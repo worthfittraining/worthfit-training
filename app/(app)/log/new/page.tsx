@@ -69,7 +69,8 @@ export default function NewLogPage() {
     setSearching(true)
     setSelectedFood(null)
     try {
-      const res = await fetch(`/api/food-search?q=${encodeURIComponent(searchQuery)}`)
+      const email = user?.primaryEmailAddress?.emailAddress || ''
+      const res = await fetch(`/api/food-search?q=${encodeURIComponent(searchQuery)}&email=${encodeURIComponent(email)}`)
       const data = await res.json()
       setSearchResults(data.results || [])
     } catch {

@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { href: '/log', label: 'Log', icon: '🍽️' },
   { href: '/chat', label: 'Nali', icon: '💬' },
   { href: '/meal-plan', label: 'Meals', icon: '📋' },
-  { href: '/coach', label: 'Coach', icon: '👥' },
+  { href: '/resources', label: 'Resources', icon: '📚' },
 ]
 
 // Pages that should NOT show the bottom nav (full-screen flows)
@@ -34,11 +34,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 transition-colors ${
+                  className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors ${
                     isActive ? 'text-green-600' : 'text-gray-400 hover:text-gray-600'
                   }`}
                 >
-                  <span className="text-xl leading-none">{item.icon}</span>
+                  <span className="text-lg leading-none">{item.icon}</span>
                   <span className={`text-xs font-medium ${isActive ? 'text-green-600' : 'text-gray-400'}`}>
                     {item.label}
                   </span>

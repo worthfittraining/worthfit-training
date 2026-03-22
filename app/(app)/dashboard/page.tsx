@@ -21,12 +21,16 @@ type FoodLog = {
   meal_slot: string
 }
 
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
 export default function DashboardPage() {
   const { user } = useUser()
   const [totals, setTotals] = useState<MacroTotals>({ calories: 0, protein: 0, carbs: 0, fat: 0 })
   const [targets, setTargets] = useState<MacroTotals>({ calories: 2000, protein: 150, carbs: 200, fat: 65 })
   const [logs, setLogs] = useState<FoodLog[]>([])
   const [loading, setLoading] = useState(true)
+
+  const todayName = DAYS[new Date().getDay()]
 
   useEffect(() => {
     async function fetchData() {
@@ -52,7 +56,24 @@ export default function DashboardPage() {
 
         if (profileRes.ok) {
           const profile = await profileRes.json()
-          if (profile.Calories) {
+          // Try to load today's day-specific macros first
+          let usedDayMacros = false
+          if (profile.Weekly_Macros) {
+            try {
+              const weekly = JSON.parse(profile.Weekly_Macros)
+              const todayMacros = weekly[todayName]
+              if (todayMacros) {
+                setTargets({
+                  calories: Number(todayMacros.calories) || 2000,
+                  protein: Number(todayMacros.protein_g) || 150,
+                  carbs: Number(todayMacros.carbs_g) || 200,
+                  fat: Number(todayMacros.fat_g) || 65,
+                })
+                usedDayMacros = true
+              }
+            } catch { /* fall through to default */ }
+          }
+          if (!usedDayMacros && profile.Calories) {
             setTargets({
               calories: Number(profile.Calories) || 2000,
               protein: Number(profile.Protein_g) || 150,
@@ -68,11 +89,18 @@ export default function DashboardPage() {
       }
     }
     fetchData()
-  }, [user])
+  }, [user, todayName])
 
   const firstName = user?.firstName || 'there'
   const calPct = Math.min((totals.calories / targets.calories) * 100, 100)
   const remaining = Math.max(targets.calories - totals.calories, 0)
+
+  // Within-target helpers (±5g for macros, ±50 cal for calories)
+  const calHit = !loading && totals.calories > 0 && Math.abs(totals.calories - targets.calories) <= 50
+  const proteinHit = !loading && totals.protein > 0 && Math.abs(totals.protein - targets.protein) <= 5
+  const carbsHit = !loading && totals.carbs > 0 && Math.abs(totals.carbs - targets.carbs) <= 5
+  const fatHit = !loading && totals.fat > 0 && Math.abs(totals.fat - targets.fat) <= 5
+  const allMacrosHit = proteinHit && carbsHit && fatHit && calHit
 
   // Greeting based on time of day
   const hour = new Date().getHours()
@@ -80,6 +108,7 @@ export default function DashboardPage() {
 
   // Motivational message based on progress
   function getMotivation() {
+    if (allMacrosHit) return "🏆 You nailed all your macros today!"
     if (totals.calories === 0) return "Ready to start logging? Let's hit those goals! 💪"
     if (calPct < 33) return "Great start! Keep adding meals to fuel your day."
     if (calPct < 66) return "You're halfway there! Stay consistent."
@@ -93,11 +122,29 @@ export default function DashboardPage() {
   const circumference = 2 * Math.PI * radius
   const dashOffset = circumference - (calPct / 100) * circumference
 
-  function ProgressBar({ value, target, color }: { value: number; target: number; color: string }) {
+  function MacroRow({
+    label, value, target, color, barColor, hit
+  }: {
+    label: string; value: number; target: number; color: string; barColor: string; hit: boolean
+  }) {
     const pct = Math.min(Math.round((value / target) * 100), 100)
     return (
-      <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
-        <div className={`h-2 rounded-full transition-all duration-500 ${color}`} style={{ width: `${pct}%` }} />
+      <div>
+        <div className="flex justify-between items-center text-sm">
+          <div className="flex items-center gap-1.5">
+            <span className={`font-medium ${color}`}>{label}</span>
+            {hit && (
+              <span className="inline-flex items-center justify-center w-4 h-4 bg-green-500 rounded-full text-white text-xs leading-none">✓</span>
+            )}
+          </div>
+          <span className="text-gray-500">{value}g / {target}g</span>
+        </div>
+        <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
+          <div
+            className={`h-2 rounded-full transition-all duration-500 ${hit ? 'bg-green-500' : barColor}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
       </div>
     )
   }
@@ -110,10 +157,27 @@ export default function DashboardPage() {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
 
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">{greeting}, {firstName}! 👋</h1>
-          <p className="text-gray-500 text-sm mt-1">{getMotivation()}</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">{greeting}, {firstName}! 👋</h1>
+            <p className="text-gray-500 text-sm mt-1">{getMotivation()}</p>
+          </div>
+          <div className="text-right text-xs text-gray-400 mt-1">
+            <div className="font-medium text-gray-600">{todayName}</div>
+            <Link href="/macros" className="text-green-600 hover:underline">Edit macros →</Link>
+          </div>
         </div>
+
+        {/* All macros hit celebration banner */}
+        {allMacrosHit && (
+          <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
+            <span className="text-2xl">🏆</span>
+            <div>
+              <p className="font-semibold text-green-800 text-sm">Macro goals achieved!</p>
+              <p className="text-green-600 text-xs mt-0.5">You hit all your targets today. Amazing work!</p>
+            </div>
+          </div>
+        )}
 
         {/* Calorie Ring Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
@@ -124,7 +188,7 @@ export default function DashboardPage() {
                 <circle cx="64" cy="64" r={radius} fill="none" stroke="#f3f4f6" strokeWidth="12" />
                 <circle
                   cx="64" cy="64" r={radius} fill="none"
-                  stroke={calPct >= 100 ? '#ef4444' : '#22c55e'}
+                  stroke={calHit ? '#22c55e' : calPct >= 100 ? '#ef4444' : '#22c55e'}
                   strokeWidth="12"
                   strokeDasharray={circumference}
                   strokeDashoffset={loading ? circumference : dashOffset}
@@ -133,8 +197,14 @@ export default function DashboardPage() {
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-xl font-bold text-gray-800">{loading ? '—' : totals.calories}</span>
-                <span className="text-xs text-gray-400">kcal</span>
+                {calHit ? (
+                  <span className="text-2xl">✅</span>
+                ) : (
+                  <>
+                    <span className="text-xl font-bold text-gray-800">{loading ? '—' : totals.calories}</span>
+                    <span className="text-xs text-gray-400">kcal</span>
+                  </>
+                )}
               </div>
             </div>
 
@@ -150,8 +220,8 @@ export default function DashboardPage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Remaining</span>
-                <span className={`font-medium ${remaining === 0 ? 'text-red-500' : 'text-green-600'}`}>
-                  {remaining} kcal
+                <span className={`font-medium ${calHit ? 'text-green-600' : remaining === 0 ? 'text-red-500' : 'text-green-600'}`}>
+                  {calHit ? '✓ On target!' : `${remaining} kcal`}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
@@ -164,32 +234,21 @@ export default function DashboardPage() {
 
         {/* Macros */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-          <h2 className="text-xs font-semibold text-gray-400 mb-4 tracking-wide">MACROS</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xs font-semibold text-gray-400 tracking-wide">MACROS</h2>
+            {(proteinHit || carbsHit || fatHit) && !allMacrosHit && (
+              <span className="text-xs text-green-600 font-medium">
+                {[proteinHit && 'P', carbsHit && 'C', fatHit && 'F'].filter(Boolean).join(', ')} on target!
+              </span>
+            )}
+          </div>
           {loading ? (
             <div className="text-center text-gray-400 py-4">Loading...</div>
           ) : (
             <div className="space-y-3">
-              <div>
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium text-green-700">Protein</span>
-                  <span className="text-gray-500">{totals.protein}g / {targets.protein}g</span>
-                </div>
-                <ProgressBar value={totals.protein} target={targets.protein} color="bg-green-500" />
-              </div>
-              <div>
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium text-blue-700">Carbs</span>
-                  <span className="text-gray-500">{totals.carbs}g / {targets.carbs}g</span>
-                </div>
-                <ProgressBar value={totals.carbs} target={targets.carbs} color="bg-blue-500" />
-              </div>
-              <div>
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium text-orange-600">Fat</span>
-                  <span className="text-gray-500">{totals.fat}g / {targets.fat}g</span>
-                </div>
-                <ProgressBar value={totals.fat} target={targets.fat} color="bg-orange-400" />
-              </div>
+              <MacroRow label="Protein" value={totals.protein} target={targets.protein} color="text-green-700" barColor="bg-green-500" hit={proteinHit} />
+              <MacroRow label="Carbs" value={totals.carbs} target={targets.carbs} color="text-blue-700" barColor="bg-blue-500" hit={carbsHit} />
+              <MacroRow label="Fat" value={totals.fat} target={targets.fat} color="text-orange-600" barColor="bg-orange-400" hit={fatHit} />
             </div>
           )}
         </div>
@@ -234,10 +293,10 @@ export default function DashboardPage() {
               <div className="font-semibold text-gray-800 text-sm">Meal Plan</div>
               <div className="text-xs text-gray-500 mt-1">See this week's meals</div>
             </Link>
-            <Link href="/log" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
-              <div className="text-2xl mb-2">📊</div>
-              <div className="font-semibold text-gray-800 text-sm">Full Log</div>
-              <div className="text-xs text-gray-500 mt-1">View today's entries</div>
+            <Link href="/macros" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
+              <div className="text-2xl mb-2">🎯</div>
+              <div className="font-semibold text-gray-800 text-sm">My Macros</div>
+              <div className="text-xs text-gray-500 mt-1">Set targets per day</div>
             </Link>
           </div>
         </div>

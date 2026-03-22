@@ -166,11 +166,31 @@ export default function RecipePage() {
         ? `${recipeName} (1 serving)`
         : `${recipeName} (${servingsEaten} servings)`
 
+      const email = user.primaryEmailAddress.emailAddress
+
+      // Save recipe for future search
+      await fetch('/api/recipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          recipe: {
+            name: recipeName,
+            calories: perServing.calories,
+            protein_g: perServing.protein_g,
+            carbs_g: perServing.carbs_g,
+            fat_g: perServing.fat_g,
+            servings: Number(totalServings),
+            saved_at: new Date().toISOString(),
+          },
+        }),
+      })
+
       const res = await fetch('/api/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: user.primaryEmailAddress.emailAddress,
+          email,
           food_name: name,
           calories: loggedMacros.calories,
           protein_g: loggedMacros.protein_g,

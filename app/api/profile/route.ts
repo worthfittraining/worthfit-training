@@ -47,6 +47,21 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true, macros })
 }
+export async function PATCH(req: NextRequest) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const body = await req.json()
+  const { email, ...fields } = body
+  if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 })
+
+  const existing = await getClientByEmail(email)
+  if (!existing) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+
+  await updateClient(existing.id, fields)
+  return NextResponse.json({ success: true })
+}
+
 export async function GET(req: NextRequest) {
   try {
     const email = req.nextUrl.searchParams.get('email')
