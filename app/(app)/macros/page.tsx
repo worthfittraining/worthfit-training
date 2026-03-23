@@ -117,16 +117,38 @@ export default function MacrosPage() {
     setRecalcPreview(result)
   }
 
-  function applyRecalculated() {
-    if (!recalcPreview) return
-    setDefaultMacros({
+  async function applyRecalculated() {
+    if (!recalcPreview || !user?.primaryEmailAddress?.emailAddress) return
+    const newMacros = {
       calories: String(recalcPreview.calories),
       protein_g: String(recalcPreview.protein_g),
       carbs_g: String(recalcPreview.carbs_g),
       fat_g: String(recalcPreview.fat_g),
-    })
+    }
+    setDefaultMacros(newMacros)
     setRecalcPreview(null)
     setShowRecalc(false)
+
+    // Auto-save immediately so user doesn't have to scroll down and hit Save
+    setSaving(true)
+    try {
+      await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.primaryEmailAddress.emailAddress,
+          Calories: recalcPreview.calories,
+          Protein_g: recalcPreview.protein_g,
+          Carbs_g: recalcPreview.carbs_g,
+          Fat_g: recalcPreview.fat_g,
+          Goal: recalcGoal || undefined,
+          Activity_Level: recalcActivity || undefined,
+        }),
+      })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch { /* ignore */ }
+    setSaving(false)
   }
 
   function updateDay(day: string, field: keyof DayMacros, value: string) {
@@ -263,7 +285,7 @@ export default function MacrosPage() {
 
               {/* Stats — pre-filled, editable */}
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Your stats</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Your current stats (not goal weight)</p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { key: 'weight_lbs', label: 'Weight (lbs)' },
@@ -327,7 +349,7 @@ export default function MacrosPage() {
                     onClick={applyRecalculated}
                     className="w-full py-2.5 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 transition"
                   >
-                    Apply These Macros
+                    ✅ Apply & Save Macros
                   </button>
                 </div>
               )}
