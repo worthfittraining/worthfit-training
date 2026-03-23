@@ -19,12 +19,16 @@ export async function POST(req: NextRequest) {
   // Build personalized system prompt — pass fields directly so casing matches
   const systemPrompt = buildSystemPrompt(profile, 'Nali', 'Your Coach', mode)
 
+  // Anthropic requires messages to start with a user message — strip any leading assistant messages
+  const firstUserIdx = messages.findIndex((m: { role: string }) => m.role === 'user')
+  const cleanedMessages = firstUserIdx >= 0 ? messages.slice(firstUserIdx) : messages
+
   // Get full response from Claude (streaming doesn't work reliably on Vercel serverless)
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 2048,
     system: systemPrompt,
-    messages,
+    messages: cleanedMessages,
   })
 
   const text = response.content
