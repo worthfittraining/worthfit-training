@@ -122,7 +122,8 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
       }
     } catch (err) {
       console.error('Chat error:', err)
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, something went wrong. Please try again!' }])
+      const errMsg = err instanceof Error ? err.message : String(err)
+      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${errMsg}` }])
     } finally {
       setLoading(false)
     }
