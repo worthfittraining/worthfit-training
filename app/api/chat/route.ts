@@ -13,9 +13,14 @@ export async function POST(req: NextRequest) {
 
     const { messages, email, mode } = await req.json()
 
-    // Get client profile from Airtable
-    const clientRecord = await getClientByEmail(email)
-    const profile = clientRecord?.fields || {}
+    // Get client profile from Airtable (non-fatal — chat still works without it)
+    let profile: Record<string, unknown> = {}
+    try {
+      const clientRecord = await getClientByEmail(email)
+      profile = (clientRecord?.fields as Record<string, unknown>) || {}
+    } catch (airtableErr) {
+      console.warn('Airtable lookup failed (continuing without profile):', airtableErr)
+    }
 
     // Build personalized system prompt
     const systemPrompt = buildSystemPrompt(profile, 'Nali', 'Your Coach', mode)
