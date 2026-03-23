@@ -9,7 +9,7 @@ const PLANS = [
     label: 'Monthly',
     price: '$29',
     period: '/month',
-    priceId: process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID!,
+    priceId: () => process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID ?? '',
     badge: null,
     savings: null,
   },
@@ -18,7 +18,7 @@ const PLANS = [
     label: 'Annual',
     price: '$249',
     period: '/year',
-    priceId: process.env.NEXT_PUBLIC_STRIPE_ANNUAL_PRICE_ID!,
+    priceId: () => process.env.NEXT_PUBLIC_STRIPE_ANNUAL_PRICE_ID ?? '',
     badge: '🎉 Best Value',
     savings: 'Save $99 vs monthly',
   },
@@ -50,7 +50,7 @@ export default function SubscribePage() {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, priceId: plan.priceId }),
+        body: JSON.stringify({ email, priceId: plan.priceId() }),
       })
       const data = await res.json()
       if (data.url) {

@@ -4,9 +4,6 @@ import { getClientByEmail, updateClient } from '@/lib/airtable'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
-// Required: disable body parsing so we can verify the raw Stripe signature
-export const config = { api: { bodyParser: false } }
-
 export async function POST(req: NextRequest) {
   const rawBody = await req.text()
   const sig = req.headers.get('stripe-signature')!
