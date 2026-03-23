@@ -4,7 +4,7 @@ import { useUser } from '@clerk/nextjs'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-// Pages that bypass the subscription check
+// Pages that bypass ALL checks
 const BYPASS_PATHS = [
   '/subscribe',
   '/onboarding',
@@ -32,6 +32,14 @@ export default function SubscriptionGate({ children }: { children: React.ReactNo
         if (!res.ok) { setChecked(true); return }
         const profile = await res.json()
 
+        // Step 1: No profile at all → needs onboarding
+        const hasProfile = profile && profile.Calories
+        if (!hasProfile) {
+          router.replace('/onboarding')
+          return
+        }
+
+        // Step 2: Has profile → check subscription
         const status = profile.Subscription_Status as string | undefined
         const isComped = profile.Comp_Access === true || profile.Comp_Access === 'true' || profile.Comp_Access === 1
 
