@@ -4,8 +4,6 @@ import { getClientByEmail } from '@/lib/airtable'
 import { buildSystemPrompt } from '@/lib/prompts'
 import Anthropic from '@anthropic-ai/sdk'
 
-export const maxDuration = 30 // seconds — tells Vercel to allow up to 30s
-
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(req: NextRequest) {
