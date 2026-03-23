@@ -7,34 +7,42 @@ import Anthropic from '@anthropic-ai/sdk'
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth()
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  try {
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { messages, email, mode } = await req.json()
+    const { messages, email, mode } = await req.json()
 
-  // Get client profile from Airtable (fields already use correct capitalization)
-  const clientRecord = await getClientByEmail(email)
-  const profile = clientRecord?.fields || {}
+    // Get client profile from Airtable
+    const clientRecord = await getClientByEmail(email)
+    const profile = clientRecord?.fields || {}
 
-  // Build personalized system prompt — pass fields directly so casing matches
-  const systemPrompt = buildSystemPrompt(profile, 'Nali', 'Your Coach', mode)
+    // Build personalized system prompt
+    const systemPrompt = buildSystemPrompt(profile, 'Nali', 'Your Coach', mode)
 
-  // Anthropic requires messages to start with a user message — strip any leading assistant messages
-  const firstUserIdx = messages.findIndex((m: { role: string }) => m.role === 'user')
-  const cleanedMessages = firstUserIdx >= 0 ? messages.slice(firstUserIdx) : messages
+    // Anthropic requires messages to start with a user message — strip any leading assistant messages
+    const firstUserIdx = messages.findIndex((m: { role: string }) => m.role === 'user')
+    const cleanedMessages = firstUserIdx >= 0 ? messages.slice(firstUserIdx) : messages
 
-  // Get full response from Claude (streaming doesn't work reliably on Vercel serverless)
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 2048,
-    system: systemPrompt,
-    messages: cleanedMessages,
-  })
+    if (cleanedMessages.length === 0) {
+      return NextResponse.json({ error: 'No user message found' }, { status: 400 })
+    }
 
-  const text = response.content
-    .filter(block => block.type === 'text')
-    .map(block => (block as { type: 'text'; text: string }).text)
-    .join('')
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2048,
+      system: systemPrompt,
+      messages: cleanedMessages,
+    })
 
-  return NextResponse.json({ content: text })
+    const text = response.content
+      .filter(block => block.type === 'text')
+      .map(block => (block as { type: 'text'; text: string }).text)
+      .join('')
+
+    return NextResponse.json({ content: text })
+  } catch (err) {
+    console.error('Chat API error:', err)
+    return NextResponse.json({ error: String(err) }, { status: 500 })
+  }
 }

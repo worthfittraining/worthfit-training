@@ -99,12 +99,21 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
         }),
       })
 
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `Server error ${res.status}`)
+      }
+
       const data = await res.json()
       const fullContent: string = data.content || ''
 
+      if (!fullContent) {
+        throw new Error('Empty response from Nali')
+      }
+
       if (mode === 'food_logger' && user?.primaryEmailAddress?.emailAddress) {
         const { cleaned, logData } = extractFoodLog(fullContent)
-        setMessages(prev => [...prev, { role: 'assistant', content: cleaned }])
+        setMessages(prev => [...prev, { role: 'assistant', content: cleaned || fullContent }])
         if (logData) {
           await saveFoodLog(logData, user.primaryEmailAddress!.emailAddress)
         }
