@@ -16,12 +16,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
-  async function updateByEmail(email: string, fields: Record<string, unknown>) {
+  type AirtableFields = Record<string, string | number | boolean | null>
+
+  async function updateByEmail(email: string, fields: AirtableFields) {
     const client = await getClientByEmail(email)
-    if (client) await updateClient(client.id, fields)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (client) await updateClient(client.id, fields as any)
   }
 
-  async function updateByCustomerId(customerId: string, fields: Record<string, unknown>) {
+  async function updateByCustomerId(customerId: string, fields: AirtableFields) {
     // Find customer email from Stripe
     const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer
     if (customer.email) await updateByEmail(customer.email, fields)
