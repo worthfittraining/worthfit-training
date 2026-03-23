@@ -19,34 +19,18 @@ export async function POST(req: NextRequest) {
   // Build personalized system prompt — pass fields directly so casing matches
   const systemPrompt = buildSystemPrompt(profile, 'Nali', 'Your Coach', mode)
 
-  // Stream response from Claude
-  const stream = await client.messages.stream({
+  // Get full response from Claude (streaming doesn't work reliably on Vercel serverless)
+  const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 2048,
     system: systemPrompt,
     messages,
   })
 
-  // Return as a readable stream
-  const encoder = new TextEncoder()
-  const readable = new ReadableStream({
-    async start(controller) {
-      for await (const chunk of stream) {
-        if (
-          chunk.type === 'content_block_delta' &&
-          chunk.delta.type === 'text_delta'
-        ) {
-          controller.enqueue(encoder.encode(chunk.delta.text))
-        }
-      }
-      controller.close()
-    },
-  })
+  const text = response.content
+    .filter(block => block.type === 'text')
+    .map(block => (block as { type: 'text'; text: string }).text)
+    .join('')
 
-  return new NextResponse(readable, {
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Transfer-Encoding': 'chunked',
-    },
-  })
+  return NextResponse.json({ content: text })
 }

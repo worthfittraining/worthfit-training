@@ -99,34 +99,17 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
         }),
       })
 
-      if (!res.body) throw new Error('No response body')
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let fullContent = ''
-
-      setMessages(prev => [...prev, { role: 'assistant', content: '' }])
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        fullContent += decoder.decode(value)
-        setMessages(prev => {
-          const updated = [...prev]
-          updated[updated.length - 1] = { role: 'assistant', content: fullContent }
-          return updated
-        })
-      }
+      const data = await res.json()
+      const fullContent: string = data.content || ''
 
       if (mode === 'food_logger' && user?.primaryEmailAddress?.emailAddress) {
         const { cleaned, logData } = extractFoodLog(fullContent)
+        setMessages(prev => [...prev, { role: 'assistant', content: cleaned }])
         if (logData) {
-          setMessages(prev => {
-            const updated = [...prev]
-            updated[updated.length - 1] = { role: 'assistant', content: cleaned }
-            return updated
-          })
           await saveFoodLog(logData, user.primaryEmailAddress!.emailAddress)
         }
+      } else {
+        setMessages(prev => [...prev, { role: 'assistant', content: fullContent }])
       }
     } catch (err) {
       console.error('Chat error:', err)
