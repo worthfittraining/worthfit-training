@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import Stripe from 'stripe'
 import { getClientByEmail } from '@/lib/airtable'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+const getStripe = () => new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
@@ -18,14 +18,14 @@ export async function POST(req: NextRequest) {
   if (client?.fields?.Stripe_Customer_Id) {
     customerId = client.fields.Stripe_Customer_Id as string
   } else {
-    const customer = await stripe.customers.create({
+    const customer = await getStripe().customers.create({
       email,
       metadata: { clerk_user_id: userId },
     })
     customerId = customer.id
   }
 
-  const session = await stripe.checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     customer: customerId,
     mode: 'subscription',
     payment_method_types: ['card'],

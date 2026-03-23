@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { getClientByEmail, updateClient } from '@/lib/airtable'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+const getStripe = () => new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.text()
@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
   let event: Stripe.Event
   try {
-    event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET!)
+    event = getStripe().webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET!)
   } catch (err) {
     console.error('Webhook signature failed:', err)
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   async function updateByCustomerId(customerId: string, fields: AirtableFields) {
     // Find customer email from Stripe
-    const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer
+    const customer = await getStripe().customers.retrieve(customerId) as Stripe.Customer
     if (customer.email) await updateByEmail(customer.email, fields)
   }
 
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       const invoice = event.data.object as Stripe.Invoice
       const subId = (invoice as Stripe.Invoice & { subscription?: string }).subscription
       if (subId) {
-        const sub = await stripe.subscriptions.retrieve(subId)
+        const sub = await getStripe().subscriptions.retrieve(subId)
         const email = sub.metadata?.email
         const fields = { Subscription_Status: 'past_due' }
         if (email) {

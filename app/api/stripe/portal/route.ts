@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import Stripe from 'stripe'
 import { getClientByEmail } from '@/lib/airtable'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+const getStripe = () => new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const customerId = client?.fields?.Stripe_Customer_Id as string
   if (!customerId) return NextResponse.json({ error: 'No subscription found' }, { status: 404 })
 
-  const session = await stripe.billingPortal.sessions.create({
+  const session = await getStripe().billingPortal.sessions.create({
     customer: customerId,
     return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
   })
