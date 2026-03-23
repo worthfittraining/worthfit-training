@@ -4,6 +4,8 @@ import { getClientByEmail } from '@/lib/airtable'
 import { buildSystemPrompt } from '@/lib/prompts'
 import Anthropic from '@anthropic-ai/sdk'
 
+export const maxDuration = 30 // seconds — tells Vercel to allow up to 30s
+
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(req: NextRequest) {
@@ -29,8 +31,8 @@ export async function POST(req: NextRequest) {
     }
 
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2048,
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
       system: systemPrompt,
       messages: cleanedMessages,
     })
