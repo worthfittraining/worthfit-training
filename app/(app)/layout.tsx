@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
+import SubscriptionGate from '@/app/components/SubscriptionGate'
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Home', icon: '🏠' },
@@ -19,6 +20,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const hideNav = HIDE_NAV_ON.some(p => pathname.startsWith(p))
 
   return (
+    <SubscriptionGate>
     <div className="flex flex-col min-h-screen">
       <main className={hideNav ? 'flex-1' : 'flex-1 pb-20'}>
         {children}
@@ -49,5 +51,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </nav>
       )}
     </div>
+    </SubscriptionGate>
   )
 }
