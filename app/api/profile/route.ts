@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getClientByEmail, createClient, updateClient } from '@/lib/airtable'
 import { calculateMacros } from '@/lib/macros'
+import type Airtable from 'airtable'
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
     goal
   )
 
-  const profileData: Record<string, unknown> = {
+  const profileData: Airtable.FieldSet = {
     Name: name,
     Email: email,
     Goal: goal,
