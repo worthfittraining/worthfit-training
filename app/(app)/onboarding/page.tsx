@@ -24,6 +24,12 @@ const ACTIVITY_LEVELS = [
   { value: 'very_active', label: 'Very Active', desc: 'Physical job + hard training' },
 ]
 
+const FOOD_SUGGESTIONS = [
+  'chicken', 'salmon', 'ground beef', 'eggs', 'shrimp',
+  'rice', 'pasta', 'potatoes', 'oats', 'quinoa',
+  'broccoli', 'spinach', 'avocado', 'Greek yogurt', 'cottage cheese',
+]
+
 export default function OnboardingPage() {
   const { user } = useUser()
   const router = useRouter()
@@ -32,6 +38,8 @@ export default function OnboardingPage() {
   const [form, setForm] = useState({
     goal: '',
     restrictions: [] as string[],
+    food_preferences: '',
+    food_dislikes: '',
     height_in: '',
     weight_lbs: '',
     age: '',
@@ -39,7 +47,7 @@ export default function OnboardingPage() {
     activity_level: '',
   })
 
-  const totalSteps = 4
+  const totalSteps = 5
 
   function toggleRestriction(r: string) {
     setForm(f => ({
@@ -48,6 +56,21 @@ export default function OnboardingPage() {
         ? f.restrictions.filter(x => x !== r)
         : [...f.restrictions, r],
     }))
+  }
+
+  function togglePreference(food: string) {
+    const current = form.food_preferences
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+    const updated = current.includes(food)
+      ? current.filter(x => x !== food)
+      : [...current, food]
+    setForm(f => ({ ...f, food_preferences: updated.join(', ') }))
+  }
+
+  function likedFoods() {
+    return form.food_preferences.split(',').map(s => s.trim()).filter(Boolean)
   }
 
   async function handleSubmit() {
@@ -139,8 +162,63 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Step 3: Stats */}
+        {/* Step 3: Food Preferences & Dislikes */}
         {step === 3 && (
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">What do you like to eat?</h2>
+            <p className="text-gray-500 mb-5">Nali uses this to build meal plans you'll actually enjoy.</p>
+
+            {/* Quick-tap suggestions */}
+            <p className="text-sm font-medium text-gray-700 mb-2">Tap foods you enjoy:</p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {FOOD_SUGGESTIONS.map(food => (
+                <button
+                  key={food}
+                  onClick={() => togglePreference(food)}
+                  className={`px-3 py-1.5 rounded-full border-2 text-sm capitalize transition ${
+                    likedFoods().includes(food)
+                      ? 'border-green-500 bg-green-50 text-green-700'
+                      : 'border-gray-200 hover:border-green-300 text-gray-600'
+                  }`}
+                >
+                  {food}
+                </button>
+              ))}
+            </div>
+
+            {/* Free-text preferences */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Other foods you love (optional)
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. sweet potatoes, turkey, steak..."
+                value={form.food_preferences}
+                onChange={e => setForm(f => ({ ...f, food_preferences: e.target.value }))}
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-sm"
+              />
+            </div>
+
+            {/* Dislikes */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Foods you dislike or want to avoid
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. tuna, Brussels sprouts, tofu..."
+                value={form.food_dislikes}
+                onChange={e => setForm(f => ({ ...f, food_dislikes: e.target.value }))}
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-sm"
+              />
+              <p className="text-xs text-gray-400 mt-1">Nali will never suggest these in your meal plan.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Stats */}
+        {step === 4 && (
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Let's calculate your targets</h2>
             <p className="text-gray-500 mb-6">We use these to calculate your daily calories and macros — not Claude.</p>
@@ -195,8 +273,8 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Step 4: Activity Level */}
-        {step === 4 && (
+        {/* Step 5: Activity Level */}
+        {step === 5 && (
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">How active are you?</h2>
             <p className="text-gray-500 mb-6">Be honest — this directly affects your calorie target.</p>
@@ -235,11 +313,11 @@ export default function OnboardingPage() {
               onClick={() => setStep(s => s + 1)}
               disabled={
                 (step === 1 && !form.goal) ||
-                (step === 3 && (!form.height_in || !form.weight_lbs || !form.age || !form.sex))
+                (step === 4 && (!form.height_in || !form.weight_lbs || !form.age || !form.sex))
               }
               className="px-6 py-3 bg-green-600 text-white rounded-full font-semibold hover:bg-green-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Next
+              {step === 3 && !form.food_preferences && !form.food_dislikes ? 'Skip →' : 'Next →'}
             </button>
           ) : (
             <button

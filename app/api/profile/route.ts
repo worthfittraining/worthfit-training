@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { email, name, goal, restrictions, height_in, weight_lbs, age, sex, activity_level } = body
+  const { email, name, goal, restrictions, food_preferences, food_dislikes, height_in, weight_lbs, age, sex, activity_level } = body
 
   const macros = calculateMacros(
     Number(weight_lbs),
@@ -19,11 +19,13 @@ export async function POST(req: NextRequest) {
     goal
   )
 
-  const profileData = {
+  const profileData: Record<string, unknown> = {
     Name: name,
     Email: email,
     Goal: goal,
     Restrictions: restrictions,
+    Food_Preferences: food_preferences || '',
+    Food_Dislikes: food_dislikes || '',
     height_in: Number(height_in),
     Weight_lbs: Number(weight_lbs),
     Age: Number(age),
