@@ -63,6 +63,8 @@ export default function NewLogPage() {
   // Manual mode
   const [manualMode, setManualMode] = useState(false)
   const [manualForm, setManualForm] = useState({ food_name: '', calories: '', protein_g: '', carbs_g: '', fat_g: '' })
+  // Date — defaults to today, can be changed for past/future logging
+  const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0])
 
   async function handleSearch() {
     if (!searchQuery.trim()) return
@@ -95,7 +97,6 @@ export default function NewLogPage() {
     if (!user?.primaryEmailAddress?.emailAddress) return
     setSaving(true)
     try {
-      const today = new Date().toISOString().split('T')[0]
       const payload = manualMode
         ? {
             food_name: manualForm.food_name,
@@ -119,7 +120,7 @@ export default function NewLogPage() {
       const res = await fetch('/api/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...payload, email: user.primaryEmailAddress.emailAddress, date: today }),
+        body: JSON.stringify({ ...payload, email: user.primaryEmailAddress.emailAddress, date: logDate }),
       })
       if (res.ok) router.push('/log')
       else alert('Failed to save. Please try again.')
@@ -245,15 +246,31 @@ export default function NewLogPage() {
             </div>
           )}
 
-          {/* Meal + Notes */}
+          {/* Meal + Date + Notes */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
-            <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">Meal</label>
-              <select value={mealSlot} onChange={e => setMealSlot(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
-                {MEAL_SLOTS.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">Meal</label>
+                <select value={mealSlot} onChange={e => setMealSlot(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+                  {MEAL_SLOTS.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">Date</label>
+                <input
+                  type="date"
+                  value={logDate}
+                  onChange={e => setLogDate(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                />
+              </div>
             </div>
+            {logDate !== new Date().toISOString().split('T')[0] && (
+              <p className="text-xs text-green-600 font-medium">
+                {logDate > new Date().toISOString().split('T')[0] ? '📅 Logging ahead for this date' : '📋 Logging for a past date'}
+              </p>
+            )}
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">Notes (optional)</label>
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Any extra details..."
