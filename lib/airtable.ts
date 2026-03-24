@@ -62,6 +62,18 @@ export async function getMealPlan(clientId: string, weekNumber: number) {
   return records
 }
 
+// ── RESOURCES ─────────────────────────────────────
+
+export async function getResources() {
+  const records = await getBase()('Resources')
+    .select({
+      filterByFormula: `{Published} = 1`,
+      sort: [{ field: 'Order', direction: 'asc' }],
+    })
+    .all()
+  return records
+}
+
 // ── SESSION CONTEXTS ──────────────────────────────
 
 export async function createSession(data: Fields) {
