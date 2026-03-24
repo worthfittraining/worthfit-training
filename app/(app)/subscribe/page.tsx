@@ -39,6 +39,8 @@ export default function SubscribePage() {
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [promoCode, setPromoCode] = useState('')
+  const [promoApplied, setPromoApplied] = useState(false)
 
   async function handleSubscribe() {
     const email = user?.primaryEmailAddress?.emailAddress
@@ -50,13 +52,13 @@ export default function SubscribePage() {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, priceId: plan.priceId() }),
+        body: JSON.stringify({ email, priceId: plan.priceId(), promoCode: promoCode.trim() }),
       })
       const data = await res.json()
       if (data.url) {
         window.location.href = data.url
       } else {
-        setError('Something went wrong. Please try again.')
+        setError(data.error || 'Something went wrong. Please try again.')
       }
     } catch {
       setError('Something went wrong. Please try again.')
@@ -105,13 +107,40 @@ export default function SubscribePage() {
         </div>
 
         {/* Features */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
           <p className="text-sm font-semibold text-gray-700 mb-3">Everything included:</p>
           <ul className="space-y-2">
             {FEATURES.map(f => (
               <li key={f} className="text-sm text-gray-600">{f}</li>
             ))}
           </ul>
+        </div>
+
+        {/* Promo code */}
+        <div className="mb-4">
+          {!promoApplied ? (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={promoCode}
+                onChange={e => setPromoCode(e.target.value.toUpperCase())}
+                placeholder="Promo code"
+                className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+              />
+              <button
+                onClick={() => { if (promoCode.trim()) setPromoApplied(true) }}
+                disabled={!promoCode.trim()}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-40 transition"
+              >
+                Apply
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-2.5">
+              <span className="text-sm text-green-700 font-medium">🎉 Code <strong>{promoCode}</strong> applied!</span>
+              <button onClick={() => { setPromoApplied(false); setPromoCode('') }} className="text-xs text-gray-400 hover:text-gray-600">Remove</button>
+            </div>
+          )}
         </div>
 
         {/* CTA */}
@@ -124,7 +153,7 @@ export default function SubscribePage() {
           {loading ? 'Loading...' : 'Start 7-Day Free Trial →'}
         </button>
         <p className="text-center text-xs text-gray-400 mt-3">
-          No charge for 7 days. Have a discount code? Enter it at checkout.
+          No charge for 7 days. Cancel anytime.
         </p>
 
       </div>

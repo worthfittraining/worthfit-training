@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import Airtable from 'airtable'
 import Anthropic from '@anthropic-ai/sdk'
 
-const base = new Airtable({ apiKey: process.env.AIRTABLE_TOKEN }).base(process.env.AIRTABLE_BASE_ID!)
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const getBase = () => new Airtable({ apiKey: process.env.AIRTABLE_TOKEN }).base(process.env.AIRTABLE_BASE_ID!)
+const getAnthropic = () => new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 async function getClientRecordId(email: string): Promise<string | null> {
   try {
-    const records = await base('Clients').select({
+    const records = await getBase()('Clients').select({
       filterByFormula: `{Email} = '${email}'`,
       maxRecords: 1,
     }).firstPage()
@@ -17,7 +17,7 @@ async function getClientRecordId(email: string): Promise<string | null> {
 
 async function getClientProfile(email: string) {
   try {
-    const records = await base('Clients').select({
+    const records = await getBase()('Clients').select({
       filterByFormula: `{Email} = '${email}'`,
       maxRecords: 1,
     }).firstPage()
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     if (!clientRecordId) return NextResponse.json({ meals: [] })
 
     const weekNumber = getWeekNumber()
-    const allRecords = await base('Meal Plans').select().all()
+    const allRecords = await getBase()('Meal Plans').select().all()
 
     const meals = allRecords
       .filter(r => {
@@ -122,7 +122,7 @@ Each object must have exactly these keys:
 Make meals varied, realistic and aligned with the client's goals.
 Return ONLY the JSON array, nothing else.`
 
-    const message = await anthropic.messages.create({
+    const message = await getAnthropic().messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
       messages: [{ role: 'user', content: prompt }],
@@ -142,19 +142,19 @@ Return ONLY the JSON array, nothing else.`
     console.log('Generated', mealPlan.length, 'meals, saving to Airtable...')
 
     // Delete existing plan for this week
-    const existingRecords = await base('Meal Plans').select().all()
+    const existingRecords = await getBase()('Meal Plans').select().all()
     const toDelete = existingRecords.filter(r => {
       const clientIds = (r.fields.client_id as string[]) || []
       return clientIds.includes(clientRecordId) && Number(r.fields.week_number) === weekNumber
     })
     for (const record of toDelete) {
-      await base('Meal Plans').destroy(record.id)
+      await getBase()('Meal Plans').destroy(record.id)
     }
 
     // Save new meals
     const savedMeals = []
     for (const meal of mealPlan) {
-      const record = await base('Meal Plans').create({
+      const record = await getBase()('Meal Plans').create({
         recipe_name: String(meal.recipe_name || ''),
         client_id: [clientRecordId],
         week_number: weekNumber,
