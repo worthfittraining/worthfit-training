@@ -84,15 +84,27 @@ const MODES = [
 function extractFoodLog(content: string): { cleaned: string; logData: Record<string, unknown> | null } {
   const idx = content.indexOf('[FOOD_LOG:')
   if (idx === -1) return { cleaned: content, logData: null }
-  const end = content.indexOf(']', idx)
+
+  // Find the matching closing ] by tracking JSON brace depth
+  // so we don't accidentally stop at a ] inside the JSON
+  let depth = 0
+  let end = -1
+  for (let i = idx; i < content.length; i++) {
+    if (content[i] === '{') depth++
+    if (content[i] === '}') depth--
+    if (content[i] === ']' && depth === 0) { end = i; break }
+  }
   if (end === -1) return { cleaned: content, logData: null }
+
   try {
     const json = content.slice(idx + 10, end)
     const logData = JSON.parse(json)
     const cleaned = (content.slice(0, idx) + content.slice(end + 1)).trim()
     return { cleaned, logData }
   } catch {
-    return { cleaned: content, logData: null }
+    // JSON parse failed — still strip the raw tag so it doesn't show in UI
+    const cleaned = (content.slice(0, idx) + content.slice(end + 1)).trim()
+    return { cleaned, logData: null }
   }
 }
 
@@ -181,8 +193,8 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
       const { cleaned, logData } = extractFoodLog(fullContent)
       setMessages(prev => [...prev, { role: 'assistant', content: cleaned || fullContent }])
 
-      // Only save the food log if we're in food_logger mode
-      if (logData && mode === 'food_logger' && user?.primaryEmailAddress?.emailAddress) {
+      // Save the food log whenever Nali includes the tag — works in any mode
+      if (logData && user?.primaryEmailAddress?.emailAddress) {
         await saveFoodLog(logData, user.primaryEmailAddress!.emailAddress)
       }
     } catch (err) {
