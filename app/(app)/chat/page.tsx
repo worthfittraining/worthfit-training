@@ -111,14 +111,13 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
         throw new Error('Empty response from Nali')
       }
 
-      if (mode === 'food_logger' && user?.primaryEmailAddress?.emailAddress) {
-        const { cleaned, logData } = extractFoodLog(fullContent)
-        setMessages(prev => [...prev, { role: 'assistant', content: cleaned || fullContent }])
-        if (logData) {
-          await saveFoodLog(logData, user.primaryEmailAddress!.emailAddress)
-        }
-      } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: fullContent }])
+      // Always strip [FOOD_LOG:...] tag from display — regardless of mode
+      const { cleaned, logData } = extractFoodLog(fullContent)
+      setMessages(prev => [...prev, { role: 'assistant', content: cleaned || fullContent }])
+
+      // Only save the food log if we're in food_logger mode
+      if (logData && mode === 'food_logger' && user?.primaryEmailAddress?.emailAddress) {
+        await saveFoodLog(logData, user.primaryEmailAddress!.emailAddress)
       }
     } catch (err) {
       console.error('Chat error:', err)
