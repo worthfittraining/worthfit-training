@@ -8,19 +8,17 @@ const CLIENTS_TABLE = 'Clients'
 async function getClientRecordId(email: string): Promise<string | null> {
   const formula = encodeURIComponent(`{Email}="${email}"`)
   const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(CLIENTS_TABLE)}?filterByFormula=${formula}&maxRecords=1`
-  console.log('Looking up client for email:', email)
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
   })
   const data = await res.json()
-  console.log('Airtable client lookup result:', JSON.stringify(data).slice(0, 200))
   return data.records?.[0]?.id ?? null
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { email, food_name, calories, protein_g, carbs_g, fat_g, meal_slot, notes } = body
+    const { email, food_name, calories, protein_g, carbs_g, fat_g, meal_slot, notes, date } = body
 
     if (!email || !food_name) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -31,7 +29,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 })
     }
 
-    const today = new Date().toISOString().split('T')[0]
+    const logDate = date || new Date().toISOString().split('T')[0]
 
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}`
     const res = await fetch(url, {
@@ -49,7 +47,7 @@ export async function POST(req: NextRequest) {
           fat_g: Number(fat_g) || 0,
           meal_slot: meal_slot || 'snack',
           notes: notes || '',
-          Date: today,
+          Date: logDate,
           client_id: [clientId],
         },
       }),
@@ -81,9 +79,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ logs: [] })
     }
 
+    // ?date=YYYY-MM-DD for a specific date, ?days=7 for past N days, default = today
+    const dateParam = req.nextUrl.searchParams.get('date')
+    const daysParam = req.nextUrl.searchParams.get('days')
     const today = new Date().toISOString().split('T')[0]
 
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?maxRecords=100&sort[0][field]=Date&sort[0][direction]=desc`
+    let targetDates: string[] = []
+    if (daysParam) {
+      const numDays = Math.min(parseInt(daysParam) || 7, 30)
+      for (let i = 0; i < numDays; i++) {
+        const d = new Date()
+        d.setDate(d.getDate() - i)
+        targetDates.push(d.toISOString().split('T')[0])
+      }
+    } else {
+      targetDates = [dateParam || today]
+    }
+
+    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?maxRecords=200&sort[0][field]=Date&sort[0][direction]=desc`
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
     })
@@ -95,14 +108,14 @@ export async function GET(req: NextRequest) {
     const data = await res.json()
     const allRecords = data.records || []
 
-    const todayLogs = allRecords.filter((r: any) => {
+    const filtered = allRecords.filter((r: any) => {
       const fields = r.fields
       const recordDate = fields.Date || fields.date || ''
       const clientIds: string[] = Array.isArray(fields.client_id) ? fields.client_id : []
-      return recordDate === today && clientIds.includes(clientId)
+      return targetDates.includes(recordDate) && clientIds.includes(clientId)
     })
 
-    const logs = todayLogs.map((r: any) => ({
+    const logs = filtered.map((r: any) => ({
       id: r.id,
       food_name: r.fields.food_name || '',
       calories: r.fields.calories || 0,
