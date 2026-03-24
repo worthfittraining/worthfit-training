@@ -8,6 +8,72 @@ type Message = {
   content: string
 }
 
+// Renders basic markdown inside chat bubbles (bold, italic, bullets, numbered lists)
+function ChatMarkdown({ text, isUser }: { text: string; isUser: boolean }) {
+  const mutedClass = isUser ? 'text-green-100' : 'text-gray-500'
+  const boldClass = isUser ? 'font-semibold text-white' : 'font-semibold text-gray-900'
+
+  function renderInline(line: string): React.ReactNode {
+    // Split on **bold** and *italic*
+    const parts = line.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/)
+    return parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**'))
+        return <strong key={i} className={boldClass}>{part.slice(2, -2)}</strong>
+      if (part.startsWith('*') && part.endsWith('*'))
+        return <em key={i} className={mutedClass}>{part.slice(1, -1)}</em>
+      return part
+    })
+  }
+
+  const paragraphs = text.split('\n').filter((l, i, arr) => l.trim() || arr[i - 1]?.trim())
+
+  const elements: React.ReactNode[] = []
+  let bulletBuffer: string[] = []
+  let numberedBuffer: string[] = []
+
+  function flushBullets() {
+    if (bulletBuffer.length) {
+      elements.push(
+        <ul key={`ul-${elements.length}`} className="list-disc pl-4 space-y-0.5 mt-1">
+          {bulletBuffer.map((b, i) => <li key={i}>{renderInline(b)}</li>)}
+        </ul>
+      )
+      bulletBuffer = []
+    }
+  }
+  function flushNumbered() {
+    if (numberedBuffer.length) {
+      elements.push(
+        <ol key={`ol-${elements.length}`} className="list-decimal pl-4 space-y-0.5 mt-1">
+          {numberedBuffer.map((b, i) => <li key={i}>{renderInline(b)}</li>)}
+        </ol>
+      )
+      numberedBuffer = []
+    }
+  }
+
+  paragraphs.forEach((line, i) => {
+    const trimmed = line.trim()
+    if (!trimmed) {
+      flushBullets(); flushNumbered()
+      return
+    }
+    if (/^[-•]\s/.test(trimmed)) {
+      flushNumbered()
+      bulletBuffer.push(trimmed.replace(/^[-•]\s*/, ''))
+    } else if (/^\d+\.\s/.test(trimmed)) {
+      flushBullets()
+      numberedBuffer.push(trimmed.replace(/^\d+\.\s*/, ''))
+    } else {
+      flushBullets(); flushNumbered()
+      elements.push(<p key={i}>{renderInline(trimmed)}</p>)
+    }
+  })
+  flushBullets(); flushNumbered()
+
+  return <div className="space-y-1.5 text-sm leading-relaxed">{elements}</div>
+}
+
 const MODES = [
   { id: 'coach', label: '💬 Coach' },
   { id: 'food_logger', label: '🍽️ Log Food' },
@@ -171,12 +237,14 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+            <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
               msg.role === 'user'
                 ? 'bg-green-500 text-white rounded-br-sm'
                 : 'bg-white text-gray-800 shadow-sm border border-gray-100 rounded-bl-sm'
             }`}>
-              {msg.content || (loading && i === messages.length - 1 ? '...' : '')}
+              {msg.content
+                ? <ChatMarkdown text={msg.content} isUser={msg.role === 'user'} />
+                : (loading && i === messages.length - 1 ? <span className="text-sm">...</span> : null)}
             </div>
           </div>
         ))}
