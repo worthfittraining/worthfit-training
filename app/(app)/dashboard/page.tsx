@@ -162,9 +162,13 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-bold text-gray-800">{greeting}, {firstName}! 👋</h1>
             <p className="text-gray-500 text-sm mt-1">{getMotivation()}</p>
           </div>
-          <div className="text-right text-xs text-gray-400 mt-1">
-            <div className="font-medium text-gray-600">{todayName}</div>
-            <Link href="/macros" className="text-green-600 hover:underline">Edit macros →</Link>
+          <div className="flex items-center gap-3 mt-1">
+            <div className="text-right text-xs text-gray-400">
+              <div className="font-medium text-gray-600">{todayName}</div>
+            </div>
+            <Link href="/account" className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center text-white text-sm font-bold shadow-sm hover:bg-green-600 transition-colors flex-shrink-0">
+              {(user?.firstName?.[0] || user?.primaryEmailAddress?.emailAddress?.[0] || '?').toUpperCase()}
+            </Link>
           </div>
         </div>
 

@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { href: '/log', label: 'Log', icon: '🍽️' },
   { href: '/chat', label: 'Nali', icon: '💬' },
   { href: '/meal-plan', label: 'Meals', icon: '📋' },
-  { href: '/account', label: 'Account', icon: '👤' },
+  { href: '/resources', label: 'Resources', icon: '📚' },
 ]
 
 // Pages that should NOT show the bottom nav (full-screen flows)
