@@ -66,6 +66,20 @@ const COMMON_FOODS = [
   { name: 'Orange juice', serving: '1 cup (248ml)', calories: 112, protein_g: 1.7, carbs_g: 26, fat_g: 0.5, cal_per_100g: 45, protein_per_100g: 0.7, carbs_per_100g: 10, fat_per_100g: 0.2 },
 ]
 
+type FoodResult = {
+  name: string
+  serving: string
+  calories: number
+  protein_g: number
+  carbs_g: number
+  fat_g: number
+  cal_per_100g: number
+  protein_per_100g: number
+  carbs_per_100g: number
+  fat_per_100g: number
+  is_recipe: boolean
+}
+
 export async function GET(req: NextRequest) {
   const query = req.nextUrl.searchParams.get('q')
   const email = req.nextUrl.searchParams.get('email')
@@ -79,58 +93,83 @@ export async function GET(req: NextRequest) {
     .slice(0, 4)
     .map(f => ({ ...f, is_recipe: false }))
 
-  try {
-    // Run OFF search and saved recipes in parallel, with a 5s timeout
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 5000)
+  // Run USDA + saved recipes in parallel
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 6000)
 
-    const [offRes, savedRecipes] = await Promise.all([
-      fetch(
-        `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=10&fields=product_name,serving_size,nutriments`,
-        { signal: controller.signal }
-      ).catch(() => null),
+  try {
+    const [usdaResults, savedRecipes] = await Promise.all([
+      fetchUSDA(query, controller.signal),
       email ? fetchSavedRecipes(email, query) : Promise.resolve([]),
     ])
 
     clearTimeout(timeout)
 
-    let offResults: typeof COMMON_FOODS = []
-    if (offRes?.ok) {
-      const offData = await offRes.json().catch(() => ({ products: [] }))
-      offResults = (offData.products || [])
-        .filter((p: Record<string, unknown>) => {
-          const n = p.nutriments as Record<string, number>
-          return p.product_name && n?.['energy-kcal_100g']
-        })
-        .slice(0, 6)
-        .map((p: Record<string, unknown>) => {
-          const n = p.nutriments as Record<string, number>
-          const hasPer = n['energy-kcal_serving'] !== undefined
-          return {
-            name: String(p.product_name || ''),
-            serving: String(p.serving_size || '100g'),
-            calories: Math.round(hasPer ? n['energy-kcal_serving'] : n['energy-kcal_100g']),
-            protein_g: Math.round((hasPer ? n['proteins_serving'] : n['proteins_100g']) || 0),
-            carbs_g: Math.round((hasPer ? n['carbohydrates_serving'] : n['carbohydrates_100g']) || 0),
-            fat_g: Math.round((hasPer ? n['fat_serving'] : n['fat_100g']) || 0),
-            cal_per_100g: Math.round(n['energy-kcal_100g'] || 0),
-            protein_per_100g: Number((n['proteins_100g'] || 0).toFixed(1)),
-            carbs_per_100g: Number((n['carbohydrates_100g'] || 0).toFixed(1)),
-            fat_per_100g: Number((n['fat_100g'] || 0).toFixed(1)),
-            is_recipe: false,
-          }
-        })
-    }
-
-    // Saved recipes first, then built-in matches, then OFF results (deduped by name)
+    // Saved recipes first, then built-in matches, then USDA results (deduped)
     const builtInNames = new Set(builtIn.map(f => f.name.toLowerCase()))
-    const dedupedOff = offResults.filter(f => !builtInNames.has(f.name.toLowerCase()))
+    const dedupedUSDA = usdaResults.filter(f => !builtInNames.has(f.name.toLowerCase()))
 
-    const results = [...savedRecipes, ...builtIn, ...dedupedOff]
+    const results = [...savedRecipes, ...builtIn, ...dedupedUSDA]
     return NextResponse.json({ results })
   } catch {
-    // If everything fails, at least return the built-in matches
+    clearTimeout(timeout)
     return NextResponse.json({ results: builtIn })
+  }
+}
+
+async function fetchUSDA(query: string, signal: AbortSignal): Promise<FoodResult[]> {
+  const apiKey = process.env.USDA_API_KEY
+  // If no API key yet, return empty (built-in foods still show)
+  if (!apiKey) return []
+
+  try {
+    const res = await fetch(
+      `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(query)}&api_key=${apiKey}&pageSize=10&dataType=SR%20Legacy,Survey%20(FNDDS),Foundation`,
+      { signal }
+    )
+    if (!res.ok) return []
+
+    const data = await res.json()
+    const foods: FoodResult[] = []
+
+    for (const food of (data.foods || [])) {
+      const nutrients: Record<number, number> = {}
+      for (const n of (food.foodNutrients || [])) {
+        nutrients[n.nutrientId] = n.value
+      }
+      const cal = nutrients[1008] ?? nutrients[2047] ?? 0
+      const protein = nutrients[1003] ?? 0
+      const carbs = nutrients[1005] ?? 0
+      const fat = nutrients[1004] ?? 0
+
+      if (!cal) continue // skip foods with no calorie data
+
+      foods.push({
+        name: food.description
+          ? food.description.charAt(0).toUpperCase() + food.description.slice(1).toLowerCase()
+          : '',
+        serving: food.servingSize
+          ? `${food.servingSize}${food.servingSizeUnit || 'g'}`
+          : '100g',
+        // Per-serving values (USDA foundation foods are per 100g)
+        calories: Math.round(cal),
+        protein_g: Math.round(protein),
+        carbs_g: Math.round(carbs),
+        fat_g: Math.round(fat),
+        // Per-100g values (same for USDA foundation/SR Legacy foods)
+        cal_per_100g: Math.round(cal),
+        protein_per_100g: Number(protein.toFixed(1)),
+        carbs_per_100g: Number(carbs.toFixed(1)),
+        fat_per_100g: Number(fat.toFixed(1)),
+        is_recipe: false,
+      })
+
+      if (foods.length >= 8) break
+    }
+
+    return foods
+  } catch {
+    return []
   }
 }
 
