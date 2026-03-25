@@ -55,6 +55,7 @@ export default function NewLogPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [searching, setSearching] = useState(false)
+  const [searchError, setSearchError] = useState('')
   const [selectedFood, setSelectedFood] = useState<SearchResult | null>(null)
   const [qty, setQty] = useState('100')
   const [unit, setUnit] = useState('g')
@@ -70,13 +71,17 @@ export default function NewLogPage() {
     if (!searchQuery.trim()) return
     setSearching(true)
     setSelectedFood(null)
+    setSearchError('')
     try {
       const email = user?.primaryEmailAddress?.emailAddress || ''
       const res = await fetch(`/api/food-search?q=${encodeURIComponent(searchQuery)}&email=${encodeURIComponent(email)}`)
       const data = await res.json()
-      setSearchResults(data.results || [])
+      const results = data.results || []
+      setSearchResults(results)
+      if (results.length === 0) setSearchError('No results found — try a different name or use "Enter manually"')
     } catch {
       setSearchResults([])
+      setSearchError('Search unavailable — use "Enter manually" to log this food')
     } finally {
       setSearching(false)
     }
@@ -163,6 +168,10 @@ export default function NewLogPage() {
                     {searching ? '...' : 'Search'}
                   </button>
                 </div>
+
+                {searchError && (
+                  <p className="mt-2 text-xs text-red-500">{searchError}</p>
+                )}
 
                 {searchResults.length > 0 && (
                   <div className="mt-3 space-y-1">
