@@ -40,6 +40,30 @@ const COMMON_FOODS = [
   { name: 'Black beans (cooked)', serving: '100g', calories: 132, protein_g: 8.9, carbs_g: 24, fat_g: 0.5, cal_per_100g: 132, protein_per_100g: 8.9, carbs_per_100g: 24, fat_per_100g: 0.5 },
   { name: 'Lentils (cooked)', serving: '100g', calories: 116, protein_g: 9, carbs_g: 20, fat_g: 0.4, cal_per_100g: 116, protein_per_100g: 9, carbs_per_100g: 20, fat_per_100g: 0.4 },
   { name: 'Protein powder (whey, 1 scoop)', serving: '1 scoop (30g)', calories: 120, protein_g: 24, carbs_g: 3, fat_g: 2, cal_per_100g: 400, protein_per_100g: 80, carbs_per_100g: 10, fat_per_100g: 6 },
+  // Breakfast
+  { name: 'Bacon (cooked, 1 strip)', serving: '1 strip (8g)', calories: 43, protein_g: 3, carbs_g: 0.1, fat_g: 3.3, cal_per_100g: 541, protein_per_100g: 37, carbs_per_100g: 1.4, fat_per_100g: 42 },
+  { name: 'Biscuit (homemade)', serving: '1 biscuit (60g)', calories: 212, protein_g: 4.2, carbs_g: 27, fat_g: 9.6, cal_per_100g: 353, protein_per_100g: 7, carbs_per_100g: 45, fat_per_100g: 16 },
+  { name: 'Gravy (sausage/country)', serving: '1/4 cup (60g)', calories: 75, protein_g: 2.5, carbs_g: 6, fat_g: 4.5, cal_per_100g: 125, protein_per_100g: 4.2, carbs_per_100g: 10, fat_per_100g: 7.5 },
+  { name: 'Sausage patty (pork)', serving: '1 patty (38g)', calories: 119, protein_g: 7, carbs_g: 0.5, fat_g: 10, cal_per_100g: 313, protein_per_100g: 18, carbs_per_100g: 1.3, fat_per_100g: 26 },
+  { name: 'Pancakes (plain, 3 medium)', serving: '3 pancakes (150g)', calories: 348, protein_g: 10, carbs_g: 56, fat_g: 9, cal_per_100g: 232, protein_per_100g: 6.7, carbs_per_100g: 37, fat_per_100g: 6 },
+  { name: 'Waffles (plain)', serving: '1 waffle (75g)', calories: 218, protein_g: 5.9, carbs_g: 25, fat_g: 10, cal_per_100g: 291, protein_per_100g: 7.9, carbs_per_100g: 33, fat_per_100g: 14 },
+  { name: 'Scrambled eggs (2 eggs, butter)', serving: '2 eggs (110g)', calories: 182, protein_g: 13, carbs_g: 1.6, fat_g: 14, cal_per_100g: 166, protein_per_100g: 12, carbs_per_100g: 1.5, fat_per_100g: 13 },
+  // Lunch / dinner staples
+  { name: 'Burger (beef, no bun)', serving: '1 patty (113g)', calories: 285, protein_g: 28, carbs_g: 0, fat_g: 19, cal_per_100g: 252, protein_per_100g: 25, carbs_per_100g: 0, fat_per_100g: 17 },
+  { name: 'Hamburger bun', serving: '1 bun (43g)', calories: 120, protein_g: 4, carbs_g: 22, fat_g: 2, cal_per_100g: 279, protein_per_100g: 9.3, carbs_per_100g: 51, fat_per_100g: 4.7 },
+  { name: 'Pizza (cheese, 1 slice)', serving: '1 slice (107g)', calories: 285, protein_g: 12, carbs_g: 36, fat_g: 10, cal_per_100g: 266, protein_per_100g: 11, carbs_per_100g: 34, fat_per_100g: 9.8 },
+  { name: 'French fries', serving: '100g', calories: 312, protein_g: 3.4, carbs_g: 41, fat_g: 15, cal_per_100g: 312, protein_per_100g: 3.4, carbs_per_100g: 41, fat_per_100g: 15 },
+  { name: 'Mac and cheese (1 cup)', serving: '1 cup (200g)', calories: 390, protein_g: 14, carbs_g: 50, fat_g: 15, cal_per_100g: 195, protein_per_100g: 7, carbs_per_100g: 25, fat_per_100g: 7.5 },
+  { name: 'Turkey breast (deli, sliced)', serving: '100g', calories: 104, protein_g: 18, carbs_g: 3.6, fat_g: 2.2, cal_per_100g: 104, protein_per_100g: 18, carbs_per_100g: 3.6, fat_per_100g: 2.2 },
+  { name: 'Steak (sirloin, cooked)', serving: '100g', calories: 207, protein_g: 30, carbs_g: 0, fat_g: 9, cal_per_100g: 207, protein_per_100g: 30, carbs_per_100g: 0, fat_per_100g: 9 },
+  // Snacks & extras
+  { name: 'Orange', serving: '1 medium (131g)', calories: 62, protein_g: 1.2, carbs_g: 15, fat_g: 0.2, cal_per_100g: 47, protein_per_100g: 0.9, carbs_per_100g: 12, fat_per_100g: 0.1 },
+  { name: 'Grapes', serving: '100g', calories: 69, protein_g: 0.7, carbs_g: 18, fat_g: 0.2, cal_per_100g: 69, protein_per_100g: 0.7, carbs_per_100g: 18, fat_per_100g: 0.2 },
+  { name: 'Tortilla (flour, 10")', serving: '1 tortilla (72g)', calories: 218, protein_g: 5.6, carbs_g: 36, fat_g: 5.6, cal_per_100g: 303, protein_per_100g: 7.8, carbs_per_100g: 50, fat_per_100g: 7.8 },
+  { name: 'Tortilla chips', serving: '1 oz (28g)', calories: 138, protein_g: 2, carbs_g: 18, fat_g: 7, cal_per_100g: 489, protein_per_100g: 7.1, carbs_per_100g: 64, fat_per_100g: 25 },
+  { name: 'Hummus', serving: '2 tbsp (30g)', calories: 70, protein_g: 2, carbs_g: 8, fat_g: 3, cal_per_100g: 233, protein_per_100g: 6.7, carbs_per_100g: 27, fat_per_100g: 10 },
+  { name: 'Coffee (black)', serving: '1 cup (240ml)', calories: 2, protein_g: 0.3, carbs_g: 0, fat_g: 0, cal_per_100g: 1, protein_per_100g: 0.1, carbs_per_100g: 0, fat_per_100g: 0 },
+  { name: 'Orange juice', serving: '1 cup (248ml)', calories: 112, protein_g: 1.7, carbs_g: 26, fat_g: 0.5, cal_per_100g: 45, protein_per_100g: 0.7, carbs_per_100g: 10, fat_per_100g: 0.2 },
 ]
 
 export async function GET(req: NextRequest) {
