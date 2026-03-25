@@ -1,6 +1,6 @@
 'use client'
 
-import { useUser } from '@clerk/nextjs'
+import { useUser, useClerk } from '@clerk/nextjs'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -10,15 +10,24 @@ const BYPASS_PATHS = [
   '/onboarding',
 ]
 
+// Pages past_due users can still access (to fix their account)
+const PAST_DUE_ALLOWED = [
+  '/account',
+]
+
 const ACTIVE_STATUSES = ['trialing', 'active']
 
 export default function SubscriptionGate({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useUser()
+  const { signOut } = useClerk()
   const pathname = usePathname()
   const router = useRouter()
   const [checked, setChecked] = useState(false)
+  const [isPastDue, setIsPastDue] = useState(false)
+  const [portalLoading, setPortalLoading] = useState(false)
 
   const isBypassed = BYPASS_PATHS.some(p => pathname.startsWith(p))
+  const isPastDueAllowed = PAST_DUE_ALLOWED.some(p => pathname.startsWith(p))
 
   useEffect(() => {
     if (!isLoaded) return
@@ -45,6 +54,10 @@ export default function SubscriptionGate({ children }: { children: React.ReactNo
 
         if (isComped || ACTIVE_STATUSES.includes(status || '')) {
           setChecked(true)
+        } else if (status === 'past_due') {
+          // Past due — show hard gate, don't redirect
+          setIsPastDue(true)
+          setChecked(true)
         } else {
           router.replace('/subscribe')
         }
@@ -56,6 +69,25 @@ export default function SubscriptionGate({ children }: { children: React.ReactNo
 
     check()
   }, [isLoaded, user, pathname, isBypassed, router])
+
+  async function openBillingPortal() {
+    const email = user?.primaryEmailAddress?.emailAddress
+    if (!email) return
+    setPortalLoading(true)
+    try {
+      const res = await fetch('/api/stripe/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+    } catch {
+      // ignore
+    } finally {
+      setPortalLoading(false)
+    }
+  }
 
   // Show nothing while checking (avoids flash of content)
   if (!checked && !isBypassed) {
@@ -69,6 +101,78 @@ export default function SubscriptionGate({ children }: { children: React.ReactNo
           Loading...
         </div>
       </div>
+    )
+  }
+
+  // Past due — show banner + hard gate (unless on an allowed page like /account)
+  if (isPastDue && !isPastDueAllowed) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        {/* Red warning banner */}
+        <div className="bg-red-600 text-white px-4 py-3 text-center text-sm font-medium">
+          ⚠️ Your payment didn't go through — update your card to restore access
+        </div>
+
+        {/* Hard gate content */}
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="max-w-sm w-full text-center space-y-6">
+            <div className="text-6xl">💳</div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 mb-2">Payment failed</h1>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                We couldn't process your last payment. Update your card to get back to your nutrition plan.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={openBillingPortal}
+                disabled={portalLoading}
+                className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-semibold rounded-2xl transition-colors"
+              >
+                {portalLoading ? 'Opening...' : 'Update Payment Method →'}
+              </button>
+
+              <a
+                href="/account"
+                className="block w-full py-3 border-2 border-gray-200 hover:border-gray-300 text-gray-600 font-medium rounded-2xl transition-colors text-sm"
+              >
+                Go to Account
+              </a>
+
+              <button
+                onClick={() => signOut().then(() => router.push('/'))}
+                className="block w-full text-center text-xs text-gray-400 hover:text-gray-500 py-1"
+              >
+                Sign out
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-400">
+              Questions? Email{' '}
+              <a href="mailto:worthfittraining@gmail.com" className="underline">
+                worthfittraining@gmail.com
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Past due but on an allowed page (/account) — show banner + page content
+  if (isPastDue && isPastDueAllowed) {
+    return (
+      <>
+        <div className="bg-red-600 text-white px-4 py-3 text-center text-sm font-medium sticky top-0 z-50">
+          ⚠️ Payment failed —{' '}
+          <button onClick={openBillingPortal} className="underline font-semibold">
+            {portalLoading ? 'Opening...' : 'update your card'}
+          </button>
+          {' '}to restore access
+        </div>
+        {children}
+      </>
     )
   }
 
