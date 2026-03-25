@@ -45,6 +45,7 @@ export default function OnboardingPage() {
     age: '',
     sex: '',
     activity_level: '',
+    breastfeeding: false,
   })
 
   const totalSteps = 5
@@ -260,15 +261,38 @@ export default function OnboardingPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Sex</label>
                   <select
                     value={form.sex}
-                    onChange={e => setForm(f => ({ ...f, sex: e.target.value }))}
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none"
+                    onChange={e => setForm(f => ({ ...f, sex: e.target.value, breastfeeding: false }))}
+                    className={`w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none ${!form.sex ? 'text-gray-400' : 'text-gray-800'}`}
                   >
-                    <option value="">Select...</option>
+                    <option value="" disabled>Select...</option>
                     <option value="female">Female</option>
                     <option value="male">Male</option>
                   </select>
                 </div>
               </div>
+
+              {/* Breastfeeding toggle — only shown for female */}
+              {form.sex === 'female' && (
+                <button
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, breastfeeding: !f.breastfeeding }))}
+                  className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition ${
+                    form.breastfeeding
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 hover:border-green-300'
+                  }`}
+                >
+                  <div className="text-left">
+                    <div className="font-medium text-gray-800 text-sm">Currently breastfeeding?</div>
+                    <div className="text-xs text-gray-500 mt-0.5">We'll add ~500 extra calories and 25g protein to your targets</div>
+                  </div>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ml-3 ${
+                    form.breastfeeding ? 'border-green-500 bg-green-500' : 'border-gray-300'
+                  }`}>
+                    {form.breastfeeding && <span className="text-white text-xs">✓</span>}
+                  </div>
+                </button>
+              )}
             </div>
           </div>
         )}

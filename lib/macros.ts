@@ -4,7 +4,8 @@ export function calculateMacros(
   age: number,
   sex: 'male' | 'female',
   activityLevel: string,
-  goal: string
+  goal: string,
+  breastfeeding = false
 ) {
   // Convert imperial to metric
   const weightKg = weightLbs * 0.453592
@@ -33,6 +34,9 @@ export function calculateMacros(
   if (goal === 'performance') calories = tdee + 300
   if (goal === 'body_recomp') calories = tdee
 
+  // Breastfeeding adds ~500 cal/day to support milk production
+  if (breastfeeding) calories += 500
+
   calories = Math.max(calories, sex === 'female' ? 1200 : 1500)
 
   // Macro splits
@@ -40,9 +44,12 @@ export function calculateMacros(
   if (goal === 'weight_loss') { proteinPct = 0.40; carbsPct = 0.30; fatPct = 0.30 }
   if (goal === 'performance') { proteinPct = 0.30; carbsPct = 0.50; fatPct = 0.20 }
 
+  // Breastfeeding: boost protein by 25g on top of percentage-based calculation
+  const extraProtein = breastfeeding ? 25 : 0
+
   return {
     calories: Math.round(calories),
-    protein_g: Math.round((calories * proteinPct) / 4),
+    protein_g: Math.round((calories * proteinPct) / 4) + extraProtein,
     carbs_g: Math.round((calories * carbsPct) / 4),
     fat_g: Math.round((calories * fatPct) / 9),
   }
