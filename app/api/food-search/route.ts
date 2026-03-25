@@ -93,23 +93,36 @@ export async function GET(req: NextRequest) {
     .slice(0, 4)
     .map(f => ({ ...f, is_recipe: false }))
 
-  // Run USDA + saved recipes in parallel
+  // Run USDA + Open Food Facts + saved recipes all in parallel
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 6000)
 
   try {
-    const [usdaResults, savedRecipes] = await Promise.all([
+    const [usdaResults, offResults, savedRecipes] = await Promise.all([
       fetchUSDA(query, controller.signal),
+      fetchOFF(query, controller.signal),
       email ? fetchSavedRecipes(email, query) : Promise.resolve([]),
     ])
 
     clearTimeout(timeout)
 
-    // Saved recipes first, then built-in matches, then USDA results (deduped)
-    const builtInNames = new Set(builtIn.map(f => f.name.toLowerCase()))
-    const dedupedUSDA = usdaResults.filter(f => !builtInNames.has(f.name.toLowerCase()))
+    // Deduplicate: built-in names take priority, then USDA, then OFF fills gaps
+    const seenNames = new Set(builtIn.map(f => f.name.toLowerCase()))
 
-    const results = [...savedRecipes, ...builtIn, ...dedupedUSDA]
+    const dedupedUSDA = usdaResults.filter(f => {
+      if (seenNames.has(f.name.toLowerCase())) return false
+      seenNames.add(f.name.toLowerCase())
+      return true
+    })
+
+    const dedupedOFF = offResults.filter(f => {
+      if (seenNames.has(f.name.toLowerCase())) return false
+      seenNames.add(f.name.toLowerCase())
+      return true
+    })
+
+    // Order: saved recipes → built-in → USDA → OFF (packaged goods)
+    const results = [...savedRecipes, ...builtIn, ...dedupedUSDA, ...dedupedOFF]
     return NextResponse.json({ results })
   } catch {
     clearTimeout(timeout)
@@ -168,6 +181,44 @@ async function fetchUSDA(query: string, signal: AbortSignal): Promise<FoodResult
     }
 
     return foods
+  } catch {
+    return []
+  }
+}
+
+async function fetchOFF(query: string, signal: AbortSignal): Promise<FoodResult[]> {
+  try {
+    const res = await fetch(
+      `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=8&fields=product_name,serving_size,nutriments`,
+      { signal }
+    ).catch(() => null)
+
+    if (!res?.ok) return []
+
+    const data = await res.json().catch(() => ({ products: [] }))
+    return (data.products || [])
+      .filter((p: Record<string, unknown>) => {
+        const n = p.nutriments as Record<string, number>
+        return p.product_name && n?.['energy-kcal_100g']
+      })
+      .slice(0, 6)
+      .map((p: Record<string, unknown>) => {
+        const n = p.nutriments as Record<string, number>
+        const hasPer = n['energy-kcal_serving'] !== undefined
+        return {
+          name: String(p.product_name || ''),
+          serving: String(p.serving_size || '100g'),
+          calories: Math.round(hasPer ? n['energy-kcal_serving'] : n['energy-kcal_100g']),
+          protein_g: Math.round((hasPer ? n['proteins_serving'] : n['proteins_100g']) || 0),
+          carbs_g: Math.round((hasPer ? n['carbohydrates_serving'] : n['carbohydrates_100g']) || 0),
+          fat_g: Math.round((hasPer ? n['fat_serving'] : n['fat_100g']) || 0),
+          cal_per_100g: Math.round(n['energy-kcal_100g'] || 0),
+          protein_per_100g: Number((n['proteins_100g'] || 0).toFixed(1)),
+          carbs_per_100g: Number((n['carbohydrates_100g'] || 0).toFixed(1)),
+          fat_per_100g: Number((n['fat_100g'] || 0).toFixed(1)),
+          is_recipe: false,
+        }
+      })
   } catch {
     return []
   }
