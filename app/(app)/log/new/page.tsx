@@ -36,6 +36,7 @@ function calcMacros(food: SearchResult, qty: number, unit: string) {
       protein_g: Math.round(food.protein_g * qty),
       carbs_g: Math.round(food.carbs_g * qty),
       fat_g: Math.round(food.fat_g * qty),
+      fiber_g: Number(((food.fiber_g || 0) * qty).toFixed(1)),
     }
   }
 
@@ -45,6 +46,7 @@ function calcMacros(food: SearchResult, qty: number, unit: string) {
     protein_g: Math.round(food.protein_per_100g * factor),
     carbs_g: Math.round(food.carbs_per_100g * factor),
     fat_g: Math.round(food.fat_per_100g * factor),
+    fiber_g: Number(((food.fiber_per_100g || 0) * factor).toFixed(1)),
   }
 }
 
@@ -63,7 +65,7 @@ export default function NewLogPage() {
   const [notes, setNotes] = useState('')
   // Manual mode
   const [manualMode, setManualMode] = useState(false)
-  const [manualForm, setManualForm] = useState({ food_name: '', calories: '', protein_g: '', carbs_g: '', fat_g: '' })
+  const [manualForm, setManualForm] = useState({ food_name: '', calories: '', protein_g: '', carbs_g: '', fat_g: '', fiber_g: '' })
   // Date — defaults to today, can be changed for past/future logging
   const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0])
 
@@ -118,6 +120,7 @@ export default function NewLogPage() {
             protein_g: computed?.protein_g || 0,
             carbs_g: computed?.carbs_g || 0,
             fat_g: computed?.fat_g || 0,
+            fiber_g: computed?.fiber_g || 0,
             meal_slot: mealSlot,
             notes,
           }
@@ -180,7 +183,7 @@ export default function NewLogPage() {
                         className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-green-50 border border-gray-100 transition-colors">
                         <div className="text-sm font-medium text-gray-800 truncate">{r.name}</div>
                         <div className="text-xs text-gray-400 mt-0.5">
-                          {r.cal_per_100g} cal · {r.protein_per_100g}g protein · {r.carbs_per_100g}g carbs · {r.fat_per_100g}g fat
+                          {r.cal_per_100g} cal · {r.protein_per_100g}g protein · {r.carbs_per_100g}g carbs · {r.fat_per_100g}g fat · {r.fiber_per_100g}g fiber
                           <span className="text-gray-300 ml-1">per 100g</span>
                         </div>
                       </button>
@@ -224,11 +227,12 @@ export default function NewLogPage() {
                   </div>
 
                   {computed && Number(qty) > 0 && (
-                    <div className="bg-white rounded-xl p-3 grid grid-cols-4 gap-2 text-center">
+                    <div className="bg-white rounded-xl p-3 grid grid-cols-5 gap-2 text-center">
                       <div><div className="font-bold text-gray-800">{computed.calories}</div><div className="text-xs text-gray-400">cal</div></div>
                       <div><div className="font-bold text-green-600">{computed.protein_g}g</div><div className="text-xs text-gray-400">protein</div></div>
                       <div><div className="font-bold text-blue-600">{computed.carbs_g}g</div><div className="text-xs text-gray-400">carbs</div></div>
                       <div><div className="font-bold text-orange-500">{computed.fat_g}g</div><div className="text-xs text-gray-400">fat</div></div>
+                      <div><div className="font-bold text-teal-600">{computed.fiber_g}g</div><div className="text-xs text-gray-400">fiber</div></div>
                     </div>
                   )}
                 </div>
@@ -244,7 +248,7 @@ export default function NewLogPage() {
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {[['calories','Calories'],['protein_g','Protein (g)'],['carbs_g','Carbs (g)'],['fat_g','Fat (g)']].map(([k,l]) => (
+                {[['calories','Calories'],['protein_g','Protein (g)'],['carbs_g','Carbs (g)'],['fat_g','Fat (g)'],['fiber_g','Fiber (g)']].map(([k,l]) => (
                   <div key={k}>
                     <label className="text-xs font-medium text-gray-500 block mb-1">{l}</label>
                     <input type="number" min="0" value={manualForm[k as keyof typeof manualForm]}

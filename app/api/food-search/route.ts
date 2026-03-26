@@ -73,10 +73,12 @@ type FoodResult = {
   protein_g: number
   carbs_g: number
   fat_g: number
+  fiber_g: number
   cal_per_100g: number
   protein_per_100g: number
   carbs_per_100g: number
   fat_per_100g: number
+  fiber_per_100g: number
   is_recipe: boolean
 }
 
@@ -91,7 +93,7 @@ export async function GET(req: NextRequest) {
   const builtIn = COMMON_FOODS
     .filter(f => f.name.toLowerCase().includes(q))
     .slice(0, 4)
-    .map(f => ({ ...f, is_recipe: false }))
+    .map(f => ({ ...f, fiber_g: f.fiber_g ?? 0, fiber_per_100g: f.fiber_per_100g ?? 0, is_recipe: false }))
 
   // Run USDA + Open Food Facts + saved recipes all in parallel
   const controller = new AbortController()
@@ -154,6 +156,7 @@ async function fetchUSDA(query: string, signal: AbortSignal): Promise<FoodResult
       const protein = nutrients[1003] ?? 0
       const carbs = nutrients[1005] ?? 0
       const fat = nutrients[1004] ?? 0
+      const fiber = nutrients[1079] ?? 0
 
       if (!cal) continue // skip foods with no calorie data
 
@@ -164,16 +167,16 @@ async function fetchUSDA(query: string, signal: AbortSignal): Promise<FoodResult
         serving: food.servingSize
           ? `${food.servingSize}${food.servingSizeUnit || 'g'}`
           : '100g',
-        // Per-serving values (USDA foundation foods are per 100g)
         calories: Math.round(cal),
         protein_g: Math.round(protein),
         carbs_g: Math.round(carbs),
         fat_g: Math.round(fat),
-        // Per-100g values (same for USDA foundation/SR Legacy foods)
+        fiber_g: Number(fiber.toFixed(1)),
         cal_per_100g: Math.round(cal),
         protein_per_100g: Number(protein.toFixed(1)),
         carbs_per_100g: Number(carbs.toFixed(1)),
         fat_per_100g: Number(fat.toFixed(1)),
+        fiber_per_100g: Number(fiber.toFixed(1)),
         is_recipe: false,
       })
 
@@ -212,10 +215,12 @@ async function fetchOFF(query: string, signal: AbortSignal): Promise<FoodResult[
           protein_g: Math.round((hasPer ? n['proteins_serving'] : n['proteins_100g']) || 0),
           carbs_g: Math.round((hasPer ? n['carbohydrates_serving'] : n['carbohydrates_100g']) || 0),
           fat_g: Math.round((hasPer ? n['fat_serving'] : n['fat_100g']) || 0),
+          fiber_g: Number(((hasPer ? n['fiber_serving'] : n['fiber_100g']) || 0).toFixed(1)),
           cal_per_100g: Math.round(n['energy-kcal_100g'] || 0),
           protein_per_100g: Number((n['proteins_100g'] || 0).toFixed(1)),
           carbs_per_100g: Number((n['carbohydrates_100g'] || 0).toFixed(1)),
           fat_per_100g: Number((n['fat_100g'] || 0).toFixed(1)),
+          fiber_per_100g: Number((n['fiber_100g'] || 0).toFixed(1)),
           is_recipe: false,
         }
       })

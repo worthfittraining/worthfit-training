@@ -9,6 +9,7 @@ type MacroTotals = {
   protein: number
   carbs: number
   fat: number
+  fiber: number
 }
 
 type FoodLog = {
@@ -18,19 +19,38 @@ type FoodLog = {
   protein_g: number
   carbs_g: number
   fat_g: number
+  fiber_g: number
   meal_slot: string
 }
+
+const WATER_STORAGE_KEY = () => `water_${new Date().toISOString().split('T')[0]}`
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 export default function DashboardPage() {
   const { user } = useUser()
-  const [totals, setTotals] = useState<MacroTotals>({ calories: 0, protein: 0, carbs: 0, fat: 0 })
-  const [targets, setTargets] = useState<MacroTotals>({ calories: 2000, protein: 150, carbs: 200, fat: 65 })
+  const [totals, setTotals] = useState<MacroTotals>({ calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 })
+  const [targets, setTargets] = useState<MacroTotals & { fiber: number }>({ calories: 2000, protein: 150, carbs: 200, fat: 65, fiber: 28 })
   const [logs, setLogs] = useState<FoodLog[]>([])
   const [loading, setLoading] = useState(true)
+  const [waterOz, setWaterOz] = useState(0)
+  const [waterGoal, setWaterGoal] = useState(64)
 
   const todayName = DAYS[new Date().getDay()]
+
+  // Load water from localStorage (resets daily automatically via date key)
+  useEffect(() => {
+    const saved = localStorage.getItem(WATER_STORAGE_KEY())
+    if (saved) setWaterOz(Number(saved))
+  }, [])
+
+  function addWater(oz: number) {
+    setWaterOz(prev => {
+      const next = Math.max(0, prev + oz)
+      localStorage.setItem(WATER_STORAGE_KEY(), String(next))
+      return next
+    })
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -52,6 +72,7 @@ export default function DashboardPage() {
           protein: fetchedLogs.reduce((s, l) => s + (Number(l.protein_g) || 0), 0),
           carbs: fetchedLogs.reduce((s, l) => s + (Number(l.carbs_g) || 0), 0),
           fat: fetchedLogs.reduce((s, l) => s + (Number(l.fat_g) || 0), 0),
+          fiber: Number(fetchedLogs.reduce((s, l) => s + (Number(l.fiber_g) || 0), 0).toFixed(1)),
         })
 
         if (profileRes.ok) {
@@ -79,8 +100,10 @@ export default function DashboardPage() {
               protein: Number(profile.Protein_g) || 150,
               carbs: Number(profile.Carbs_g) || 200,
               fat: Number(profile.Fat_g) || 65,
+              fiber: Number(profile.Fiber_g) || 28,
             })
           }
+          if (profile.Water_goal_oz) setWaterGoal(Number(profile.Water_goal_oz))
         }
       } catch (err) {
         console.error('Dashboard fetch error:', err)
@@ -100,6 +123,8 @@ export default function DashboardPage() {
   const proteinHit = !loading && totals.protein > 0 && Math.abs(totals.protein - targets.protein) <= 5
   const carbsHit = !loading && totals.carbs > 0 && Math.abs(totals.carbs - targets.carbs) <= 5
   const fatHit = !loading && totals.fat > 0 && Math.abs(totals.fat - targets.fat) <= 5
+  const fiberHit = !loading && totals.fiber >= targets.fiber
+  const waterHit = waterOz >= waterGoal
   const allMacrosHit = proteinHit && carbsHit && fatHit && calHit
 
   // Greeting based on time of day
@@ -255,6 +280,85 @@ export default function DashboardPage() {
               <MacroRow label="Fat" value={totals.fat} target={targets.fat} color="text-orange-600" barColor="bg-orange-400" hit={fatHit} />
             </div>
           )}
+        </div>
+
+        {/* Fiber Ring + Water Tracker */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Fiber Ring */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col items-center">
+            <h2 className="text-xs font-semibold text-gray-400 tracking-wide mb-3 self-start">FIBER</h2>
+            {(() => {
+              const fiberPct = Math.min((totals.fiber / targets.fiber) * 100, 100)
+              const r = 36, circ = 2 * Math.PI * r
+              const offset = circ - (fiberPct / 100) * circ
+              return (
+                <div className="relative">
+                  <svg width="90" height="90" className="-rotate-90">
+                    <circle cx="45" cy="45" r={r} fill="none" stroke="#f3f4f6" strokeWidth="10" />
+                    <circle cx="45" cy="45" r={r} fill="none"
+                      stroke={fiberHit ? '#22c55e' : '#14b8a6'}
+                      strokeWidth="10"
+                      strokeDasharray={circ}
+                      strokeDashoffset={loading ? circ : offset}
+                      strokeLinecap="round"
+                      className="transition-all duration-700"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    {fiberHit ? (
+                      <span className="text-lg">✅</span>
+                    ) : (
+                      <>
+                        <span className="text-sm font-bold text-gray-800">{loading ? '—' : totals.fiber}g</span>
+                        <span className="text-xs text-gray-400">fiber</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
+            <p className="text-xs text-gray-400 mt-2">Goal: {targets.fiber}g</p>
+          </div>
+
+          {/* Water Tracker */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col items-center">
+            <h2 className="text-xs font-semibold text-gray-400 tracking-wide mb-3 self-start">WATER</h2>
+            {(() => {
+              const waterPct = Math.min((waterOz / waterGoal) * 100, 100)
+              const r = 36, circ = 2 * Math.PI * r
+              const offset = circ - (waterPct / 100) * circ
+              return (
+                <div className="relative">
+                  <svg width="90" height="90" className="-rotate-90">
+                    <circle cx="45" cy="45" r={r} fill="none" stroke="#f3f4f6" strokeWidth="10" />
+                    <circle cx="45" cy="45" r={r} fill="none"
+                      stroke={waterHit ? '#22c55e' : '#3b82f6'}
+                      strokeWidth="10"
+                      strokeDasharray={circ}
+                      strokeDashoffset={offset}
+                      strokeLinecap="round"
+                      className="transition-all duration-700"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    {waterHit ? (
+                      <span className="text-lg">✅</span>
+                    ) : (
+                      <>
+                        <span className="text-sm font-bold text-gray-800">{waterOz}oz</span>
+                        <span className="text-xs text-gray-400">water</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
+            <div className="flex gap-2 mt-2">
+              <button onClick={() => addWater(-8)} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded-lg border border-gray-200">-8oz</button>
+              <button onClick={() => addWater(8)} className={`text-xs font-medium px-3 py-1 rounded-lg transition-colors ${waterHit ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}>+8oz</button>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Goal: {waterGoal}oz</p>
+          </div>
         </div>
 
         {/* Recent Logs */}

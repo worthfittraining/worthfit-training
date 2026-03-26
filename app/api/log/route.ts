@@ -18,7 +18,7 @@ async function getClientRecordId(email: string): Promise<string | null> {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { email, food_name, calories, protein_g, carbs_g, fat_g, meal_slot, notes, date } = body
+    const { email, food_name, calories, protein_g, carbs_g, fat_g, fiber_g, meal_slot, notes, date } = body
 
     if (!email || !food_name) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
           protein_g: Number(protein_g) || 0,
           carbs_g: Number(carbs_g) || 0,
           fat_g: Number(fat_g) || 0,
+          fiber_g: Number(fiber_g) || 0,
           meal_slot: meal_slot || 'snack',
           notes: notes || '',
           Date: logDate,
@@ -122,6 +123,7 @@ export async function GET(req: NextRequest) {
       protein_g: r.fields.protein_g || 0,
       carbs_g: r.fields.carbs_g || 0,
       fat_g: r.fields.fat_g || 0,
+      fiber_g: r.fields.fiber_g || 0,
       meal_slot: r.fields.meal_slot || 'snack',
       notes: r.fields.notes || '',
       date: r.fields.Date || r.fields.date || '',

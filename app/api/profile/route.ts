@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getClientByEmail, createClient, updateClient } from '@/lib/airtable'
-import { calculateMacros } from '@/lib/macros'
+import { calculateMacros, calculateWaterGoal } from '@/lib/macros'
 import type Airtable from 'airtable'
 
 export async function POST(req: NextRequest) {
@@ -36,6 +36,8 @@ export async function POST(req: NextRequest) {
     Protein_g: macros.protein_g,
     Carbs_g: macros.carbs_g,
     Fat_g: macros.fat_g,
+    Fiber_g: macros.fiber_g,
+    Water_goal_oz: calculateWaterGoal(Number(weight_lbs)),
     Program_week: 1,
     Onboarding_complete: false,
     Meals_Per_Day: 3,

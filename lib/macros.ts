@@ -47,10 +47,21 @@ export function calculateMacros(
   // Breastfeeding: boost protein by 25g on top of percentage-based calculation
   const extraProtein = breastfeeding ? 25 : 0
 
+  // Fiber: 14g per 1000 calories (FDA recommendation), min 25g women / 38g men
+  const fiberBase = Math.round((calories / 1000) * 14)
+  const fiberMin = sex === 'female' ? 25 : 38
+  const fiber_g = Math.max(fiberBase, fiberMin)
+
   return {
     calories: Math.round(calories),
     protein_g: Math.round((calories * proteinPct) / 4) + extraProtein,
     carbs_g: Math.round((calories * carbsPct) / 4),
     fat_g: Math.round((calories * fatPct) / 9),
+    fiber_g,
   }
+}
+
+// Water goal: bodyweight (lbs) / 2 = oz (common recommendation)
+export function calculateWaterGoal(weightLbs: number): number {
+  return Math.round(weightLbs / 2)
 }
