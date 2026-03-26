@@ -204,7 +204,8 @@ export default function NewLogPage() {
                   <div className="flex gap-2 mb-3">
                     <input
                       type="number"
-                      min="1"
+                      min="0.1"
+                      step="0.1"
                       value={qty}
                       onChange={e => setQty(e.target.value)}
                       className="w-28 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
