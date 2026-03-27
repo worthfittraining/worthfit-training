@@ -28,11 +28,16 @@ type DaySummary = {
 
 const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack']
 
+/** Returns local date string YYYY-MM-DD (not UTC — avoids off-by-one for US users at night) */
+function localDateString(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 function getDateLabel(dateStr: string): string {
-  const today = new Date().toISOString().split('T')[0]
+  const today = localDateString()
   const yesterday = new Date()
   yesterday.setDate(yesterday.getDate() - 1)
-  const yStr = yesterday.toISOString().split('T')[0]
+  const yStr = localDateString(yesterday)
   if (dateStr === today) return 'Today'
   if (dateStr === yStr) return 'Yesterday'
   const d = new Date(dateStr + 'T00:00:00')
@@ -119,17 +124,21 @@ export default function LogPage() {
     if (!email) return
     setCopying(log.id)
     try {
-      const today = new Date().toISOString().split('T')[0]
+      // Use local date — avoids off-by-one for US users logging after ~7 PM
+      const today = localDateString()
       const res = await fetch('/api/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, food_name: log.food_name, calories: log.calories, protein_g: log.protein_g, carbs_g: log.carbs_g, fat_g: log.fat_g, meal_slot: log.meal_slot, notes: log.notes || '', date: today }),
+        body: JSON.stringify({ email, food_name: log.food_name, calories: log.calories, protein_g: log.protein_g, carbs_g: log.carbs_g, fat_g: log.fat_g, fiber_g: log.fiber_g || 0, meal_slot: log.meal_slot, notes: log.notes || '', date: today }),
       })
       if (res.ok) {
         const data = await res.json()
+        const newEntry: FoodLog = { ...log, id: data.id, date: today }
         setCopySuccess(log.id)
         setTimeout(() => setCopySuccess(null), 2500)
-        setLogs(prev => [...prev, { ...log, id: data.id, date: today }])
+        // Update both today's view AND the week view so the item appears correctly everywhere
+        setLogs(prev => [...prev, newEntry])
+        setWeekLogs(prev => [...prev, newEntry])
       }
     } catch (e) { console.error(e) }
     finally { setCopying(null) }
@@ -151,7 +160,7 @@ export default function LogPage() {
 
   const weekDays: DaySummary[] = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() - i)
-    const dateStr = d.toISOString().split('T')[0]
+    const dateStr = localDateString(d)
     const dayLogs = weekLogs.filter(l => l.date === dateStr)
     return { date: dateStr, label: getDateLabel(dateStr), calories: dayLogs.reduce((s, l) => s + l.calories, 0), protein_g: dayLogs.reduce((s, l) => s + l.protein_g, 0), carbs_g: dayLogs.reduce((s, l) => s + l.carbs_g, 0), fat_g: dayLogs.reduce((s, l) => s + l.fat_g, 0), logged: dayLogs.length > 0 }
   })
@@ -159,7 +168,7 @@ export default function LogPage() {
   const daysHitProtein = weekDays.filter(d => d.logged && protTarget && d.protein_g >= protTarget * 0.9).length
   const daysHitCalories = weekDays.filter(d => d.logged && calTarget && d.calories >= calTarget * 0.9 && d.calories <= calTarget * 1.1).length
   const loggedDays = weekDays.filter(d => d.logged).length
-  const today = new Date().toISOString().split('T')[0]
+  const today = localDateString()
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">

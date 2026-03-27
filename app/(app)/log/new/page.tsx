@@ -66,8 +66,11 @@ export default function NewLogPage() {
   // Manual mode
   const [manualMode, setManualMode] = useState(false)
   const [manualForm, setManualForm] = useState({ food_name: '', calories: '', protein_g: '', carbs_g: '', fat_g: '', fiber_g: '' })
-  // Date — defaults to today, can be changed for past/future logging
-  const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0])
+  // Date — defaults to today (local date, not UTC — avoids off-by-one for US users at night)
+  function localDateString(d: Date = new Date()): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+  const [logDate, setLogDate] = useState(localDateString())
 
   async function handleSearch() {
     if (!searchQuery.trim()) return
@@ -280,9 +283,9 @@ export default function NewLogPage() {
                 />
               </div>
             </div>
-            {logDate !== new Date().toISOString().split('T')[0] && (
+            {logDate !== localDateString() && (
               <p className="text-xs text-green-600 font-medium">
-                {logDate > new Date().toISOString().split('T')[0] ? '📅 Logging ahead for this date' : '📋 Logging for a past date'}
+                {logDate > localDateString() ? '📅 Logging ahead for this date' : '📋 Logging for a past date'}
               </p>
             )}
             <div>

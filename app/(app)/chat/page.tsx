@@ -83,12 +83,12 @@ const MODES = [
   { id: 'check_in', label: '✅ Check In' },
 ]
 
-function extractFoodLog(content: string): { cleaned: string; logData: Record<string, unknown> | null } {
-  const idx = content.indexOf('[FOOD_LOG:')
-  if (idx === -1) return { cleaned: content, logData: null }
+/** Parse a bracketed JSON tag like [TAG_NAME:{...}] from content */
+function extractTag(content: string, tagName: string): { cleaned: string; data: Record<string, unknown> | null } {
+  const prefix = `[${tagName}:`
+  const idx = content.indexOf(prefix)
+  if (idx === -1) return { cleaned: content, data: null }
 
-  // Find the matching closing ] by tracking JSON brace depth
-  // so we don't accidentally stop at a ] inside the JSON
   let depth = 0
   let end = -1
   for (let i = idx; i < content.length; i++) {
@@ -96,18 +96,27 @@ function extractFoodLog(content: string): { cleaned: string; logData: Record<str
     if (content[i] === '}') depth--
     if (content[i] === ']' && depth === 0) { end = i; break }
   }
-  if (end === -1) return { cleaned: content, logData: null }
+  if (end === -1) return { cleaned: content, data: null }
 
   try {
-    const json = content.slice(idx + 10, end)
-    const logData = JSON.parse(json)
+    const json = content.slice(idx + prefix.length, end)
+    const data = JSON.parse(json)
     const cleaned = (content.slice(0, idx) + content.slice(end + 1)).trim()
-    return { cleaned, logData }
+    return { cleaned, data }
   } catch {
-    // JSON parse failed — still strip the raw tag so it doesn't show in UI
     const cleaned = (content.slice(0, idx) + content.slice(end + 1)).trim()
-    return { cleaned, logData: null }
+    return { cleaned, data: null }
   }
+}
+
+function extractFoodLog(content: string): { cleaned: string; logData: Record<string, unknown> | null } {
+  const { cleaned, data } = extractTag(content, 'FOOD_LOG')
+  return { cleaned, logData: data }
+}
+
+function extractDeleteFood(content: string): { cleaned: string; deleteData: Record<string, unknown> | null } {
+  const { cleaned, data } = extractTag(content, 'DELETE_FOOD')
+  return { cleaned, deleteData: data }
 }
 
 export default function ChatPage() {
@@ -117,6 +126,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false)
   const [mode, setMode] = useState('coach')
   const [logSaved, setLogSaved] = useState<string | null>(null)
+  const [logDeleted, setLogDeleted] = useState<string | null>(null)
   const [savedInSession, setSavedInSession] = useState<Set<string>>(new Set())
   const [plan, setPlan] = useState<Plan>('free')
   const [msgCount, setMsgCount] = useState(0)
@@ -177,6 +187,25 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
   }
 }
 
+async function deleteFoodLog(deleteData: Record<string, unknown>, email: string) {
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    const food_name = encodeURIComponent((deleteData.food_name as string) || '')
+    const meal_slot = encodeURIComponent((deleteData.meal_slot as string) || '')
+    const res = await fetch(
+      `/api/log?email=${encodeURIComponent(email)}&food_name=${food_name}&meal_slot=${meal_slot}&date=${today}`,
+      { method: 'DELETE' }
+    )
+    const data = await res.json()
+    if (res.ok && data.ok) {
+      setLogDeleted((data.deleted as string) || (deleteData.food_name as string) || 'Food')
+      setTimeout(() => setLogDeleted(null), 4000)
+    }
+  } catch (err) {
+    console.error('Failed to delete food log:', err)
+  }
+}
+
   async function sendMessage() {
     if (!input.trim() || loading) return
 
@@ -219,13 +248,19 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
         throw new Error('Empty response from Nali')
       }
 
-      // Always strip [FOOD_LOG:...] tag from display — regardless of mode
-      const { cleaned, logData } = extractFoodLog(fullContent)
+      // Strip [FOOD_LOG:...] tag, then strip [DELETE_FOOD:...] tag — both invisible to user
+      const { cleaned: step1, logData } = extractFoodLog(fullContent)
+      const { cleaned, deleteData } = extractDeleteFood(step1)
       setMessages(prev => [...prev, { role: 'assistant', content: cleaned || fullContent }])
 
-      // Save the food log whenever Nali includes the tag — works in any mode
+      // Save food log if Nali logged something
       if (logData && user?.primaryEmailAddress?.emailAddress) {
         await saveFoodLog(logData, user.primaryEmailAddress!.emailAddress)
+      }
+
+      // Delete food log if Nali removed something
+      if (deleteData && user?.primaryEmailAddress?.emailAddress) {
+        await deleteFoodLog(deleteData, user.primaryEmailAddress!.emailAddress)
       }
     } catch (err) {
       console.error('Chat error:', err)
@@ -272,6 +307,13 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
         <div className="bg-green-50 border-b border-green-200 px-4 py-2 text-sm text-green-700 flex items-center gap-2">
           <span>✅</span>
           <span><strong>{logSaved}</strong> saved to your food log!</span>
+          <a href="/log" className="underline ml-1">View log →</a>
+        </div>
+      )}
+      {logDeleted && (
+        <div className="bg-red-50 border-b border-red-200 px-4 py-2 text-sm text-red-700 flex items-center gap-2">
+          <span>🗑️</span>
+          <span><strong>{logDeleted}</strong> removed from your food log.</span>
           <a href="/log" className="underline ml-1">View log →</a>
         </div>
       )}
