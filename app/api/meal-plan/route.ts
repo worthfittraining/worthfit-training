@@ -67,9 +67,37 @@ export async function GET(req: NextRequest) {
   }
 }
 
+export async function PATCH(req: NextRequest) {
+  try {
+    const { id, recipe_name, calories, protein_g, carbs_g, fat_g, notes } = await req.json()
+    if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
+
+    const record = await getBase()('Meal Plans').update(id, {
+      recipe_name: String(recipe_name || ''),
+      calories: Number(calories) || 0,
+      protein_g: Number(protein_g) || 0,
+      carbs_g: Number(carbs_g) || 0,
+      fat_g: Number(fat_g) || 0,
+      Notes: String(notes || ''),
+    } as Airtable.FieldSet)
+
+    return NextResponse.json({ ok: true, id: record.id })
+  } catch (error) {
+    console.error('Meal plan PATCH error:', error)
+    return NextResponse.json({ error: String(error) }, { status: 500 })
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json()
+    const {
+      email,
+      uniqueBreakfasts = 7,
+      uniqueLunches = 7,
+      uniqueDinners = 7,
+      includeSnacks = false,
+      weekPreferences = '',
+    } = await req.json()
     if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 })
 
     console.log('Generating meal plan for:', email)
@@ -84,7 +112,6 @@ export async function POST(req: NextRequest) {
     }
 
     const weekNumber = getWeekNumber()
-    const mealsPerDay = Number(profile.Meals_Per_Day) || 3
     const calories = Number(profile.Calories) || 2000
     const protein = Number(profile.Protein_g) || 150
     const carbs = Number(profile.Carbs_g) || 200
@@ -95,20 +122,33 @@ export async function POST(req: NextRequest) {
     const dislikes = profile.Dislikes || 'None'
     const goal = profile.Goal || 'general health'
 
-    const slots = mealsPerDay >= 4
+    const slots = includeSnacks
       ? ['breakfast', 'lunch', 'dinner', 'snack']
       : ['breakfast', 'lunch', 'dinner']
+
+    const totalMeals = 7 * slots.length
 
     const prompt = `You are a nutrition coach creating a 7-day meal plan. Return ONLY a valid JSON array, no other text or markdown.
 
 Client details:
 - Goal: ${goal}
 - Daily targets: ${calories} calories, ${protein}g protein, ${carbs}g carbs, ${fat}g fat
-- Meals per day: ${mealsPerDay} (slots: ${slots.join(', ')})
 - Dietary restrictions: ${restrictions}
 - Dislikes: ${dislikes}
+${weekPreferences ? `- Special requests for this week: ${weekPreferences}` : ''}
 
-Return a JSON array with exactly ${7 * slots.length} meal objects.
+Meal variety for this plan:
+- Breakfasts: ${uniqueBreakfasts} unique recipe(s) total, repeated across all 7 days as needed
+- Lunches: ${uniqueLunches} unique recipe(s) total, repeated across all 7 days as needed
+- Dinners: ${uniqueDinners} unique recipe(s) total, repeated across all 7 days as needed
+${includeSnacks ? '- Snacks: 1-2 different snack options, one per day' : ''}
+
+IMPORTANT RULES:
+- Return exactly ${totalMeals} meal objects (one per day per slot for all 7 days)
+- When a meal repeats across days, use the EXACT same recipe_name, calories, protein_g, carbs_g, fat_g, and notes
+- Spread repeated meals throughout the week — don't cluster them all at the start
+- Each meal's macros should help hit the daily targets when combined
+
 Each object must have exactly these keys:
 - "day": one of Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday
 - "meal_slot": one of ${slots.join(', ')}
@@ -119,7 +159,6 @@ Each object must have exactly these keys:
 - "fat_g": number
 - "notes": brief prep note or empty string
 
-Make meals varied, realistic and aligned with the client's goals.
 Return ONLY the JSON array, nothing else.`
 
     const message = await getAnthropic().messages.create({
