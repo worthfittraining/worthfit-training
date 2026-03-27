@@ -49,10 +49,37 @@ export async function POST(req: NextRequest) {
     // Note: Playbook_Active is intentionally omitted here so it's never accidentally cleared
   }
 
+  const isNewUser = !existing
+
   if (existing) {
     await updateClient(existing.id, profileData)
   } else {
     await createClient(profileData)
+  }
+
+  // Add new Worth Fit sign-ups to Flodesk automatically
+  // Existing users re-submitting onboarding are skipped (no duplicate adds)
+  if (isNewUser && process.env.FLODESK_API_KEY) {
+    try {
+      const firstName = name?.split(' ')[0] || ''
+      await fetch('https://api.flodesk.com/v1/subscribers', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${Buffer.from(`${process.env.FLODESK_API_KEY}:`).toString('base64')}`,
+          'Content-Type': 'application/json',
+          'User-Agent': 'WorthFit/1.0',
+        },
+        body: JSON.stringify({
+          email,
+          first_name: firstName,
+          segments: ['Worth Fit App'],
+        }),
+      })
+      console.log('Flodesk: added new sign-up', email)
+    } catch (err) {
+      // Non-fatal — don't block onboarding if Flodesk is down
+      console.error('Flodesk sync error (non-fatal):', err)
+    }
   }
 
   return NextResponse.json({ success: true, macros })
