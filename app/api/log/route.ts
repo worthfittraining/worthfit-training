@@ -81,20 +81,24 @@ export async function GET(req: NextRequest) {
     }
 
     // ?date=YYYY-MM-DD for a specific date, ?days=7 for past N days, default = today
+    // IMPORTANT: always use client-provided date as anchor to avoid UTC/local timezone mismatch.
+    // US users logging at 8 PM local time are already "tomorrow" in UTC, which causes logs to disappear.
     const dateParam = req.nextUrl.searchParams.get('date')
     const daysParam = req.nextUrl.searchParams.get('days')
-    const today = new Date().toISOString().split('T')[0]
+    // Anchor date: prefer client-sent date, fall back to UTC today only as last resort
+    const anchorDate = dateParam || new Date().toISOString().split('T')[0]
 
     let targetDates: string[] = []
     if (daysParam) {
       const numDays = Math.min(parseInt(daysParam) || 7, 30)
+      // Count back from the anchor using midnight UTC of the anchor date — fully deterministic
+      const anchorMs = new Date(anchorDate + 'T00:00:00Z').getTime()
       for (let i = 0; i < numDays; i++) {
-        const d = new Date()
-        d.setDate(d.getDate() - i)
+        const d = new Date(anchorMs - i * 24 * 60 * 60 * 1000)
         targetDates.push(d.toISOString().split('T')[0])
       }
     } else {
-      targetDates = [dateParam || today]
+      targetDates = [anchorDate]
     }
 
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?maxRecords=200&sort[0][field]=Date&sort[0][direction]=desc`

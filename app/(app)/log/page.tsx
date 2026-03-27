@@ -90,7 +90,8 @@ export default function LogPage() {
     const email = user?.primaryEmailAddress?.emailAddress
     if (!email) return
     try {
-      const res = await fetch(`/api/log?email=${encodeURIComponent(email)}`)
+      // Always pass local date so the server doesn't use UTC and show wrong day for US users at night
+      const res = await fetch(`/api/log?email=${encodeURIComponent(email)}&date=${localDateString()}`)
       const data = await res.json()
       setLogs(data.logs || [])
     } catch (e) { console.error(e) }
@@ -102,7 +103,8 @@ export default function LogPage() {
     if (!email) return
     setWeekLoading(true)
     try {
-      const res = await fetch(`/api/log?email=${encodeURIComponent(email)}&days=7`)
+      // Pass local date as anchor so server generates correct 7-day range regardless of UTC offset
+      const res = await fetch(`/api/log?email=${encodeURIComponent(email)}&date=${localDateString()}&days=7`)
       const data = await res.json()
       setWeekLogs(data.logs || [])
     } catch (e) { console.error(e) }
