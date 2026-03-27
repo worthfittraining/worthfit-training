@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
+import PlanGate from '@/app/components/PlanGate'
 
 type FoodData = {
   name: string
@@ -136,6 +137,7 @@ export default function BarcodePage() {
   const macros = food ? calcMacros(food, qty, unit) : null
 
   return (
+    <PlanGate feature="barcode">
     <div className="min-h-screen bg-gray-900 flex flex-col">
       <div className="flex items-center gap-3 p-4 text-white">
         <button
@@ -285,5 +287,6 @@ export default function BarcodePage() {
         </div>
       )}
     </div>
+    </PlanGate>
   )
 }

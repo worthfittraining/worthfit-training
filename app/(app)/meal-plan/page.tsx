@@ -2,6 +2,7 @@
 
 import { useUser } from '@clerk/nextjs'
 import { useEffect, useState } from 'react'
+import PlanGate from '@/app/components/PlanGate'
 
 type Meal = {
   id?: string
@@ -162,6 +163,7 @@ export default function MealPlanPage() {
   const bySlot = MEAL_SLOTS.map(slot => ({ slot, meal: dayMeals.find(m => String(m.meal_slot).toLowerCase() === slot) })).filter(s => s.meal)
 
   return (
+    <PlanGate feature="mealPlan">
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 py-6">
         {/* Header */}
@@ -369,5 +371,6 @@ export default function MealPlanPage() {
         </div>
       )}
     </div>
+    </PlanGate>
   )
 }

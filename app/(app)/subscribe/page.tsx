@@ -1,58 +1,127 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
-const PLANS = [
+type PlanId = 'free' | 'standard' | 'premium'
+
+type Tier = {
+  id: PlanId
+  label: string
+  price: string
+  period: string
+  badge: string | null
+  tagline: string
+  priceId: string
+  features: { text: string; included: boolean }[]
+  cta: string
+  highlight: boolean
+}
+
+const TIERS: Tier[] = [
   {
-    id: 'monthly',
-    label: 'Monthly',
-    price: '$29',
-    period: '/month',
-    priceId: () => process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID ?? '',
+    id: 'free',
+    label: 'Free',
+    price: '$0',
+    period: 'forever',
     badge: null,
-    savings: null,
+    tagline: 'Start tracking today',
+    priceId: '',
+    features: [
+      { text: 'Food logging (manual + search)', included: true },
+      { text: '5 Nali messages per day', included: true },
+      { text: 'Daily macro & calorie tracking', included: true },
+      { text: 'Barcode scanner', included: false },
+      { text: 'Photo food logging', included: false },
+      { text: 'AI meal plans', included: false },
+      { text: 'Grocery list', included: false },
+      { text: 'AI check-ins with Nali', included: false },
+    ],
+    cta: 'Get Started Free',
+    highlight: false,
   },
   {
-    id: 'annual',
-    label: 'Annual',
-    price: '$249',
-    period: '/year',
-    priceId: () => process.env.NEXT_PUBLIC_STRIPE_ANNUAL_PRICE_ID ?? '',
-    badge: '🎉 Best Value',
-    savings: 'Save $99 vs monthly',
+    id: 'standard',
+    label: 'Standard',
+    price: '$9.99',
+    period: '/month',
+    badge: null,
+    tagline: 'For serious trackers',
+    priceId: process.env.NEXT_PUBLIC_STRIPE_STANDARD_PRICE_ID ?? '',
+    features: [
+      { text: 'Everything in Free', included: true },
+      { text: '30 Nali messages per day', included: true },
+      { text: 'Barcode scanner', included: true },
+      { text: 'Photo food logging', included: true },
+      { text: 'AI meal plans', included: true },
+      { text: '24-hour Nali memory', included: true },
+      { text: 'Grocery list', included: false },
+      { text: 'AI check-ins with Nali', included: false },
+    ],
+    cta: 'Start 7-Day Free Trial',
+    highlight: false,
   },
-]
-
-const FEATURES = [
-  '✅ AI-powered personalized meal plans',
-  '✅ Daily macro & calorie tracking',
-  '✅ Chat with Nali, your AI nutrition coach',
-  '✅ Barcode scanner & photo logging',
-  '✅ Recipe saving & search',
-  '✅ Carb cycling & custom macro targets',
-  '✅ Exclusive resources & guides',
+  {
+    id: 'premium',
+    label: 'Premium',
+    price: '$29.99',
+    period: '/month',
+    badge: '⭐ Most Popular',
+    tagline: 'The full experience',
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID ?? '',
+    features: [
+      { text: 'Everything in Standard', included: true },
+      { text: 'Unlimited Nali messages', included: true },
+      { text: '7-day Nali memory', included: true },
+      { text: 'Grocery list', included: true },
+      { text: 'Weekly AI check-ins', included: true },
+      { text: 'Priority support', included: true },
+      { text: 'Early access to new features', included: true },
+      { text: 'Personalized coaching adjustments', included: true },
+    ],
+    cta: 'Start 7-Day Free Trial',
+    highlight: true,
+  },
 ]
 
 export default function SubscribePage() {
   const { user } = useUser()
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual')
-  const [loading, setLoading] = useState(false)
+  const [currentPlan, setCurrentPlan] = useState<string | null>(null)
+  const [loading, setLoading] = useState<PlanId | null>(null)
   const [error, setError] = useState('')
-  const [promoCode, setPromoCode] = useState('')
-  const [promoApplied, setPromoApplied] = useState(false)
 
-  async function handleSubscribe() {
+  // Fetch current plan so we can show "Current Plan" badge
+  useEffect(() => {
     const email = user?.primaryEmailAddress?.emailAddress
     if (!email) return
-    setLoading(true)
+    fetch(`/api/profile?email=${encodeURIComponent(email)}`)
+      .then(r => r.json())
+      .then(d => { if (d.Plan) setCurrentPlan(d.Plan) })
+      .catch(() => {})
+  }, [user])
+
+  async function handleSelect(tier: Tier) {
+    const email = user?.primaryEmailAddress?.emailAddress
+    if (!email) return
+
+    // Free plan — just navigate to dashboard (they already have free access after onboarding)
+    if (tier.id === 'free') {
+      window.location.href = '/dashboard'
+      return
+    }
+
+    if (!tier.priceId) {
+      setError('This plan is not yet available. Please contact support.')
+      return
+    }
+
+    setLoading(tier.id)
     setError('')
     try {
-      const plan = PLANS.find(p => p.id === selectedPlan)!
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, priceId: plan.priceId(), promoCode: promoCode.trim() }),
+        body: JSON.stringify({ email, priceId: tier.priceId }),
       })
       const data = await res.json()
       if (data.url) {
@@ -63,99 +132,110 @@ export default function SubscribePage() {
     } catch {
       setError('Something went wrong. Please try again.')
     }
-    setLoading(false)
+    setLoading(null)
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-10 px-4">
+      <div className="max-w-4xl mx-auto">
 
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 text-sm font-semibold px-4 py-2 rounded-full mb-4">
             💪 WorthFit Training
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Start your free trial</h1>
-          <p className="text-gray-500 text-base">7 days free — then just pick a plan. Cancel anytime.</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Choose your plan</h1>
+          <p className="text-gray-500 text-base">Start free, upgrade anytime. No commitment required.</p>
         </div>
 
-        {/* Plan toggle */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          {PLANS.map(plan => (
-            <button
-              key={plan.id}
-              onClick={() => setSelectedPlan(plan.id as 'monthly' | 'annual')}
-              className={`relative p-4 rounded-2xl border-2 text-left transition-all ${
-                selectedPlan === plan.id
-                  ? 'border-green-500 bg-green-50 shadow-sm'
-                  : 'border-gray-200 bg-white hover:border-green-300'
-              }`}
-            >
-              {plan.badge && (
-                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-green-500 text-white text-xs font-bold px-3 py-0.5 rounded-full whitespace-nowrap">
-                  {plan.badge}
-                </span>
-              )}
-              <p className="font-semibold text-gray-700 text-sm mb-1">{plan.label}</p>
-              <p className="text-2xl font-bold text-gray-900">{plan.price}</p>
-              <p className="text-xs text-gray-400">{plan.period}</p>
-              {plan.savings && (
-                <p className="text-xs text-green-600 font-semibold mt-1">{plan.savings}</p>
-              )}
-            </button>
-          ))}
-        </div>
+        {/* Tier cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+          {TIERS.map(tier => {
+            const isCurrent = currentPlan === tier.id
+            const isLoading = loading === tier.id
 
-        {/* Features */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
-          <p className="text-sm font-semibold text-gray-700 mb-3">Everything included:</p>
-          <ul className="space-y-2">
-            {FEATURES.map(f => (
-              <li key={f} className="text-sm text-gray-600">{f}</li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Promo code */}
-        <div className="mb-4">
-          {!promoApplied ? (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={promoCode}
-                onChange={e => setPromoCode(e.target.value.toUpperCase())}
-                placeholder="Promo code"
-                className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-              />
-              <button
-                onClick={() => { if (promoCode.trim()) setPromoApplied(true) }}
-                disabled={!promoCode.trim()}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2.5 rounded-xl disabled:opacity-40 transition"
+            return (
+              <div
+                key={tier.id}
+                className={`relative rounded-3xl border-2 p-6 flex flex-col transition-all ${
+                  tier.highlight
+                    ? 'border-green-500 bg-white shadow-xl shadow-green-100'
+                    : 'border-gray-200 bg-white shadow-sm'
+                } ${isCurrent ? 'ring-2 ring-green-400' : ''}`}
               >
-                Apply
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-2.5">
-              <span className="text-sm text-green-700 font-medium">🎉 Code <strong>{promoCode}</strong> applied!</span>
-              <button onClick={() => { setPromoApplied(false); setPromoCode('') }} className="text-xs text-gray-400 hover:text-gray-600">Remove</button>
-            </div>
-          )}
+                {/* Badges */}
+                {tier.badge && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap">
+                    {tier.badge}
+                  </span>
+                )}
+                {isCurrent && !tier.badge && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap">
+                    Current Plan
+                  </span>
+                )}
+                {isCurrent && tier.badge && (
+                  <span className="absolute -top-3 right-4 bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">
+                    Current
+                  </span>
+                )}
+
+                {/* Plan name + price */}
+                <div className="mb-5">
+                  <p className="text-sm font-semibold text-gray-500 mb-1">{tier.label}</p>
+                  <div className="flex items-end gap-1 mb-1">
+                    <span className="text-3xl font-bold text-gray-900">{tier.price}</span>
+                    <span className="text-sm text-gray-400 pb-1">{tier.period}</span>
+                  </div>
+                  <p className="text-xs text-gray-500">{tier.tagline}</p>
+                </div>
+
+                {/* Features */}
+                <ul className="space-y-2.5 mb-6 flex-1">
+                  {tier.features.map((f, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <span className={f.included ? 'text-green-500 mt-0.5' : 'text-gray-300 mt-0.5'}>
+                        {f.included ? '✓' : '✗'}
+                      </span>
+                      <span className={f.included ? 'text-gray-700' : 'text-gray-400'}>
+                        {f.text}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA */}
+                <button
+                  onClick={() => handleSelect(tier)}
+                  disabled={isLoading || isCurrent}
+                  className={`w-full py-3 rounded-2xl font-semibold text-sm transition-colors ${
+                    isCurrent
+                      ? 'bg-gray-100 text-gray-400 cursor-default'
+                      : tier.highlight
+                      ? 'bg-green-600 hover:bg-green-700 text-white shadow-md'
+                      : 'bg-gray-900 hover:bg-gray-800 text-white'
+                  } disabled:opacity-50`}
+                >
+                  {isLoading ? 'Loading...' : isCurrent ? 'Current Plan' : tier.cta}
+                </button>
+
+                {(tier.id === 'standard' || tier.id === 'premium') && !isCurrent && (
+                  <p className="text-center text-xs text-gray-400 mt-2">7 days free, then {tier.price}/mo</p>
+                )}
+              </div>
+            )
+          })}
         </div>
 
-        {/* CTA */}
-        {error && <p className="text-red-500 text-sm text-center mb-3">{error}</p>}
-        <button
-          onClick={handleSubscribe}
-          disabled={loading}
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-2xl text-base transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-        >
-          {loading ? 'Loading...' : 'Start 7-Day Free Trial →'}
-        </button>
-        <p className="text-center text-xs text-gray-400 mt-3">
-          No charge for 7 days. Cancel anytime.
-        </p>
+        {error && (
+          <p className="text-red-500 text-sm text-center mb-4">{error}</p>
+        )}
 
+        {/* Footer note */}
+        <p className="text-center text-xs text-gray-400">
+          Cancel or change plans anytime from your account settings. Questions?{' '}
+          <a href="mailto:worthfittraining@gmail.com" className="underline">worthfittraining@gmail.com</a>
+        </p>
       </div>
     </div>
   )

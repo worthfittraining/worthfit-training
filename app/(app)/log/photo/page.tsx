@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
+import PlanGate from '@/app/components/PlanGate'
 
 type NutritionEstimate = {
   food_name: string
@@ -112,6 +113,7 @@ export default function PhotoLogPage() {
       : '⚠️ Low confidence — please review'
 
   return (
+    <PlanGate feature="photoLog">
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-md mx-auto">
         <div className="flex items-center gap-3 mb-6">
@@ -286,5 +288,6 @@ export default function PhotoLogPage() {
         )}
       </div>
     </div>
+    </PlanGate>
   )
 }

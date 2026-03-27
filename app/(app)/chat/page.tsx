@@ -2,6 +2,8 @@
 
 import { useUser } from '@clerk/nextjs'
 import { useState, useRef, useEffect } from 'react'
+import { resolvePlan, PLAN_LIMITS, getNaliMessageCount, incrementNaliMessageCount, canSendNaliMessage } from '@/lib/plan'
+import type { Plan } from '@/lib/plan'
 
 type Message = {
   role: 'user' | 'assistant'
@@ -116,7 +118,24 @@ export default function ChatPage() {
   const [mode, setMode] = useState('coach')
   const [logSaved, setLogSaved] = useState<string | null>(null)
   const [savedInSession, setSavedInSession] = useState<Set<string>>(new Set())
+  const [plan, setPlan] = useState<Plan>('free')
+  const [msgCount, setMsgCount] = useState(0)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  // Load plan from profile
+  useEffect(() => {
+    const email = user?.primaryEmailAddress?.emailAddress
+    if (!email) return
+    fetch(`/api/profile?email=${encodeURIComponent(email)}`)
+      .then(r => r.json())
+      .then(d => setPlan(resolvePlan(d.Plan)))
+      .catch(() => {})
+  }, [user])
+
+  // Sync local message count on mount
+  useEffect(() => {
+    setMsgCount(getNaliMessageCount())
+  }, [])
 
   useEffect(() => {
     if (messages.length === 0 && user) {
@@ -160,11 +179,22 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
 
   async function sendMessage() {
     if (!input.trim() || loading) return
+
+    // Check daily message limit for non-premium plans
+    if (!canSendNaliMessage(plan)) return
+
     const userMessage: Message = { role: 'user', content: input.trim() }
     const newMessages = [...messages, userMessage]
     setMessages(newMessages)
     setInput('')
     setLoading(true)
+
+    // Increment counter (only for limited plans)
+    const limit = PLAN_LIMITS[plan].naliMessagesPerDay
+    if (isFinite(limit)) {
+      const newCount = incrementNaliMessageCount()
+      setMsgCount(newCount)
+    }
 
     try {
       const res = await fetch('/api/chat', {
@@ -264,6 +294,21 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
       </div>
 
       <div className="bg-white border-t border-gray-200 px-4 py-3">
+        {/* Message limit hit banner */}
+        {!canSendNaliMessage(plan) && (
+          <div className="mb-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-center">
+            <p className="text-sm font-semibold text-amber-800 mb-1">
+              You've used all {PLAN_LIMITS[plan].naliMessagesPerDay} Nali messages for today
+            </p>
+            <p className="text-xs text-amber-600 mb-2">
+              {plan === 'free' ? 'Standard gets 30/day, Premium gets unlimited.' : 'Upgrade to Premium for unlimited messages.'}
+            </p>
+            <a href="/subscribe" className="inline-block bg-green-600 text-white text-xs font-semibold px-4 py-1.5 rounded-full hover:bg-green-700 transition-colors">
+              Upgrade Plan →
+            </a>
+          </div>
+        )}
+
         <div className="flex gap-2 items-end">
           <textarea
             value={input}
@@ -275,13 +320,21 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
           />
           <button
             onClick={sendMessage}
-            disabled={loading || !input.trim()}
+            disabled={loading || !input.trim() || !canSendNaliMessage(plan)}
             className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white rounded-xl px-4 py-3 text-sm font-medium transition-colors"
           >
             {loading ? '...' : 'Send'}
           </button>
         </div>
-        <p className="text-xs text-gray-400 mt-1 text-center">Press Enter to send • Shift+Enter for new line</p>
+
+        <div className="flex items-center justify-between mt-1">
+          <p className="text-xs text-gray-400">Press Enter to send • Shift+Enter for new line</p>
+          {isFinite(PLAN_LIMITS[plan].naliMessagesPerDay) && (
+            <p className="text-xs text-gray-400">
+              {Math.max(0, PLAN_LIMITS[plan].naliMessagesPerDay - msgCount)} msg{Math.max(0, PLAN_LIMITS[plan].naliMessagesPerDay - msgCount) !== 1 ? 's' : ''} left today
+            </p>
+          )}
+        </div>
       </div>
     </div>
   )

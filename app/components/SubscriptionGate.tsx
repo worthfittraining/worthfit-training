@@ -15,7 +15,7 @@ const PAST_DUE_ALLOWED = [
   '/account',
 ]
 
-const ACTIVE_STATUSES = ['trialing', 'active']
+const ACTIVE_STATUSES = ['trialing', 'active', 'past_due']
 
 export default function SubscriptionGate({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useUser()
@@ -48,18 +48,28 @@ export default function SubscriptionGate({ children }: { children: React.ReactNo
           return
         }
 
-        // Step 2: Has profile → check subscription
+        // Step 2: Free plan users — always allowed through
+        const plan = profile.Plan as string | undefined
+        if (plan === 'free') {
+          setChecked(true)
+          return
+        }
+
+        // Step 3: Paid plan — check subscription status
         const status = profile.Subscription_Status as string | undefined
         const isComped = profile.Comp_Access === true || profile.Comp_Access === 'true' || profile.Comp_Access === 1
 
         if (isComped || ACTIVE_STATUSES.includes(status || '')) {
+          if (status === 'past_due') {
+            setIsPastDue(true)
+          }
           setChecked(true)
-        } else if (status === 'past_due') {
-          // Past due — show hard gate, don't redirect
-          setIsPastDue(true)
-          setChecked(true)
-        } else {
+        } else if (status === 'canceled' || (!status && plan !== 'free')) {
+          // Canceled subscription or no plan set → show subscribe page
           router.replace('/subscribe')
+        } else {
+          // Unknown state — let them through
+          setChecked(true)
         }
       } catch {
         // On error, allow through (don't block users due to network issues)

@@ -21,6 +21,8 @@ export async function POST(req: NextRequest) {
     !!breastfeeding
   )
 
+  const existing = await getClientByEmail(email)
+
   const profileData: Airtable.FieldSet = {
     Name: name,
     Email: email,
@@ -41,9 +43,9 @@ export async function POST(req: NextRequest) {
     Program_week: 1,
     Onboarding_complete: false,
     Meals_Per_Day: 3,
+    // Set Plan to 'free' only on first-time signup (don't overwrite an existing paid plan)
+    ...(!existing ? { Plan: 'free' } : {}),
   }
-
-  const existing = await getClientByEmail(email)
 
   if (existing) {
     await updateClient(existing.id, profileData)
