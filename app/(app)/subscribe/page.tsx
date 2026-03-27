@@ -236,6 +236,11 @@ export default function SubscribePage() {
           Cancel or change plans anytime from your account settings. Questions?{' '}
           <a href="mailto:worthfittraining@gmail.com" className="underline">worthfittraining@gmail.com</a>
         </p>
+        <p className="text-center text-xs text-gray-400 mt-2">
+          By subscribing you agree to our{' '}
+          <a href="/terms" className="underline hover:text-gray-600">Terms & Conditions</a>.
+          Subscription fees are non-refundable. Worth Fit Training LLC, Kentucky.
+        </p>
       </div>
     </div>
   )

@@ -344,13 +344,19 @@ export default function OnboardingPage() {
               {step === 3 && !form.food_preferences && !form.food_dislikes ? 'Skip →' : 'Next →'}
             </button>
           ) : (
-            <button
-              onClick={handleSubmit}
-              disabled={!form.activity_level || loading}
-              className="px-6 py-3 bg-green-600 text-white rounded-full font-semibold hover:bg-green-700 transition disabled:opacity-40"
-            >
-              {loading ? 'Setting up your profile...' : 'Build My Plan →'}
-            </button>
+            <div className="flex flex-col items-center gap-2">
+              <button
+                onClick={handleSubmit}
+                disabled={!form.activity_level || loading}
+                className="px-6 py-3 bg-green-600 text-white rounded-full font-semibold hover:bg-green-700 transition disabled:opacity-40"
+              >
+                {loading ? 'Setting up your profile...' : 'Build My Plan →'}
+              </button>
+              <p className="text-xs text-gray-400 text-center">
+                By continuing you agree to our{' '}
+                <a href="/terms" target="_blank" className="underline hover:text-gray-600">Terms & Conditions</a>.
+              </p>
+            </div>
           )}
         </div>
 
