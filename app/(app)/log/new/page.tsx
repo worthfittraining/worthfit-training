@@ -73,6 +73,8 @@ export default function NewLogPage() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   }
   const [logDate, setLogDate] = useState(localDateString())
+  // Track foods saved this session so user can keep adding without leaving the page
+  const [savedFoods, setSavedFoods] = useState<string[]>([])
 
   async function handleSearch() {
     if (!searchQuery.trim()) return
@@ -135,8 +137,22 @@ export default function NewLogPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...payload, email: user.primaryEmailAddress.emailAddress, date: logDate }),
       })
-      if (res.ok) router.push('/log')
-      else alert('Failed to save. Please try again.')
+      if (res.ok) {
+        // Stay on the page — record what was saved and reset for the next food
+        const savedName = manualMode ? manualForm.food_name : `${selectedFood?.name} (${qty}${unit})`
+        setSavedFoods(prev => [...prev, savedName])
+        // Reset search/selection but keep meal slot + date so they can quickly add more
+        setSelectedFood(null)
+        setSearchQuery('')
+        setSearchResults([])
+        setSearchError('')
+        setQty('100')
+        setUnit('g')
+        setNotes('')
+        setManualForm({ food_name: '', calories: '', protein_g: '', carbs_g: '', fat_g: '', fiber_g: '' })
+      } else {
+        alert('Failed to save. Please try again.')
+      }
     } catch {
       alert('Something went wrong.')
     } finally {
@@ -149,13 +165,34 @@ export default function NewLogPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-lg mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <a href="/log" className="text-sm text-gray-500 hover:text-gray-700">← Back to Log</a>
           <h1 className="text-lg font-bold text-gray-800">Add Food</h1>
           <button onClick={() => { setManualMode(m => !m); setSelectedFood(null) }} className="text-sm text-green-600 hover:underline">
             {manualMode ? 'Search instead' : 'Enter manually'}
           </button>
         </div>
+
+        {/* Saved foods this session — shows after first save */}
+        {savedFoods.length > 0 && (
+          <div className="bg-green-50 border border-green-200 rounded-2xl px-4 py-3 mb-4">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-sm font-semibold text-green-800">✅ Added to your log</p>
+              <a
+                href="/log"
+                className="text-xs font-semibold text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded-full transition-colors"
+              >
+                Done → View Log
+              </a>
+            </div>
+            <ul className="space-y-0.5">
+              {savedFoods.map((name, i) => (
+                <li key={i} className="text-sm text-green-700">• {name}</li>
+              ))}
+            </ul>
+            <p className="text-xs text-green-600 mt-1.5">Keep adding below, or tap "Done" when finished.</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {!manualMode ? (
@@ -310,7 +347,7 @@ export default function NewLogPage() {
 
           <button type="submit" disabled={saving || !canSave}
             className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-medium py-3 rounded-xl transition-colors">
-            {saving ? 'Saving...' : 'Save to Log'}
+            {saving ? 'Saving...' : savedFoods.length > 0 ? '+ Add Another Food' : 'Save to Log'}
           </button>
         </form>
       </div>
