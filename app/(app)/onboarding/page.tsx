@@ -35,6 +35,7 @@ export default function OnboardingPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [form, setForm] = useState({
     goal: '',
     restrictions: [] as string[],
@@ -344,18 +345,39 @@ export default function OnboardingPage() {
               {step === 3 && !form.food_preferences && !form.food_dislikes ? 'Skip →' : 'Next →'}
             </button>
           ) : (
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center gap-3">
+              {/* Terms checkbox — must be ticked before button activates */}
+              <label className="flex items-start gap-2.5 cursor-pointer max-w-xs">
+                <div className="relative shrink-0 mt-0.5">
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={e => setAgreedToTerms(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div
+                    onClick={() => setAgreedToTerms(v => !v)}
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${agreedToTerms ? 'bg-green-500 border-green-500' : 'border-gray-300 bg-white'}`}
+                  >
+                    {agreedToTerms && <span className="text-white text-xs font-bold">✓</span>}
+                  </div>
+                </div>
+                <span className="text-xs text-gray-500 leading-relaxed">
+                  I have read and agree to the{' '}
+                  <a href="/terms" target="_blank" className="text-green-600 underline hover:text-green-700" onClick={e => e.stopPropagation()}>
+                    Terms & Conditions
+                  </a>
+                  , including the medical disclaimer. I understand Worth Fit is not a medical service.
+                </span>
+              </label>
+
               <button
                 onClick={handleSubmit}
-                disabled={!form.activity_level || loading}
-                className="px-6 py-3 bg-green-600 text-white rounded-full font-semibold hover:bg-green-700 transition disabled:opacity-40"
+                disabled={!form.activity_level || !agreedToTerms || loading}
+                className="px-6 py-3 bg-green-600 text-white rounded-full font-semibold hover:bg-green-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {loading ? 'Setting up your profile...' : 'Build My Plan →'}
               </button>
-              <p className="text-xs text-gray-400 text-center">
-                By continuing you agree to our{' '}
-                <a href="/terms" target="_blank" className="underline hover:text-gray-600">Terms & Conditions</a>.
-              </p>
             </div>
           )}
         </div>
