@@ -96,12 +96,23 @@ export default function NewLogPage() {
     }
   }
 
+  // Returns true if the food has a named serving (e.g. "1 strip (8g)") vs a raw weight like "100g"
+  function isNamedServing(serving: string): boolean {
+    return !/^\d+(\.\d+)?(g|oz|ml)$/i.test(serving.trim())
+  }
+
   function selectFood(result: SearchResult) {
     setSelectedFood(result)
     setSearchResults([])
-    setQty('100')
-    setUnit('g')
     setManualMode(false)
+    // If the food has a named serving (e.g. "1 strip (8g)"), default to serving mode
+    if (isNamedServing(result.serving)) {
+      setUnit('serving')
+      setQty('1')
+    } else {
+      setQty('100')
+      setUnit('g')
+    }
   }
 
   const computed = selectedFood ? calcMacros(selectedFood, Number(qty), unit) : null
@@ -122,7 +133,9 @@ export default function NewLogPage() {
             notes,
           }
         : {
-            food_name: `${selectedFood?.name} (${qty}${unit})`,
+            food_name: unit === 'serving' && selectedFood
+              ? `${selectedFood.name} (${qty}x ${selectedFood.serving})`
+              : `${selectedFood?.name} (${qty}${unit})`,
             calories: computed?.calories || 0,
             protein_g: computed?.protein_g || 0,
             carbs_g: computed?.carbs_g || 0,
@@ -139,7 +152,11 @@ export default function NewLogPage() {
       })
       if (res.ok) {
         // Stay on the page — record what was saved and reset for the next food
-        const savedName = manualMode ? manualForm.food_name : `${selectedFood?.name} (${qty}${unit})`
+        const savedName = manualMode
+          ? manualForm.food_name
+          : unit === 'serving' && selectedFood
+            ? `${selectedFood.name} (${qty}x ${selectedFood.serving})`
+            : `${selectedFood?.name} (${qty}${unit})`
         setSavedFoods(prev => [...prev, savedName])
         // Reset search/selection but keep meal slot + date so they can quickly add more
         setSelectedFood(null)
@@ -226,7 +243,10 @@ export default function NewLogPage() {
                         className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-green-50 border border-gray-100 transition-colors">
                         <div className="text-sm font-medium text-gray-800 truncate">{r.name}</div>
                         <div className="text-xs text-gray-400 mt-0.5">
-                          {r.cal_per_100g} cal · {r.protein_per_100g}g protein · {r.carbs_per_100g}g carbs · {r.fat_per_100g}g fat · {r.fiber_per_100g}g fiber
+                          {isNamedServing(r.serving) ? (
+                            <span className="text-green-600 font-medium mr-1.5">Serving: {r.serving} · {r.calories} cal</span>
+                          ) : null}
+                          {r.cal_per_100g} cal · {r.protein_per_100g}g pro · {r.carbs_per_100g}g carbs · {r.fat_per_100g}g fat
                           <span className="text-gray-300 ml-1">per 100g</span>
                         </div>
                       </button>
@@ -275,7 +295,9 @@ export default function NewLogPage() {
                       <option value="cup">cups</option>
                       <option value="tbsp">tablespoons (tbsp)</option>
                       <option value="tsp">teaspoons (tsp)</option>
-                      <option value="serving">servings</option>
+                      <option value="serving">
+                        {selectedFood && isNamedServing(selectedFood.serving) ? selectedFood.serving : 'serving'}
+                      </option>
                     </select>
                   </div>
 
