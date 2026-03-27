@@ -197,7 +197,7 @@ export default function OnboardingPage() {
                 placeholder="e.g. sweet potatoes, turkey, steak..."
                 value={form.food_preferences}
                 onChange={e => setForm(f => ({ ...f, food_preferences: e.target.value }))}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-sm placeholder:text-gray-400"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-sm placeholder:text-gray-600"
               />
             </div>
 
@@ -211,7 +211,7 @@ export default function OnboardingPage() {
                 placeholder="e.g. tuna, Brussels sprouts, tofu..."
                 value={form.food_dislikes}
                 onChange={e => setForm(f => ({ ...f, food_dislikes: e.target.value }))}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-sm placeholder:text-gray-400"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-sm placeholder:text-gray-600"
               />
               <p className="text-xs text-gray-400 mt-1">Nali will never suggest these in your meal plan.</p>
             </div>
@@ -232,7 +232,7 @@ export default function OnboardingPage() {
                     placeholder="e.g. 65"
                     value={form.height_in}
                     onChange={e => setForm(f => ({ ...f, height_in: e.target.value }))}
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none placeholder:text-gray-400"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none placeholder:text-gray-600"
                   />
                 </div>
                 <div>
@@ -242,7 +242,7 @@ export default function OnboardingPage() {
                     placeholder="e.g. 150"
                     value={form.weight_lbs}
                     onChange={e => setForm(f => ({ ...f, weight_lbs: e.target.value }))}
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none placeholder:text-gray-400"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none placeholder:text-gray-600"
                   />
                 </div>
               </div>
@@ -254,7 +254,7 @@ export default function OnboardingPage() {
                     placeholder="e.g. 30"
                     value={form.age}
                     onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none placeholder:text-gray-400"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none placeholder:text-gray-600"
                   />
                 </div>
                 <div>
