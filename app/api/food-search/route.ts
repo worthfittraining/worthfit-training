@@ -82,16 +82,34 @@ type FoodResult = {
   is_recipe: boolean
 }
 
+/**
+ * Word-order-independent food name matching.
+ * "baked potato" matches "Potato (baked)" because every meaningful word in the
+ * query appears somewhere in the food name (and vice-versa).
+ */
+function foodMatches(foodName: string, query: string): boolean {
+  const name = foodName.toLowerCase()
+  const q = query.toLowerCase().trim()
+  if (!q) return false
+  // Exact substring match first (fastest)
+  if (name.includes(q)) return true
+  // Word-level match: every word in the query (3+ chars) appears in the name
+  const queryWords = q.split(/\s+/).filter(w => w.length >= 3)
+  if (queryWords.length > 1 && queryWords.every(w => name.includes(w))) return true
+  // Reverse: every significant word in the name appears in the query
+  const nameWords = name.split(/[\s(),]+/).filter(w => w.length >= 3)
+  if (nameWords.length > 0 && nameWords.every(w => q.includes(w))) return true
+  return false
+}
+
 export async function GET(req: NextRequest) {
   const query = req.nextUrl.searchParams.get('q')
   const email = req.nextUrl.searchParams.get('email')
   if (!query) return NextResponse.json({ results: [] })
 
-  const q = query.toLowerCase()
-
-  // Always search built-in foods instantly
+  // Always search built-in foods instantly with word-order-independent matching
   const builtIn = COMMON_FOODS
-    .filter(f => f.name.toLowerCase().includes(q))
+    .filter(f => foodMatches(f.name, query))
     .slice(0, 4)
     .map(f => ({ ...f, fiber_g: f.fiber_g ?? 0, fiber_per_100g: f.fiber_per_100g ?? 0, is_recipe: false }))
 

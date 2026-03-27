@@ -168,8 +168,9 @@ export default function NewLogPage() {
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleSearch())}
+                    onFocus={e => e.target.select()}
                     placeholder="e.g. sourdough bread, chicken breast..."
-                    className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                    className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 placeholder:text-gray-600"
                   />
                   <button type="button" onClick={handleSearch} disabled={searching}
                     className="bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium disabled:bg-gray-300">
@@ -260,7 +261,7 @@ export default function NewLogPage() {
                 <label className="text-sm font-medium text-gray-700 block mb-1">Food name *</label>
                 <input value={manualForm.food_name} onChange={e => setManualForm(p => ({ ...p, food_name: e.target.value }))}
                   required placeholder="e.g. Chicken breast 6oz"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 placeholder:text-gray-600" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[['calories','Calories'],['protein_g','Protein (g)'],['carbs_g','Carbs (g)'],['fat_g','Fat (g)'],['fiber_g','Fiber (g)']].map(([k,l]) => (
@@ -303,7 +304,7 @@ export default function NewLogPage() {
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">Notes (optional)</label>
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Any extra details..."
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none" />
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none placeholder:text-gray-600" />
             </div>
           </div>
 
