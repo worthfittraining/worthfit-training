@@ -44,7 +44,9 @@ export async function POST(req: NextRequest) {
     Onboarding_complete: false,
     Meals_Per_Day: 3,
     // Set Plan to 'free' only on first-time signup (don't overwrite an existing paid plan)
+    // Never overwrite Playbook_Active — that's managed exclusively by the Playbook sync webhook
     ...(!existing ? { Plan: 'free' } : {}),
+    // Note: Playbook_Active is intentionally omitted here so it's never accidentally cleared
   }
 
   if (existing) {
@@ -77,7 +79,21 @@ export async function GET(req: NextRequest) {
 
     const client = await getClientByEmail(email)
     if (!client) return NextResponse.json({})
-    return NextResponse.json(client.fields)
+
+    const fields = client.fields
+    const rawPlan = String(fields.Plan || 'free')
+    const playbookActive = !!fields.Playbook_Active
+
+    // Resolve effective plan:
+    // Premium (paid) > Standard (paid) > Playbook active (comped Standard) > Free
+    // This means every consumer of the profile API automatically gets the right
+    // plan without needing to know about Playbook_Active separately.
+    let effectivePlan = rawPlan
+    if (rawPlan !== 'premium' && rawPlan !== 'standard' && playbookActive) {
+      effectivePlan = 'standard'
+    }
+
+    return NextResponse.json({ ...fields, Plan: effectivePlan, Playbook_Active: playbookActive })
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })
   }
