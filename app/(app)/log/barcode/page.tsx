@@ -27,7 +27,8 @@ function calcMacros(food: FoodData, qty: number, unit: string) {
   else if (unit === 'cup') grams = qty * 240
   else if (unit === 'tbsp') grams = qty * 15
   else if (unit === 'tsp') grams = qty * 5
-  else if (unit === 'serving') grams = food.serving_size_g || 100
+  // multiply by qty so changing from 1 serving to 2 actually updates the macros
+  else if (unit === 'serving') grams = (food.serving_size_g || 100) * qty
   const factor = grams / 100
   return {
     calories: Math.round(food.calories_per_100g * factor),

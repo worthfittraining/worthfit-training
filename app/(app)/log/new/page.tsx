@@ -13,10 +13,12 @@ type SearchResult = {
   protein_g: number
   carbs_g: number
   fat_g: number
+  fiber_g?: number
   cal_per_100g: number
   protein_per_100g: number
   carbs_per_100g: number
   fat_per_100g: number
+  fiber_per_100g?: number
 }
 
 function calcMacros(food: SearchResult, qty: number, unit: string) {
@@ -216,17 +218,27 @@ export default function NewLogPage() {
                       onChange={e => setQty(e.target.value)}
                       className="w-28 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
                     />
-                    <select value={unit} onChange={e => setUnit(e.target.value)}
-  className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
-  <option value="g">grams (g)</option>
-  <option value="oz">ounces (oz)</option>
-  <option value="lbs">pounds (lbs)</option>
-  <option value="ml">milliliters (ml)</option>
-  <option value="cup">cups</option>
-  <option value="tbsp">tablespoons (tbsp)</option>
-  <option value="tsp">teaspoons (tsp)</option>
-  <option value="serving">servings</option>
-</select>
+                    <select
+                      value={unit}
+                      onChange={e => {
+                        const newUnit = e.target.value
+                        setUnit(newUnit)
+                        // Auto-reset qty when switching to/from servings
+                        // so the macro display is always sensible
+                        if (newUnit === 'serving') setQty('1')
+                        else if (unit === 'serving') setQty('100')
+                      }}
+                      className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                    >
+                      <option value="g">grams (g)</option>
+                      <option value="oz">ounces (oz)</option>
+                      <option value="lbs">pounds (lbs)</option>
+                      <option value="ml">milliliters (ml)</option>
+                      <option value="cup">cups</option>
+                      <option value="tbsp">tablespoons (tbsp)</option>
+                      <option value="tsp">teaspoons (tsp)</option>
+                      <option value="serving">servings</option>
+                    </select>
                   </div>
 
                   {computed && Number(qty) > 0 && (
