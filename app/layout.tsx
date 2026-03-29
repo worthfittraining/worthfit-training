@@ -14,13 +14,13 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'WorthFit Nutrition',
-  description: 'Your personal AI nutrition coach by WorthFit Training',
+  title: 'Nali Nutrition',
+  description: 'Your personal AI nutrition coach by Nali Nutrition',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'WorthFit',
+    title: 'Nali Nutrition',
   },
   icons: {
     icon: [
@@ -35,8 +35,8 @@ export const metadata: Metadata = {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'default',
-    'apple-mobile-web-app-title': 'WorthFit',
-    'application-name': 'WorthFit',
+    'apple-mobile-web-app-title': 'Nali Nutrition',
+    'application-name': 'Nali Nutrition',
     'msapplication-TileColor': '#16a34a',
     'msapplication-tap-highlight': 'no',
   },

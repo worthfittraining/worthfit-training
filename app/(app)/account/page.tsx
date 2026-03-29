@@ -673,7 +673,7 @@ export default function AccountPage() {
           Sign Out
         </button>
 
-        <p className="text-center text-xs text-gray-300 pb-2">WorthFit Training · Powered by Nali</p>
+        <p className="text-center text-xs text-gray-300 pb-2">Nali Nutrition</p>
       </div>
     </div>
   )

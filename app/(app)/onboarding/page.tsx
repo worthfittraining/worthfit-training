@@ -109,7 +109,7 @@ export default function OnboardingPage() {
         {/* Branding */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 bg-green-50 rounded-full px-4 py-2">
-            <span className="text-green-600 font-bold text-sm">💪 WorthFit Training</span>
+            <span className="text-green-600 font-bold text-sm">🥗 Nali Nutrition</span>
           </div>
         </div>
 
@@ -375,7 +375,7 @@ export default function OnboardingPage() {
                   <a href="/terms" target="_blank" className="text-green-600 underline hover:text-green-700" onClick={e => e.stopPropagation()}>
                     Terms & Conditions
                   </a>
-                  , including the medical disclaimer. I understand Worth Fit is not a medical service.
+                  , including the medical disclaimer. I understand Nali Nutrition is not a medical service.
                 </span>
               </label>
 
