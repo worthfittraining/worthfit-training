@@ -102,7 +102,12 @@ export default function SubscribePage() {
 
   async function handleSelect(tier: Tier) {
     const email = user?.primaryEmailAddress?.emailAddress
-    if (!email) return
+
+    // Not logged in — send to sign-up, then return to subscribe after
+    if (!email) {
+      window.location.href = `/sign-up?redirect_url=/subscribe`
+      return
+    }
 
     // Free plan — just navigate to dashboard (they already have free access after onboarding)
     if (tier.id === 'free') {
