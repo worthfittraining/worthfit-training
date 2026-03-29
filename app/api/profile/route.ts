@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     await createClient(profileData)
   }
 
-  // Add new Worth Fit sign-ups to Flodesk automatically
+  // Add new Nali Nutrition sign-ups to Flodesk automatically
   // Existing users re-submitting onboarding are skipped (no duplicate adds)
   if (isNewUser && process.env.FLODESK_API_KEY) {
     try {
@@ -67,12 +67,12 @@ export async function POST(req: NextRequest) {
         headers: {
           'Authorization': `Basic ${Buffer.from(`${process.env.FLODESK_API_KEY}:`).toString('base64')}`,
           'Content-Type': 'application/json',
-          'User-Agent': 'WorthFit/1.0',
+          'User-Agent': 'NaliNutrition/1.0',
         },
         body: JSON.stringify({
           email,
           first_name: firstName,
-          segments: ['Worth Fit App'],
+          segments: ['Nali Nutrition'],
         }),
       })
       console.log('Flodesk: added new sign-up', email)
