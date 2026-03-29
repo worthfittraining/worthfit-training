@@ -119,6 +119,17 @@ function extractDeleteFood(content: string): { cleaned: string; deleteData: Reco
   return { cleaned, deleteData: data }
 }
 
+function extractMoveFood(content: string): { cleaned: string; moveData: Record<string, unknown> | null } {
+  const { cleaned, data } = extractTag(content, 'MOVE_FOOD')
+  return { cleaned, moveData: data }
+}
+
+/** Returns local date string YYYY-MM-DD (not UTC) */
+function localDateString(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 export default function ChatPage() {
   const { user } = useUser()
   const [messages, setMessages] = useState<Message[]>([])
@@ -171,7 +182,8 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
   }
 
   try {
-    const today = new Date().toISOString().split('T')[0]
+    // Use local date — avoids UTC off-by-one for US users after ~7 PM
+    const today = localDateString()
     const res = await fetch('/api/log', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -189,7 +201,8 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
 
 async function deleteFoodLog(deleteData: Record<string, unknown>, email: string) {
   try {
-    const today = new Date().toISOString().split('T')[0]
+    // Use local date — avoids UTC off-by-one for US users after ~7 PM
+    const today = localDateString()
     const food_name = encodeURIComponent((deleteData.food_name as string) || '')
     const meal_slot = encodeURIComponent((deleteData.meal_slot as string) || '')
     const res = await fetch(
@@ -203,6 +216,32 @@ async function deleteFoodLog(deleteData: Record<string, unknown>, email: string)
     }
   } catch (err) {
     console.error('Failed to delete food log:', err)
+  }
+}
+
+async function moveFoodLog(moveData: Record<string, unknown>, email: string) {
+  const { food_name, calories, protein_g, carbs_g, fat_g, from_slot, to_slot } = moveData
+  try {
+    const today = localDateString()
+    // Step 1: delete from the original slot
+    const food_name_enc = encodeURIComponent((food_name as string) || '')
+    const from_enc = encodeURIComponent((from_slot as string) || '')
+    await fetch(
+      `/api/log?email=${encodeURIComponent(email)}&food_name=${food_name_enc}&meal_slot=${from_enc}&date=${today}`,
+      { method: 'DELETE' }
+    )
+    // Step 2: re-log in the new slot
+    const res = await fetch('/api/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, food_name, calories, protein_g, carbs_g, fat_g, meal_slot: to_slot, date: today }),
+    })
+    if (res.ok) {
+      setLogSaved(`${food_name as string} → ${to_slot as string}`)
+      setTimeout(() => setLogSaved(null), 4000)
+    }
+  } catch (err) {
+    console.error('Failed to move food log:', err)
   }
 }
 
@@ -248,19 +287,26 @@ async function deleteFoodLog(deleteData: Record<string, unknown>, email: string)
         throw new Error('Empty response from Nali')
       }
 
-      // Strip [FOOD_LOG:...] tag, then strip [DELETE_FOOD:...] tag — both invisible to user
+      // Strip action tags — all invisible to the user
       const { cleaned: step1, logData } = extractFoodLog(fullContent)
-      const { cleaned, deleteData } = extractDeleteFood(step1)
+      const { cleaned: step2, deleteData } = extractDeleteFood(step1)
+      const { cleaned, moveData } = extractMoveFood(step2)
       setMessages(prev => [...prev, { role: 'assistant', content: cleaned || fullContent }])
 
+      const email = user?.primaryEmailAddress?.emailAddress
       // Save food log if Nali logged something
-      if (logData && user?.primaryEmailAddress?.emailAddress) {
-        await saveFoodLog(logData, user.primaryEmailAddress!.emailAddress)
+      if (logData && email) {
+        await saveFoodLog(logData, email)
       }
 
       // Delete food log if Nali removed something
-      if (deleteData && user?.primaryEmailAddress?.emailAddress) {
-        await deleteFoodLog(deleteData, user.primaryEmailAddress!.emailAddress)
+      if (deleteData && email) {
+        await deleteFoodLog(deleteData, email)
+      }
+
+      // Move food log if Nali moved something between meal slots
+      if (moveData && email) {
+        await moveFoodLog(moveData, email)
       }
     } catch (err) {
       console.error('Chat error:', err)

@@ -1,7 +1,7 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack']
@@ -73,6 +73,77 @@ export default function RecipePage() {
   // Manual ingredient state
   const [manualMode, setManualMode] = useState(false)
   const [manualIngredient, setManualIngredient] = useState({ name: '', calories: '', protein_g: '', carbs_g: '', fat_g: '' })
+
+  // Barcode scanner state
+  const [showBarcode, setShowBarcode] = useState(false)
+  const [barcodeError, setBarcodeError] = useState<string | null>(null)
+  const [barcodeLoading, setBarcodeLoading] = useState(false)
+  const barcodeVideoRef = useRef<HTMLVideoElement>(null)
+  const barcodeControlsRef = useRef<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
+
+  // Start/stop barcode scanner when showBarcode changes
+  useEffect(() => {
+    if (!showBarcode) {
+      if (barcodeControlsRef.current) {
+        try { barcodeControlsRef.current.stop() } catch {}
+        barcodeControlsRef.current = null
+      }
+      return
+    }
+    let active = true
+    async function startScanner() {
+      if (!barcodeVideoRef.current) return
+      try {
+        // @ts-ignore
+        const { BrowserMultiFormatReader } = await import('@zxing/browser')
+        const reader = new BrowserMultiFormatReader()
+        const devices = await BrowserMultiFormatReader.listVideoInputDevices()
+        const deviceId: string | undefined = devices.length > 1 ? devices[devices.length - 1].deviceId : undefined
+        const controls = await reader.decodeFromVideoDevice(deviceId, barcodeVideoRef.current, async (result: any, _err: any, ctrl: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+          if (!active || !result) return
+          ctrl.stop()
+          barcodeControlsRef.current = null
+          setBarcodeLoading(true)
+          try {
+            const res = await fetch(`/api/barcode?code=${result.getText()}`)
+            if (res.status === 404) { setBarcodeError('Product not found — try searching manually'); setBarcodeLoading(false); return }
+            const food = await res.json()
+            // Convert barcode food data to SearchResult format
+            const sr: SearchResult = {
+              name: food.name,
+              serving: food.serving_size_g ? `${food.serving_size_g}g` : '100g',
+              calories: Math.round(food.calories_per_100g * (food.serving_size_g || 100) / 100),
+              protein_g: Math.round(food.protein_per_100g * (food.serving_size_g || 100) / 100 * 10) / 10,
+              carbs_g: Math.round(food.carbs_per_100g * (food.serving_size_g || 100) / 100 * 10) / 10,
+              fat_g: Math.round(food.fat_per_100g * (food.serving_size_g || 100) / 100 * 10) / 10,
+              cal_per_100g: food.calories_per_100g,
+              protein_per_100g: food.protein_per_100g,
+              carbs_per_100g: food.carbs_per_100g,
+              fat_per_100g: food.fat_per_100g,
+            }
+            addIngredient(sr)
+            setShowBarcode(false)
+          } catch {
+            setBarcodeError('Error looking up barcode')
+          } finally {
+            setBarcodeLoading(false)
+          }
+        })
+        if (active) barcodeControlsRef.current = controls
+        else controls.stop()
+      } catch {
+        if (active) setBarcodeError('Camera not available. Please allow camera access.')
+      }
+    }
+    startScanner()
+    return () => {
+      active = false
+      if (barcodeControlsRef.current) {
+        try { barcodeControlsRef.current.stop() } catch {}
+        barcodeControlsRef.current = null
+      }
+    }
+  }, [showBarcode])
 
   async function handleSearch() {
     if (!searchQuery.trim()) return
@@ -239,13 +310,19 @@ export default function RecipePage() {
             <h2 className="text-sm font-semibold text-gray-700">Ingredients ({ingredients.length})</h2>
             <div className="flex gap-2">
               <button
-                onClick={() => { setManualMode(false); setShowSearch(s => !s) }}
+                onClick={() => { setManualMode(false); setShowBarcode(false); setShowSearch(s => !s) }}
                 className="text-xs bg-orange-50 text-orange-600 px-3 py-1.5 rounded-lg font-medium hover:bg-orange-100 transition"
               >
                 + Search
               </button>
               <button
-                onClick={() => { setShowSearch(false); setManualMode(m => !m) }}
+                onClick={() => { setShowSearch(false); setManualMode(false); setBarcodeError(null); setShowBarcode(b => !b) }}
+                className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-medium hover:bg-indigo-100 transition"
+              >
+                🔍 Barcode
+              </button>
+              <button
+                onClick={() => { setShowSearch(false); setShowBarcode(false); setManualMode(m => !m) }}
                 className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg font-medium hover:bg-gray-200 transition"
               >
                 + Manual
@@ -283,6 +360,31 @@ export default function RecipePage() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Barcode scanner panel */}
+          {showBarcode && (
+            <div className="mb-4 rounded-xl overflow-hidden border border-indigo-100 bg-indigo-50">
+              <div className="relative bg-black" style={{ height: 200 }}>
+                <video ref={barcodeVideoRef} className="w-full h-full object-cover" />
+                {barcodeLoading && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
+                    <p className="text-white text-sm animate-pulse">Looking up product...</p>
+                  </div>
+                )}
+                {!barcodeLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-52 h-20 border-2 border-indigo-400 rounded-lg opacity-70" />
+                  </div>
+                )}
+              </div>
+              <div className="p-3">
+                {barcodeError
+                  ? <p className="text-xs text-red-600 text-center">{barcodeError}</p>
+                  : <p className="text-xs text-indigo-600 text-center">Point camera at a barcode to add ingredient</p>
+                }
+              </div>
             </div>
           )}
 

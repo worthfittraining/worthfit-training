@@ -111,7 +111,7 @@ export async function GET(req: NextRequest) {
   const builtIn = COMMON_FOODS
     .filter(f => foodMatches(f.name, query))
     .slice(0, 4)
-    .map(f => ({ ...f, fiber_g: f.fiber_g ?? 0, fiber_per_100g: f.fiber_per_100g ?? 0, is_recipe: false }))
+    .map(f => ({ ...f, fiber_g: 0, fiber_per_100g: 0, is_recipe: false }))
 
   // Run USDA + Open Food Facts + saved recipes all in parallel
   const controller = new AbortController()

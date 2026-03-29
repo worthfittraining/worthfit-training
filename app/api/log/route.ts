@@ -140,6 +140,42 @@ export async function GET(req: NextRequest) {
   }
 }
 
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json()
+    const { id, food_name, calories, protein_g, carbs_g, fat_g, meal_slot, notes } = body
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+    const updateFields: Record<string, unknown> = {}
+    if (food_name !== undefined) updateFields.food_name = food_name
+    if (calories !== undefined) updateFields.calories = Number(calories)
+    if (protein_g !== undefined) updateFields.protein_g = Number(protein_g)
+    if (carbs_g !== undefined) updateFields.carbs_g = Number(carbs_g)
+    if (fat_g !== undefined) updateFields.fat_g = Number(fat_g)
+    if (meal_slot !== undefined) updateFields.meal_slot = meal_slot
+    if (notes !== undefined) updateFields.notes = notes
+
+    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}/${id}`
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${AIRTABLE_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ fields: updateFields }),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      console.error('Airtable PATCH error:', err)
+      return NextResponse.json({ error: 'Failed to update' }, { status: 500 })
+    }
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error('PATCH /api/log error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const id = req.nextUrl.searchParams.get('id')

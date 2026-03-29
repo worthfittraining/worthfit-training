@@ -19,6 +19,17 @@ type Profile = {
   Trial_End?: string
   Comp_Access?: boolean
   Stripe_Customer_Id?: string
+  // Stats used for macro recalculation
+  height_in?: number
+  Weight_lbs?: number
+  Age?: number
+  Sex?: string
+  breastfeeding?: boolean
+  // Rest day macro targets
+  Rest_Calories?: number
+  Rest_Protein_g?: number
+  Rest_Carbs_g?: number
+  Rest_Fat_g?: number
 }
 
 const GOAL_LABELS: Record<string, string> = {
@@ -35,6 +46,21 @@ const ACTIVITY_LABELS: Record<string, string> = {
   active: 'Active',
   very_active: 'Very Active',
 }
+
+const GOALS = [
+  { value: 'weight_loss', label: '⚖️ Weight Loss' },
+  { value: 'performance', label: '🏋️ Performance' },
+  { value: 'maintenance', label: '🎯 Maintenance' },
+  { value: 'body_recomp', label: '💪 Body Recomp' },
+]
+
+const ACTIVITY_LEVELS = [
+  { value: 'sedentary', label: 'Sedentary' },
+  { value: 'light', label: 'Light' },
+  { value: 'moderate', label: 'Moderate' },
+  { value: 'active', label: 'Active' },
+  { value: 'very_active', label: 'Very Active' },
+]
 
 function StatusBadge({ profile }: { profile: Profile }) {
   const status = profile.Subscription_Status
@@ -77,6 +103,18 @@ export default function AccountPage() {
   const [prefSaving, setPrefSaving] = useState(false)
   const [prefMsg, setPrefMsg] = useState('')
 
+  // Macro recalculator
+  const [showRecalc, setShowRecalc] = useState(false)
+  const [recalcForm, setRecalcForm] = useState({ height_in: '', weight_lbs: '', age: '', sex: '', goal: '', activity_level: '', breastfeeding: false })
+  const [recalcSaving, setRecalcSaving] = useState(false)
+  const [recalcMsg, setRecalcMsg] = useState('')
+
+  // Rest day macros
+  const [showRestDay, setShowRestDay] = useState(false)
+  const [restForm, setRestForm] = useState({ calories: '', protein_g: '', carbs_g: '', fat_g: '' })
+  const [restSaving, setRestSaving] = useState(false)
+  const [restMsg, setRestMsg] = useState('')
+
   const email = user?.primaryEmailAddress?.emailAddress
 
   useEffect(() => {
@@ -94,6 +132,23 @@ export default function AccountPage() {
         setPreferences(data.Preferences || '')
         setDislikes(data.Dislikes || '')
         setDob(data.DOB || '')
+        // Pre-fill recalculator with existing stats
+        setRecalcForm({
+          height_in: data.height_in ? String(data.height_in) : '',
+          weight_lbs: data.Weight_lbs ? String(data.Weight_lbs) : '',
+          age: data.Age ? String(data.Age) : '',
+          sex: data.Sex || '',
+          goal: data.Goal || '',
+          activity_level: data.Activity_Level || '',
+          breastfeeding: !!data.breastfeeding,
+        })
+        // Pre-fill rest day targets if set
+        setRestForm({
+          calories: data.Rest_Calories ? String(data.Rest_Calories) : '',
+          protein_g: data.Rest_Protein_g ? String(data.Rest_Protein_g) : '',
+          carbs_g: data.Rest_Carbs_g ? String(data.Rest_Carbs_g) : '',
+          fat_g: data.Rest_Fat_g ? String(data.Rest_Fat_g) : '',
+        })
       })
       .catch(console.error)
       .finally(() => setLoading(false))
@@ -159,6 +214,76 @@ export default function AccountPage() {
       setPrefMsg('Error saving')
     } finally {
       setPrefSaving(false)
+    }
+  }
+
+  async function recalculateMacros() {
+    if (!email) return
+    const { height_in, weight_lbs, age, sex, goal, activity_level, breastfeeding } = recalcForm
+    if (!height_in || !weight_lbs || !age || !sex || !goal || !activity_level) {
+      setRecalcMsg('Please fill in all fields')
+      return
+    }
+    setRecalcSaving(true)
+    setRecalcMsg('')
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          name: profile.Name || `${firstName} ${lastName}`.trim() || 'Friend',
+          goal,
+          restrictions: [],
+          food_preferences: profile.Preferences || '',
+          food_dislikes: profile.Dislikes || '',
+          height_in,
+          weight_lbs,
+          age,
+          sex,
+          activity_level,
+          breastfeeding,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        // Refresh profile to show updated macros
+        const refreshed = await fetch(`/api/profile?email=${encodeURIComponent(email)}`)
+        if (refreshed.ok) setProfile(await refreshed.json())
+        setRecalcMsg('✅ Targets updated!')
+        setTimeout(() => { setRecalcMsg(''); setShowRecalc(false) }, 2000)
+      } else {
+        setRecalcMsg('Error — try again')
+      }
+    } catch {
+      setRecalcMsg('Error — try again')
+    } finally {
+      setRecalcSaving(false)
+    }
+  }
+
+  async function saveRestDay() {
+    if (!email) return
+    setRestSaving(true)
+    setRestMsg('')
+    try {
+      await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          Rest_Calories: restForm.calories ? Number(restForm.calories) : null,
+          Rest_Protein_g: restForm.protein_g ? Number(restForm.protein_g) : null,
+          Rest_Carbs_g: restForm.carbs_g ? Number(restForm.carbs_g) : null,
+          Rest_Fat_g: restForm.fat_g ? Number(restForm.fat_g) : null,
+        }),
+      })
+      setRestMsg('✅ Rest day targets saved!')
+      setTimeout(() => { setRestMsg(''); setShowRestDay(false) }, 2000)
+    } catch {
+      setRestMsg('Error — try again')
+    } finally {
+      setRestSaving(false)
     }
   }
 
@@ -241,7 +366,7 @@ export default function AccountPage() {
                 value={firstName}
                 onChange={e => setFirstName(e.target.value)}
                 placeholder="First"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
               />
             </div>
             <div>
@@ -251,7 +376,7 @@ export default function AccountPage() {
                 value={lastName}
                 onChange={e => setLastName(e.target.value)}
                 placeholder="Last"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
               />
             </div>
           </div>
@@ -272,7 +397,7 @@ export default function AccountPage() {
               type="date"
               value={dob}
               onChange={e => setDob(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
             />
           </div>
 
@@ -315,36 +440,177 @@ export default function AccountPage() {
 
         {/* ── My Plan Card ── */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-          <h2 className="font-semibold text-gray-800 mb-3">My Plan</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-gray-800">My Macros</h2>
+            <button
+              onClick={() => setShowRecalc(r => !r)}
+              className="text-xs text-green-600 font-medium hover:text-green-700 transition-colors"
+            >
+              {showRecalc ? 'Hide ↑' : '✏️ Update Targets'}
+            </button>
+          </div>
           {loading ? (
             <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-5 bg-gray-100 rounded animate-pulse" />)}</div>
           ) : (
-            <div className="space-y-2.5">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">Goal</span>
-                <span className="text-sm font-medium text-gray-800">{GOAL_LABELS[profile.Goal || ''] || profile.Goal || '—'}</span>
+            <>
+              <div className="space-y-2.5 mb-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Goal</span>
+                  <span className="text-sm font-medium text-gray-800">{GOAL_LABELS[profile.Goal || ''] || profile.Goal || '—'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Activity</span>
+                  <span className="text-sm font-medium text-gray-800">{ACTIVITY_LABELS[profile.Activity_Level || ''] || profile.Activity_Level || '—'}</span>
+                </div>
+                <div className="h-px bg-gray-100" />
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  {[
+                    { label: 'Calories', value: profile.Calories, unit: '' },
+                    { label: 'Protein', value: profile.Protein_g, unit: 'g' },
+                    { label: 'Carbs', value: profile.Carbs_g, unit: 'g' },
+                    { label: 'Fat', value: profile.Fat_g, unit: 'g' },
+                  ].map(m => (
+                    <div key={m.label} className="bg-gray-50 rounded-xl py-2">
+                      <div className="text-sm font-bold text-gray-900">{m.value ?? '—'}{m.unit}</div>
+                      <div className="text-xs text-gray-400">{m.label}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">Activity</span>
-                <span className="text-sm font-medium text-gray-800">{ACTIVITY_LABELS[profile.Activity_Level || ''] || profile.Activity_Level || '—'}</span>
-              </div>
-              <div className="h-px bg-gray-100" />
-              <div className="grid grid-cols-4 gap-2 text-center">
-                {[
-                  { label: 'Calories', value: profile.Calories, unit: '' },
-                  { label: 'Protein', value: profile.Protein_g, unit: 'g' },
-                  { label: 'Carbs', value: profile.Carbs_g, unit: 'g' },
-                  { label: 'Fat', value: profile.Fat_g, unit: 'g' },
-                ].map(m => (
-                  <div key={m.label} className="bg-gray-50 rounded-xl py-2">
-                    <div className="text-sm font-bold text-gray-900">{m.value ?? '—'}{m.unit}</div>
-                    <div className="text-xs text-gray-400">{m.label}</div>
+
+              {showRecalc && (
+                <div className="border-t border-gray-100 pt-4 space-y-3">
+                  <p className="text-xs text-gray-500">Update your stats to recalculate targets</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 block mb-1">Height (inches)</label>
+                      <input type="number" placeholder="e.g. 65" value={recalcForm.height_in}
+                        onChange={e => setRecalcForm(p => ({ ...p, height_in: e.target.value }))}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 block mb-1">Weight (lbs)</label>
+                      <input type="number" placeholder="e.g. 150" value={recalcForm.weight_lbs}
+                        onChange={e => setRecalcForm(p => ({ ...p, weight_lbs: e.target.value }))}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 block mb-1">Age</label>
+                      <input type="number" placeholder="e.g. 30" value={recalcForm.age}
+                        onChange={e => setRecalcForm(p => ({ ...p, age: e.target.value }))}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 block mb-1">Sex</label>
+                      <select value={recalcForm.sex} onChange={e => setRecalcForm(p => ({ ...p, sex: e.target.value }))}
+                        className={`w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 ${!recalcForm.sex ? 'text-gray-400' : 'text-gray-800'}`}>
+                        <option value="" disabled>Select...</option>
+                        <option value="female">Female</option>
+                        <option value="male">Male</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 block mb-1">Goal</label>
+                    <select value={recalcForm.goal} onChange={e => setRecalcForm(p => ({ ...p, goal: e.target.value }))}
+                      className={`w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 ${!recalcForm.goal ? 'text-gray-400' : 'text-gray-800'}`}>
+                      <option value="" disabled>Select goal...</option>
+                      {GOALS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 block mb-1">Activity level</label>
+                    <select value={recalcForm.activity_level} onChange={e => setRecalcForm(p => ({ ...p, activity_level: e.target.value }))}
+                      className={`w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 ${!recalcForm.activity_level ? 'text-gray-400' : 'text-gray-800'}`}>
+                      <option value="" disabled>Select level...</option>
+                      {ACTIVITY_LEVELS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+                    </select>
+                  </div>
+                  {recalcForm.sex === 'female' && (
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={recalcForm.breastfeeding}
+                        onChange={e => setRecalcForm(p => ({ ...p, breastfeeding: e.target.checked }))}
+                        className="w-4 h-4 accent-green-600" />
+                      <span className="text-sm text-gray-700">Currently breastfeeding (+500 cal/day)</span>
+                    </label>
+                  )}
+                  {recalcMsg && <p className={`text-sm font-medium ${recalcMsg.startsWith('✅') ? 'text-green-600' : 'text-red-500'}`}>{recalcMsg}</p>}
+                  <button onClick={recalculateMacros} disabled={recalcSaving}
+                    className="w-full py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors">
+                    {recalcSaving ? 'Calculating...' : '🔄 Calculate New Targets'}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* ── Rest Day Macros ── */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <h2 className="font-semibold text-gray-800">Rest Day Macros</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Lower targets for non-training days</p>
+            </div>
+            <button
+              onClick={() => setShowRestDay(r => !r)}
+              className="text-xs text-green-600 font-medium hover:text-green-700 transition-colors"
+            >
+              {showRestDay ? 'Hide ↑' : '✏️ Set Targets'}
+            </button>
+          </div>
+
+          {!showRestDay && profile.Rest_Calories && (
+            <div className="grid grid-cols-4 gap-2 text-center mt-3">
+              {[
+                { label: 'Calories', value: profile.Rest_Calories, unit: '' },
+                { label: 'Protein', value: profile.Rest_Protein_g, unit: 'g' },
+                { label: 'Carbs', value: profile.Rest_Carbs_g, unit: 'g' },
+                { label: 'Fat', value: profile.Rest_Fat_g, unit: 'g' },
+              ].map(m => (
+                <div key={m.label} className="bg-blue-50 rounded-xl py-2">
+                  <div className="text-sm font-bold text-gray-900">{m.value ?? '—'}{m.unit}</div>
+                  <div className="text-xs text-gray-400">{m.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!showRestDay && !profile.Rest_Calories && (
+            <p className="text-sm text-gray-400 mt-2">No rest day targets set — toggle above to add them.</p>
+          )}
+
+          {showRestDay && (
+            <div className="mt-3 space-y-3">
+              <p className="text-xs text-gray-500">These targets appear on your food log when you toggle "Rest Day". Leave blank to disable.</p>
+              <div className="grid grid-cols-2 gap-3">
+                {([
+                  ['Calories', 'calories', 'kcal'],
+                  ['Protein', 'protein_g', 'g'],
+                  ['Carbs', 'carbs_g', 'g'],
+                  ['Fat', 'fat_g', 'g'],
+                ] as const).map(([label, key, unit]) => (
+                  <div key={key}>
+                    <label className="text-xs font-medium text-gray-500 block mb-1">{label} ({unit})</label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="—"
+                      value={restForm[key]}
+                      onChange={e => setRestForm(p => ({ ...p, [key]: e.target.value }))}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
                   </div>
                 ))}
               </div>
-              <a href="/onboarding" className="block text-center text-sm text-green-600 font-medium pt-1 hover:text-green-700">
-                Redo onboarding to update targets →
-              </a>
+              {restMsg && <p className={`text-sm font-medium ${restMsg.startsWith('✅') ? 'text-green-600' : 'text-red-500'}`}>{restMsg}</p>}
+              <button
+                onClick={saveRestDay}
+                disabled={restSaving}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors"
+              >
+                {restSaving ? 'Saving...' : '💾 Save Rest Day Targets'}
+              </button>
             </div>
           )}
         </div>
@@ -360,7 +626,7 @@ export default function AccountPage() {
                 value={preferences}
                 onChange={e => setPreferences(e.target.value)}
                 placeholder="e.g. chicken, rice, eggs..."
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
               />
             </div>
             <div>
@@ -370,7 +636,7 @@ export default function AccountPage() {
                 value={dislikes}
                 onChange={e => setDislikes(e.target.value)}
                 placeholder="e.g. tuna, Brussels sprouts..."
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
               />
             </div>
             <button

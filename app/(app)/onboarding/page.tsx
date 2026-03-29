@@ -36,6 +36,10 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  // Chip selections stored separately from the free-text field so clicking
+  // a chip doesn't confusingly populate the text input
+  const [chipFoods, setChipFoods] = useState<string[]>([])
+  const [extraPreferences, setExtraPreferences] = useState('')
   const [form, setForm] = useState({
     goal: '',
     restrictions: [] as string[],
@@ -60,29 +64,31 @@ export default function OnboardingPage() {
     }))
   }
 
-  function togglePreference(food: string) {
-    const current = form.food_preferences
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean)
-    const updated = current.includes(food)
-      ? current.filter(x => x !== food)
-      : [...current, food]
-    setForm(f => ({ ...f, food_preferences: updated.join(', ') }))
+  function toggleChip(food: string) {
+    setChipFoods(prev =>
+      prev.includes(food) ? prev.filter(x => x !== food) : [...prev, food]
+    )
   }
 
+  // Kept for backwards compat — likedFoods reads from chip state
   function likedFoods() {
-    return form.food_preferences.split(',').map(s => s.trim()).filter(Boolean)
+    return chipFoods
   }
 
   async function handleSubmit() {
     setLoading(true)
+    // Merge chip selections + extra free-text into the food_preferences field
+    const allPreferences = [
+      ...chipFoods,
+      ...extraPreferences.split(',').map(s => s.trim()).filter(Boolean),
+    ].join(', ')
     try {
       const res = await fetch('/api/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          food_preferences: allPreferences,
           email: user?.primaryEmailAddress?.emailAddress,
           name: user?.fullName || user?.firstName || 'Friend',
         }),
@@ -176,7 +182,7 @@ export default function OnboardingPage() {
               {FOOD_SUGGESTIONS.map(food => (
                 <button
                   key={food}
-                  onClick={() => togglePreference(food)}
+                  onClick={() => toggleChip(food)}
                   className={`px-3 py-1.5 rounded-full border-2 text-sm capitalize transition ${
                     likedFoods().includes(food)
                       ? 'border-green-500 bg-green-50 text-green-700'
@@ -188,18 +194,20 @@ export default function OnboardingPage() {
               ))}
             </div>
 
-            {/* Free-text preferences */}
+            {/* Free-text preferences — separate from chip selections so tapping chips
+                doesn't confusingly populate this box */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Other foods you love (optional)
+                Anything else you love? (optional)
               </label>
               <input
                 type="text"
                 placeholder="e.g. sweet potatoes, turkey, steak..."
-                value={form.food_preferences}
-                onChange={e => setForm(f => ({ ...f, food_preferences: e.target.value }))}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-sm placeholder:text-gray-600"
+                value={extraPreferences}
+                onChange={e => setExtraPreferences(e.target.value)}
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-sm text-gray-800 placeholder:text-gray-400"
               />
+              <p className="text-xs text-gray-400 mt-1">Tapped foods above are already included — add extras here.</p>
             </div>
 
             {/* Dislikes */}

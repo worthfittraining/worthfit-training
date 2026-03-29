@@ -204,13 +204,6 @@ export default function ResourcesPage() {
           </div>
         )}
 
-        {/* Airtable tip for coach */}
-        <div className="mt-10 p-4 bg-green-50 rounded-2xl border border-green-100">
-          <p className="text-xs text-green-700 font-medium mb-1">💡 Adding your own articles</p>
-          <p className="text-xs text-green-600 leading-relaxed">
-            Create a <strong>Resources</strong> table in Airtable with fields: Title, Category, Emoji, Summary, Content, Order, Published (checkbox). Check Published to make an article live — no code changes needed.
-          </p>
-        </div>
 
       </div>
     </div>

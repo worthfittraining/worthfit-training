@@ -142,7 +142,7 @@ export default function SubscribePage() {
         {/* Header */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 text-sm font-semibold px-4 py-2 rounded-full mb-4">
-            💪 WorthFit Training
+            🥗 Nali Nutrition
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Choose your plan</h1>
           <p className="text-gray-500 text-base">Start free, upgrade anytime. No commitment required.</p>

@@ -89,6 +89,7 @@ export default function DashboardPage() {
                   protein: Number(todayMacros.protein_g) || 150,
                   carbs: Number(todayMacros.carbs_g) || 200,
                   fat: Number(todayMacros.fat_g) || 65,
+                  fiber: Number(todayMacros.fiber_g) || 28,
                 })
                 usedDayMacros = true
               }

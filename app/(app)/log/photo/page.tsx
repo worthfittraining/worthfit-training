@@ -33,7 +33,10 @@ export default function PhotoLogPage() {
 
   function handleFile(file: File) {
     if (!file) return
-    const type = file.type || 'image/jpeg'
+    // Normalize to supported Claude vision types — iOS HEIC and others default to jpeg
+    const SUPPORTED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    const raw = file.type || 'image/jpeg'
+    const type = SUPPORTED.includes(raw) ? raw : 'image/jpeg'
     setMediaType(type)
     const reader = new FileReader()
     reader.onloadend = () => {

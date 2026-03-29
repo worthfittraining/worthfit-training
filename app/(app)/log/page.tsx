@@ -11,6 +11,7 @@ type FoodLog = {
   protein_g: number
   carbs_g: number
   fat_g: number
+  fiber_g?: number
   meal_slot: string
   notes?: string
   date: string
@@ -27,6 +28,7 @@ type DaySummary = {
 }
 
 const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack']
+const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack']
 
 /** Returns local date string YYYY-MM-DD (not UTC — avoids off-by-one for US users at night) */
 function localDateString(d: Date = new Date()): string {
@@ -57,6 +59,84 @@ function HitBadge({ value, target, label }: { value: number; target: number; lab
   )
 }
 
+type EditDraft = {
+  id: string
+  food_name: string
+  calories: number
+  protein_g: number
+  carbs_g: number
+  fat_g: number
+  meal_slot: string
+}
+
+function EditModal({ draft, onSave, onClose, saving }: {
+  draft: EditDraft
+  onSave: (updated: EditDraft) => void
+  onClose: () => void
+  saving: boolean
+}) {
+  const [local, setLocal] = useState(draft)
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="relative bg-white w-full max-w-md rounded-t-3xl p-5 pb-8 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+        <h2 className="text-base font-bold text-gray-800 mb-4">Edit Entry</h2>
+
+        <div className="mb-3">
+          <label className="text-xs font-medium text-gray-500 block mb-1">Food name</label>
+          <input
+            type="text"
+            value={local.food_name}
+            onChange={e => setLocal(p => ({ ...p, food_name: e.target.value }))}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+          />
+        </div>
+
+        <div className="mb-3">
+          <label className="text-xs font-medium text-gray-500 block mb-1">Meal</label>
+          <select
+            value={local.meal_slot}
+            onChange={e => setLocal(p => ({ ...p, meal_slot: e.target.value }))}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+          >
+            {MEAL_SLOTS.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 mb-5">
+          {([
+            ['Calories', 'calories', 'kcal'],
+            ['Protein', 'protein_g', 'g'],
+            ['Carbs', 'carbs_g', 'g'],
+            ['Fat', 'fat_g', 'g'],
+          ] as const).map(([label, key, unit]) => (
+            <div key={key}>
+              <label className="text-xs font-medium text-gray-500 block mb-1">{label} ({unit})</label>
+              <input
+                type="number"
+                min="0"
+                value={local[key]}
+                onChange={e => setLocal(p => ({ ...p, [key]: parseFloat(e.target.value) || 0 }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-3 border-2 border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:border-gray-300 transition">
+            Cancel
+          </button>
+          <button onClick={() => onSave(local)} disabled={saving} className="flex-1 py-3 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 disabled:opacity-50 transition">
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function LogPage() {
   const { user } = useUser()
   const [view, setView] = useState<'today' | 'week'>('today')
@@ -67,7 +147,13 @@ export default function LogPage() {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [copying, setCopying] = useState<string | null>(null)
   const [copySuccess, setCopySuccess] = useState<string | null>(null)
-  const [profile, setProfile] = useState<{ Calories?: number; Protein_g?: number; Carbs_g?: number; Fat_g?: number } | null>(null)
+  const [profile, setProfile] = useState<{
+    Calories?: number; Protein_g?: number; Carbs_g?: number; Fat_g?: number
+    Rest_Calories?: number; Rest_Protein_g?: number; Rest_Carbs_g?: number; Rest_Fat_g?: number
+  } | null>(null)
+  const [isRestDay, setIsRestDay] = useState(false)
+  const [editDraft, setEditDraft] = useState<EditDraft | null>(null)
+  const [editSaving, setEditSaving] = useState(false)
 
   useEffect(() => {
     if (user) { fetchLogs(); fetchProfile() }
@@ -146,6 +232,23 @@ export default function LogPage() {
     finally { setCopying(null) }
   }
 
+  async function saveEdit(updated: EditDraft) {
+    setEditSaving(true)
+    try {
+      const res = await fetch('/api/log', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      })
+      if (res.ok) {
+        setLogs(prev => prev.map(l => l.id === updated.id ? { ...l, ...updated } : l))
+        setWeekLogs(prev => prev.map(l => l.id === updated.id ? { ...l, ...updated } : l))
+        setEditDraft(null)
+      }
+    } catch (e) { console.error(e) }
+    finally { setEditSaving(false) }
+  }
+
   const totalCalories = logs.reduce((s, l) => s + (l.calories || 0), 0)
   const totalProtein = logs.reduce((s, l) => s + (l.protein_g || 0), 0)
   const totalCarbs = logs.reduce((s, l) => s + (l.carbs_g || 0), 0)
@@ -155,10 +258,12 @@ export default function LogPage() {
     return acc
   }, {})
 
-  const calTarget = profile?.Calories || 0
-  const protTarget = profile?.Protein_g || 0
-  const carbTarget = profile?.Carbs_g || 0
-  const fatTarget = profile?.Fat_g || 0
+  // Use rest-day targets when toggled (fall back to training targets if rest-day not set)
+  const hasRestTargets = !!(profile?.Rest_Calories || profile?.Rest_Protein_g)
+  const calTarget = (isRestDay && profile?.Rest_Calories) ? profile.Rest_Calories : (profile?.Calories || 0)
+  const protTarget = (isRestDay && profile?.Rest_Protein_g) ? profile.Rest_Protein_g : (profile?.Protein_g || 0)
+  const carbTarget = (isRestDay && profile?.Rest_Carbs_g) ? profile.Rest_Carbs_g : (profile?.Carbs_g || 0)
+  const fatTarget = (isRestDay && profile?.Rest_Fat_g) ? profile.Rest_Fat_g : (profile?.Fat_g || 0)
 
   const weekDays: DaySummary[] = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() - i)
@@ -174,6 +279,14 @@ export default function LogPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
+      {editDraft && (
+        <EditModal
+          draft={editDraft}
+          onSave={saveEdit}
+          onClose={() => setEditDraft(null)}
+          saving={editSaving}
+        />
+      )}
       <div className="max-w-md mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold text-gray-800">Food Log</h1>
@@ -195,8 +308,24 @@ export default function LogPage() {
               <Link href="/chat" className="bg-white border-2 border-purple-400 text-purple-600 py-4 rounded-xl font-semibold text-center hover:bg-purple-50 transition text-sm col-span-2">💬 Ask Nali</Link>
             </div>
 
+            {/* Rest day toggle — only shown if rest-day targets are configured */}
+            {hasRestTargets && (
+              <div className="flex items-center justify-between bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-2.5 mb-3">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Rest Day</p>
+                  <p className="text-xs text-gray-400">Switch to rest-day macro targets</p>
+                </div>
+                <button
+                  onClick={() => setIsRestDay(r => !r)}
+                  className={`relative w-11 h-6 rounded-full transition-colors ${isRestDay ? 'bg-blue-500' : 'bg-gray-200'}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isRestDay ? 'translate-x-5' : ''}`} />
+                </button>
+              </div>
+            )}
+
             <div className="bg-white rounded-2xl shadow p-4 mb-6">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Today&apos;s Totals</h2>
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">{isRestDay ? '😴 Rest Day Totals' : "Today's Totals"}</h2>
               <div className="grid grid-cols-4 gap-2 text-center">
                 <div><p className={`text-xl font-bold ${calTarget && totalCalories > calTarget * 1.1 ? 'text-purple-500' : calTarget && totalCalories >= calTarget * 0.9 ? 'text-green-500' : 'text-orange-500'}`}>{totalCalories}</p><p className="text-xs text-gray-400">{calTarget ? `/ ${calTarget}` : ''} kcal</p></div>
                 <div><p className={`text-xl font-bold ${protTarget && totalProtein >= protTarget * 0.9 ? 'text-green-500' : 'text-blue-500'}`}>{totalProtein}g</p><p className="text-xs text-gray-400">{protTarget ? `/ ${protTarget}g` : ''} prot</p></div>
@@ -236,6 +365,11 @@ export default function LogPage() {
                           </div>
                           {log.notes && <p className="text-xs text-gray-400 mt-1 italic">{log.notes}</p>}
                         </div>
+                        <button
+                          onClick={() => setEditDraft({ id: log.id, food_name: log.food_name, calories: log.calories, protein_g: log.protein_g, carbs_g: log.carbs_g, fat_g: log.fat_g, meal_slot: log.meal_slot })}
+                          className="text-gray-300 hover:text-blue-400 transition-colors text-sm shrink-0 mt-0.5 px-1"
+                          title="Edit"
+                        >✏️</button>
                         <button onClick={() => deleteLog(log.id)} disabled={deleting === log.id} className="text-gray-300 hover:text-red-400 transition-colors text-lg shrink-0 mt-0.5" title="Remove">
                           {deleting === log.id ? '...' : '×'}
                         </button>
@@ -289,9 +423,9 @@ export default function LogPage() {
                         <div className="mt-2 space-y-1.5">
                           {weekLogs.filter(l => l.date === day.date).map(log => (
                             <div key={log.id} className="flex items-center justify-between text-xs bg-gray-50 rounded-lg px-3 py-2">
-                              <div className="flex-1 min-w-0">
+                              <div className="flex-1 min-w-0 overflow-hidden">
                                 <span className="font-medium capitalize text-gray-400 mr-1">{log.meal_slot}:</span>
-                                <span className="text-gray-700 truncate">{log.food_name}</span>
+                                <span className="text-gray-700 inline-block max-w-full truncate align-bottom" style={{maxWidth:'calc(100% - 4rem)'}}>{log.food_name}</span>
                               </div>
                               <div className="flex items-center gap-2 shrink-0 ml-2">
                                 <span className="text-orange-500 font-semibold">{log.calories} cal</span>
