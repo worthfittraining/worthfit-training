@@ -114,5 +114,5 @@ export async function POST(req: NextRequest) {
 
 // Health check — Zapier sometimes does a GET to verify the webhook URL is live
 export async function GET() {
-  return NextResponse.json({ ok: true, service: 'Worth Fit Playbook Sync', status: 'ready' })
+  return NextResponse.json({ ok: true, service: 'Nali Nutrition Playbook Sync', status: 'ready' })
 }
