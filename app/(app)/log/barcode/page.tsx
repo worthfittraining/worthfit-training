@@ -17,7 +17,7 @@ type FoodData = {
   image_url: string | null
 }
 
-type Phase = 'scanning' | 'loading' | 'result' | 'notfound'
+type Phase = 'scanning' | 'loading' | 'result' | 'notfound' | 'contributing' | 'submitted'
 
 const UNITS = ['g', 'oz', 'cup', 'tbsp', 'tsp', 'serving']
 
@@ -51,9 +51,13 @@ export default function BarcodePage() {
   const [mealSlot, setMealSlot] = useState('lunch')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [scannedCode, setScannedCode] = useState<string>('')
+  const [contrib, setContrib] = useState({ name: '', brand: '', calories: '', protein: '', carbs: '', fat: '', serving_size: '' })
+  const [contributing, setContributing] = useState(false)
 
   async function lookupBarcode(barcode: string) {
     setPhase('loading')
+    setScannedCode(barcode)
     try {
       const res = await fetch(`/api/barcode?code=${barcode}`)
       if (res.status === 404) { setPhase('notfound'); return }
@@ -64,6 +68,46 @@ export default function BarcodePage() {
     } catch {
       setError('Failed to look up product')
       setPhase('scanning')
+    }
+  }
+
+  async function submitContribution() {
+    if (!contrib.name || !contrib.calories) return
+    setContributing(true)
+    try {
+      await fetch('/api/barcode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          barcode: scannedCode,
+          name: contrib.name,
+          brand: contrib.brand,
+          calories_per_100g: Number(contrib.calories),
+          protein_per_100g: Number(contrib.protein) || 0,
+          carbs_per_100g: Number(contrib.carbs) || 0,
+          fat_per_100g: Number(contrib.fat) || 0,
+          serving_size_g: contrib.serving_size ? Number(contrib.serving_size) : null,
+          added_by: user?.primaryEmailAddress?.emailAddress || '',
+        }),
+      })
+      // Load the contributed product into result view
+      const contributed: FoodData = {
+        name: contrib.name,
+        brand: contrib.brand,
+        calories_per_100g: Number(contrib.calories),
+        protein_per_100g: Number(contrib.protein) || 0,
+        carbs_per_100g: Number(contrib.carbs) || 0,
+        fat_per_100g: Number(contrib.fat) || 0,
+        serving_size_g: contrib.serving_size ? Number(contrib.serving_size) : null,
+        image_url: null,
+      }
+      setFood(contributed)
+      if (contributed.serving_size_g) { setUnit('serving'); setQty(1) } else { setUnit('g'); setQty(100) }
+      setPhase('submitted')
+    } catch {
+      setError('Failed to save product')
+    } finally {
+      setContributing(false)
     }
   }
 
@@ -182,25 +226,132 @@ export default function BarcodePage() {
       )}
 
       {phase === 'notfound' && (
-        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white">
-          <p className="text-5xl mb-4">🤷</p>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Product Not Found</h2>
-          <p className="text-gray-500 mb-6">This barcode isn&apos;t in the database yet.</p>
-          <button
-            onClick={() => router.push('/log/barcode')}
-            className="bg-green-500 text-white py-3 px-8 rounded-xl font-semibold mb-3"
-          >
-            Scan Again
-          </button>
-          <button onClick={() => router.push('/log/new')} className="text-blue-500 underline text-sm">
-            Enter manually instead
-          </button>
+        <div className="flex-1 bg-white overflow-y-auto">
+          <div className="p-5">
+            <div className="text-center mb-5">
+              <p className="text-4xl mb-2">🤷</p>
+              <h2 className="text-xl font-bold text-gray-800">Product Not Found</h2>
+              <p className="text-sm text-gray-500 mt-1">Help us grow the database! Add this product and it&apos;ll be available for everyone.</p>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Product Name *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Greek Yogurt Vanilla"
+                  value={contrib.name}
+                  onChange={e => setContrib(p => ({ ...p, name: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Brand</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Chobani"
+                  value={contrib.brand}
+                  onChange={e => setContrib(p => ({ ...p, brand: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                />
+              </div>
+
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-1">Nutrition per 100g</p>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">🔥 Calories *</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 59"
+                    value={contrib.calories}
+                    onChange={e => setContrib(p => ({ ...p, calories: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                    min={0}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">💪 Protein (g)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 10"
+                    value={contrib.protein}
+                    onChange={e => setContrib(p => ({ ...p, protein: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                    min={0}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">🌾 Carbs (g)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 3.6"
+                    value={contrib.carbs}
+                    onChange={e => setContrib(p => ({ ...p, carbs: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                    min={0}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">🥑 Fat (g)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 0.4"
+                    value={contrib.fat}
+                    onChange={e => setContrib(p => ({ ...p, fat: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                    min={0}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Serving Size (g) — optional</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 170"
+                  value={contrib.serving_size}
+                  onChange={e => setContrib(p => ({ ...p, serving_size: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  min={0}
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mt-3 text-sm">{error}</div>
+            )}
+
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={() => router.push('/log/barcode')}
+                className="flex-1 border-2 border-gray-200 text-gray-600 py-3 rounded-xl font-semibold text-sm"
+              >
+                Scan Again
+              </button>
+              <button
+                onClick={submitContribution}
+                disabled={contributing || !contrib.name || !contrib.calories}
+                className="flex-grow bg-green-500 text-white py-3 px-5 rounded-xl font-semibold text-sm disabled:opacity-50"
+              >
+                {contributing ? 'Saving...' : '✅ Add & Log It'}
+              </button>
+            </div>
+            <button onClick={() => router.push('/log/new')} className="w-full text-center text-blue-500 underline text-sm mt-3">
+              Skip — enter manually instead
+            </button>
+          </div>
         </div>
       )}
 
-      {phase === 'result' && food && macros && (
+      {(phase === 'result' || phase === 'submitted') && food && macros && (
         <div className="flex-1 bg-white overflow-y-auto">
           <div className="p-4">
+            {phase === 'submitted' && (
+              <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl p-3 mb-4 text-sm font-medium text-center">
+                🎉 Thanks for adding this product! It&apos;s now in the community database.
+              </div>
+            )}
             <div className="flex gap-3 items-center mb-5">
               {food.image_url && (
                 <img src={food.image_url} alt={food.name} className="w-16 h-16 rounded-xl object-cover border border-gray-100" />
