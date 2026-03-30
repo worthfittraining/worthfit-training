@@ -72,8 +72,15 @@ export default function BarcodePage() {
   }
 
   async function submitContribution() {
-    if (!contrib.name || !contrib.calories) return
+    if (!contrib.name || !contrib.calories || !contrib.serving_size) return
     setContributing(true)
+    // Convert per-serving → per-100g for storage
+    const servingG = Number(contrib.serving_size)
+    const factor = servingG > 0 ? 100 / servingG : 1
+    const cal100 = Math.round(Number(contrib.calories) * factor * 10) / 10
+    const pro100 = Math.round((Number(contrib.protein) || 0) * factor * 10) / 10
+    const carb100 = Math.round((Number(contrib.carbs) || 0) * factor * 10) / 10
+    const fat100 = Math.round((Number(contrib.fat) || 0) * factor * 10) / 10
     try {
       await fetch('/api/barcode', {
         method: 'POST',
@@ -82,11 +89,11 @@ export default function BarcodePage() {
           barcode: scannedCode,
           name: contrib.name,
           brand: contrib.brand,
-          calories_per_100g: Number(contrib.calories),
-          protein_per_100g: Number(contrib.protein) || 0,
-          carbs_per_100g: Number(contrib.carbs) || 0,
-          fat_per_100g: Number(contrib.fat) || 0,
-          serving_size_g: contrib.serving_size ? Number(contrib.serving_size) : null,
+          calories_per_100g: cal100,
+          protein_per_100g: pro100,
+          carbs_per_100g: carb100,
+          fat_per_100g: fat100,
+          serving_size_g: servingG,
           added_by: user?.primaryEmailAddress?.emailAddress || '',
         }),
       })
@@ -94,11 +101,11 @@ export default function BarcodePage() {
       const contributed: FoodData = {
         name: contrib.name,
         brand: contrib.brand,
-        calories_per_100g: Number(contrib.calories),
-        protein_per_100g: Number(contrib.protein) || 0,
-        carbs_per_100g: Number(contrib.carbs) || 0,
-        fat_per_100g: Number(contrib.fat) || 0,
-        serving_size_g: contrib.serving_size ? Number(contrib.serving_size) : null,
+        calories_per_100g: cal100,
+        protein_per_100g: pro100,
+        carbs_per_100g: carb100,
+        fat_per_100g: fat100,
+        serving_size_g: servingG,
         image_url: null,
       }
       setFood(contributed)
@@ -256,14 +263,26 @@ export default function BarcodePage() {
                 />
               </div>
 
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-1">Nutrition per 100g</p>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Serving Size (g) * <span className="font-normal text-gray-400">— check the label</span></label>
+                <input
+                  type="number"
+                  placeholder="e.g. 170"
+                  value={contrib.serving_size}
+                  onChange={e => setContrib(p => ({ ...p, serving_size: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  min={0}
+                />
+              </div>
+
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-1">Nutrition per serving (from the label)</p>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">🔥 Calories *</label>
                   <input
                     type="number"
-                    placeholder="e.g. 59"
+                    placeholder="e.g. 100"
                     value={contrib.calories}
                     onChange={e => setContrib(p => ({ ...p, calories: e.target.value }))}
                     className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
@@ -274,7 +293,7 @@ export default function BarcodePage() {
                   <label className="block text-xs font-semibold text-gray-500 mb-1">💪 Protein (g)</label>
                   <input
                     type="number"
-                    placeholder="e.g. 10"
+                    placeholder="e.g. 17"
                     value={contrib.protein}
                     onChange={e => setContrib(p => ({ ...p, protein: e.target.value }))}
                     className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
@@ -285,7 +304,7 @@ export default function BarcodePage() {
                   <label className="block text-xs font-semibold text-gray-500 mb-1">🌾 Carbs (g)</label>
                   <input
                     type="number"
-                    placeholder="e.g. 3.6"
+                    placeholder="e.g. 6"
                     value={contrib.carbs}
                     onChange={e => setContrib(p => ({ ...p, carbs: e.target.value }))}
                     className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
@@ -296,25 +315,13 @@ export default function BarcodePage() {
                   <label className="block text-xs font-semibold text-gray-500 mb-1">🥑 Fat (g)</label>
                   <input
                     type="number"
-                    placeholder="e.g. 0.4"
+                    placeholder="e.g. 0"
                     value={contrib.fat}
                     onChange={e => setContrib(p => ({ ...p, fat: e.target.value }))}
                     className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
                     min={0}
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">Serving Size (g) — optional</label>
-                <input
-                  type="number"
-                  placeholder="e.g. 170"
-                  value={contrib.serving_size}
-                  onChange={e => setContrib(p => ({ ...p, serving_size: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-                  min={0}
-                />
               </div>
             </div>
 
@@ -331,7 +338,7 @@ export default function BarcodePage() {
               </button>
               <button
                 onClick={submitContribution}
-                disabled={contributing || !contrib.name || !contrib.calories}
+                disabled={contributing || !contrib.name || !contrib.calories || !contrib.serving_size}
                 className="flex-grow bg-green-500 text-white py-3 px-5 rounded-xl font-semibold text-sm disabled:opacity-50"
               >
                 {contributing ? 'Saving...' : '✅ Add & Log It'}
