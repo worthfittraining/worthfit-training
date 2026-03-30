@@ -651,7 +651,11 @@ export default function AccountPage() {
 
         {/* ── Quick Links ── */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
-          <a href="/resources" className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors rounded-t-2xl">
+          <a href="/recipes" className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors rounded-t-2xl">
+            <div className="flex items-center gap-3"><span className="text-lg">🍳</span><span className="text-sm font-medium text-gray-700">My Recipes</span></div>
+            <span className="text-gray-300 text-sm">→</span>
+          </a>
+          <a href="/resources" className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors">
             <div className="flex items-center gap-3"><span className="text-lg">📚</span><span className="text-sm font-medium text-gray-700">Nutrition Resources</span></div>
             <span className="text-gray-300 text-sm">→</span>
           </a>

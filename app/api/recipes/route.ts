@@ -31,6 +31,28 @@ export async function GET(req: NextRequest) {
   }
 }
 
+export async function DELETE(req: NextRequest) {
+  const body = await req.json()
+  const { email, name } = body as { email: string; name: string }
+  if (!email || !name) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+
+  try {
+    const client = await getClientByEmail(email)
+    if (!client) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+
+    let recipes: SavedRecipe[] = []
+    if (client.fields?.Saved_Recipes) {
+      try { recipes = JSON.parse(String(client.fields.Saved_Recipes)) } catch { recipes = [] }
+    }
+
+    const updated = recipes.filter(r => r.name.toLowerCase() !== name.toLowerCase())
+    await updateClient(client.id, { Saved_Recipes: JSON.stringify(updated) })
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 })
+  }
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const { email, recipe } = body as { email: string; recipe: SavedRecipe }
