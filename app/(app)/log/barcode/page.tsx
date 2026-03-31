@@ -127,11 +127,11 @@ export default function BarcodePage() {
         // @ts-ignore
         const { BrowserMultiFormatReader } = await import('@zxing/browser')
         const reader = new BrowserMultiFormatReader()
-        const devices = await BrowserMultiFormatReader.listVideoInputDevices()
-        const deviceId: string | undefined = devices.length > 1 ? devices[devices.length - 1].deviceId : undefined
 
-        const controls = await reader.decodeFromVideoDevice(
-          deviceId,
+        // Use facingMode: 'environment' to reliably get the back camera on mobile.
+        // Listing devices and picking the last one is unreliable on Android Chrome.
+        const controls = await reader.decodeFromConstraints(
+          { video: { facingMode: 'environment' } },
           videoRef.current,
           (result: any, _err: any, ctrl: any) => {
             if (!active || !result) return
