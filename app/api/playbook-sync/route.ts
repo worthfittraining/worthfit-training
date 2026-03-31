@@ -37,15 +37,27 @@ async function updateClientPlaybookStatus(recordId: string, active: boolean): Pr
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { event, email, secret } = body
+
+    // Secret can come from:
+    //   - URL query param: ?secret=xxx  (used when Playbook posts directly)
+    //   - Body field: { "secret": "xxx" }  (used when Zapier posts)
+    const secretFromQuery = req.nextUrl.searchParams.get('secret')
+    const secret = secretFromQuery ?? body.secret
 
     // --- Security check ---
-    // Reject requests that don't include the correct secret key.
-    // In Zapier, add the secret as a body field: { "secret": "your-secret-here" }
     if (WEBHOOK_SECRET && secret !== WEBHOOK_SECRET) {
       console.warn('Playbook webhook: invalid secret from', req.headers.get('x-forwarded-for'))
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    // Event can come from:
+    //   - URL query param: ?event=activated  (used when Playbook posts directly — encode it in the URL)
+    //   - Body field: { "event": "activated" }  (used when Zapier posts)
+    const eventFromQuery = req.nextUrl.searchParams.get('event')
+    const event = eventFromQuery ?? body.event
+
+    // Email can come from body.email (both Playbook native and Zapier)
+    const email = body.email
 
     if (!email) {
       return NextResponse.json({ error: 'Missing email' }, { status: 400 })
