@@ -16,6 +16,12 @@ type NutritionEstimate = {
   confidence: 'low' | 'medium' | 'high'
 }
 
+/** Returns local date string YYYY-MM-DD — avoids UTC off-by-one for US users logging at night */
+function localDateString(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 export default function PhotoLogPage() {
   const { user } = useUser()
   const router = useRouter()
@@ -91,6 +97,7 @@ export default function PhotoLogPage() {
           fat_g: editedEstimate.fat_g,
           meal_slot: editedEstimate.meal_slot,
           notes: `[Photo log] ${editedEstimate.notes}`,
+          date: localDateString(),
         }),
       })
       if (!res.ok) throw new Error('Failed to save')
