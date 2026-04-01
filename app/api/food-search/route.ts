@@ -178,6 +178,8 @@ async function fetchUSDA(query: string, signal: AbortSignal): Promise<FoodResult
 
       if (!cal) continue // skip foods with no calorie data
 
+      // USDA nutrients are per 100g. Convert to per-serving using the labeled serving size.
+      const servingGrams = food.servingSize || 100
       foods.push({
         name: food.description
           ? food.description.charAt(0).toUpperCase() + food.description.slice(1).toLowerCase()
@@ -185,11 +187,11 @@ async function fetchUSDA(query: string, signal: AbortSignal): Promise<FoodResult
         serving: food.servingSize
           ? `${food.servingSize}${food.servingSizeUnit || 'g'}`
           : '100g',
-        calories: Math.round(cal),
-        protein_g: Math.round(protein),
-        carbs_g: Math.round(carbs),
-        fat_g: Math.round(fat),
-        fiber_g: Number(fiber.toFixed(1)),
+        calories: Math.round(cal * servingGrams / 100),
+        protein_g: Math.round(protein * servingGrams / 100 * 10) / 10,
+        carbs_g: Math.round(carbs * servingGrams / 100 * 10) / 10,
+        fat_g: Math.round(fat * servingGrams / 100 * 10) / 10,
+        fiber_g: Number((fiber * servingGrams / 100).toFixed(1)),
         cal_per_100g: Math.round(cal),
         protein_per_100g: Number(protein.toFixed(1)),
         carbs_per_100g: Number(carbs.toFixed(1)),
@@ -261,10 +263,12 @@ async function fetchSavedRecipes(email: string, query: string) {
         protein_g: r.protein_g,
         carbs_g: r.carbs_g,
         fat_g: r.fat_g,
+        fiber_g: 0,
         cal_per_100g: r.calories,
         protein_per_100g: r.protein_g,
         carbs_per_100g: r.carbs_g,
         fat_per_100g: r.fat_g,
+        fiber_per_100g: 0,
         is_recipe: true,
       }))
   } catch {

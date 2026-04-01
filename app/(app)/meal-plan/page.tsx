@@ -89,7 +89,8 @@ export default function MealPlanPage() {
   const [meals, setMeals] = useState<Meal[]>([])
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
-  const [selectedDay, setSelectedDay] = useState(0)
+  // Default to today (Mon=0 … Sun=6); getDay() is Sun=0 so we remap
+  const [selectedDay, setSelectedDay] = useState(() => (new Date().getDay() + 6) % 7)
   const [pageView, setPageView] = useState<'plan' | 'grocery'>('plan')
 
   // Profile + plan tier

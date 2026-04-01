@@ -32,6 +32,7 @@ type Ingredient = {
   food: SearchResult
   qty: number
   unit: string
+  isManual?: boolean
 }
 
 function calcIngredientMacros(food: SearchResult, qty: number, unit: string) {
@@ -180,19 +181,35 @@ export default function RecipePage() {
 
   function addManualIngredient() {
     if (!manualIngredient.name) return
+    const cal = Number(manualIngredient.calories) || 0
+    const protein = Number(manualIngredient.protein_g) || 0
+    const carbs = Number(manualIngredient.carbs_g) || 0
+    const fat = Number(manualIngredient.fat_g) || 0
     const fakeFood: SearchResult = {
       name: manualIngredient.name,
       serving: '1 serving',
-      calories: Number(manualIngredient.calories) || 0,
-      protein_g: Number(manualIngredient.protein_g) || 0,
-      carbs_g: Number(manualIngredient.carbs_g) || 0,
-      fat_g: Number(manualIngredient.fat_g) || 0,
-      cal_per_100g: Number(manualIngredient.calories) || 0,
-      protein_per_100g: Number(manualIngredient.protein_g) || 0,
-      carbs_per_100g: Number(manualIngredient.carbs_g) || 0,
-      fat_per_100g: Number(manualIngredient.fat_g) || 0,
+      calories: cal,
+      protein_g: protein,
+      carbs_g: carbs,
+      fat_g: fat,
+      // Per-100g fields are meaningless for manual entries (no weight info) —
+      // set to 0 so any weight-unit calculation returns 0 rather than wrong values
+      cal_per_100g: 0,
+      protein_per_100g: 0,
+      carbs_per_100g: 0,
+      fat_per_100g: 0,
     }
-    addIngredient(fakeFood)
+    // Mark as manual so the ingredient row locks unit to 'serving'
+    setIngredients(prev => [...prev, {
+      id: crypto.randomUUID(),
+      food: fakeFood,
+      qty: 1,
+      unit: 'serving',
+      isManual: true,
+    }])
+    setSearchQuery('')
+    setSearchResults([])
+    setShowSearch(false)
     setManualIngredient({ name: '', calories: '', protein_g: '', carbs_g: '', fat_g: '' })
     setManualMode(false)
   }
@@ -443,10 +460,17 @@ export default function RecipePage() {
                         onChange={e => updateIngredient(ing.id, 'qty', parseFloat(e.target.value) || 0)}
                         className="w-24 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
                       />
-                      <select value={ing.unit} onChange={e => updateIngredient(ing.id, 'unit', e.target.value)}
-                        className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
-                        {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                      </select>
+                      {ing.isManual ? (
+                        // Manual ingredients only know their per-serving macros — lock to 'serving'
+                        <div className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-gray-50 text-gray-500 flex items-center">
+                          serving
+                        </div>
+                      ) : (
+                        <select value={ing.unit} onChange={e => updateIngredient(ing.id, 'unit', e.target.value)}
+                          className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+                          {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                        </select>
+                      )}
                     </div>
                     <div className="flex gap-3 text-xs text-gray-500">
                       <span className="font-semibold text-gray-700">{m.calories} cal</span>

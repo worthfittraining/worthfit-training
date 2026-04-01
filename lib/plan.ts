@@ -50,7 +50,7 @@ export function planFromPriceId(priceId: string): Plan {
     process.env.NEXT_PUBLIC_STRIPE_ANNUAL_PRICE_ID,
   ]
   if (legacy.includes(priceId)) return 'premium' // treat old plans as premium
-  return 'standard'
+  return 'free'
 }
 
 /** Resolve a plan string from Airtable to a typed Plan */

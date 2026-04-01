@@ -138,7 +138,6 @@ export default function ChatPage() {
   const [mode, setMode] = useState('coach')
   const [logSaved, setLogSaved] = useState<string | null>(null)
   const [logDeleted, setLogDeleted] = useState<string | null>(null)
-  const [savedInSession, setSavedInSession] = useState<Set<string>>(new Set())
   const [plan, setPlan] = useState<Plan>('free')
   const [msgCount, setMsgCount] = useState(0)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -173,14 +172,6 @@ export default function ChatPage() {
   }, [messages])
 
 async function saveFoodLog(logData: Record<string, unknown>, email: string) {
-  const foodKey = `${logData.food_name}-${logData.meal_slot}`
-
-  // Skip if already saved this exact food in this chat session
-  if (savedInSession.has(foodKey)) {
-    console.log('Duplicate detected, skipping:', foodKey)
-    return
-  }
-
   try {
     // Use local date — avoids UTC off-by-one for US users after ~7 PM
     const today = localDateString()
@@ -190,7 +181,6 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
       body: JSON.stringify({ ...logData, email, date: today }),
     })
     if (res.ok) {
-      setSavedInSession(prev => new Set([...prev, foodKey]))
       setLogSaved((logData.food_name as string) || 'Food')
       setTimeout(() => setLogSaved(null), 4000)
     } else {
@@ -284,7 +274,8 @@ async function moveFoodLog(moveData: Record<string, unknown>, email: string) {
 
     const userMessage: Message = { role: 'user', content: input.trim() }
     const newMessages = [...messages, userMessage]
-    setMessages(newMessages)
+    // Add placeholder assistant message immediately so the user sees "..." right away
+    setMessages([...newMessages, { role: 'assistant', content: '' }])
     setInput('')
     setLoading(true)
 
@@ -322,7 +313,8 @@ async function moveFoodLog(moveData: Record<string, unknown>, email: string) {
       const { cleaned: step1, logData } = extractFoodLog(fullContent)
       const { cleaned: step2, deleteData } = extractDeleteFood(step1)
       const { cleaned, moveData } = extractMoveFood(step2)
-      setMessages(prev => [...prev, { role: 'assistant', content: cleaned || fullContent }])
+      // Replace the placeholder empty assistant message with the real response
+      setMessages(prev => [...prev.slice(0, -1), { role: 'assistant', content: cleaned || fullContent }])
 
       const email = user?.primaryEmailAddress?.emailAddress
       // Save food log if Nali logged something
@@ -342,7 +334,8 @@ async function moveFoodLog(moveData: Record<string, unknown>, email: string) {
     } catch (err) {
       console.error('Chat error:', err)
       const errMsg = err instanceof Error ? err.message : String(err)
-      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${errMsg}` }])
+      // Replace the placeholder with the error message
+      setMessages(prev => [...prev.slice(0, -1), { role: 'assistant', content: `Error: ${errMsg}` }])
     } finally {
       setLoading(false)
     }

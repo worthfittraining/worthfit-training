@@ -7,8 +7,9 @@ const getAnthropic = () => new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY
 
 async function getClientRecordId(email: string): Promise<string | null> {
   try {
+    const normalizedEmail = email.toLowerCase().trim()
     const records = await getBase()('Clients').select({
-      filterByFormula: `{Email} = '${email}'`,
+      filterByFormula: `LOWER({Email}) = '${normalizedEmail}'`,
       maxRecords: 1,
     }).firstPage()
     return records.length > 0 ? records[0].id : null
@@ -44,13 +45,11 @@ export async function GET(req: NextRequest) {
     if (!clientRecordId) return NextResponse.json({ meals: [] })
 
     const weekNumber = getWeekNumber()
-    const allRecords = await getBase()('Meal Plans').select().all()
+    const allRecords = await getBase()('Meal Plans').select({
+      filterByFormula: `AND(FIND('${clientRecordId}',ARRAYJOIN(client_id,',')),{week_number}=${weekNumber})`,
+    }).all()
 
     const meals = allRecords
-      .filter(r => {
-        const clientIds = (r.fields.client_id as string[]) || []
-        return clientIds.includes(clientRecordId) && Number(r.fields.week_number) === weekNumber
-      })
       .map(r => ({
         id: r.id,
         recipe_name: r.fields.recipe_name,
@@ -191,12 +190,11 @@ Return ONLY the JSON array, nothing else.`
 
     console.log('Generated', mealPlan.length, 'meals, saving to Airtable...')
 
-    // Delete existing plan for this week
-    const existingRecords = await getBase()('Meal Plans').select().all()
-    const toDelete = existingRecords.filter(r => {
-      const clientIds = (r.fields.client_id as string[]) || []
-      return clientIds.includes(clientRecordId) && Number(r.fields.week_number) === weekNumber
-    })
+    // Delete existing plan for this week — filter in Airtable to avoid fetching all records
+    const existingRecords = await getBase()('Meal Plans').select({
+      filterByFormula: `AND(FIND('${clientRecordId}',ARRAYJOIN(client_id,',')),{week_number}=${weekNumber})`,
+    }).all()
+    const toDelete = existingRecords
     for (const record of toDelete) {
       await getBase()('Meal Plans').destroy(record.id)
     }

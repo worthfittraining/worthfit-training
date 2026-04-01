@@ -103,7 +103,13 @@ export async function GET(req: NextRequest) {
       targetDates = [anchorDate]
     }
 
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?maxRecords=200&sort[0][field]=Date&sort[0][direction]=desc`
+    // Build a filter formula so Airtable does the filtering — avoids 200-record cap issue
+    // FIND() checks if clientId appears in the linked record ID list (serialized as string)
+    const dateConditions = targetDates.map(d => `{Date}='${d}'`).join(',')
+    const filterFormula = encodeURIComponent(
+      `AND(FIND('${clientId}',ARRAYJOIN(client_id,',')),OR(${dateConditions}))`
+    )
+    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?filterByFormula=${filterFormula}&sort[0][field]=Date&sort[0][direction]=desc`
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
     })
@@ -115,6 +121,7 @@ export async function GET(req: NextRequest) {
     const data = await res.json()
     const allRecords = data.records || []
 
+    // Filter client-side as a safety net (the Airtable formula already handles this)
     const filtered = allRecords.filter((r: any) => {
       const fields = r.fields
       const recordDate = fields.Date || fields.date || ''
@@ -210,8 +217,14 @@ export async function DELETE(req: NextRequest) {
     const clientId = await getClientRecordId(email)
     if (!clientId) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
 
-    // Fetch recent logs and fuzzy-match the food name
-    const listUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?maxRecords=100&sort[0][field]=Date&sort[0][direction]=desc`
+    // Target date is today if not provided
+    const targetDate = date || new Date().toISOString().split('T')[0]
+
+    // Fetch logs filtered by client and date so we don't scan everyone's records
+    const deleteFilterFormula = encodeURIComponent(
+      `AND(FIND('${clientId}',ARRAYJOIN(client_id,',')),{Date}='${targetDate}')`
+    )
+    const listUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?filterByFormula=${deleteFilterFormula}&sort[0][field]=Date&sort[0][direction]=desc`
     const listRes = await fetch(listUrl, {
       headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
     })
@@ -220,8 +233,6 @@ export async function DELETE(req: NextRequest) {
     const listData = await listRes.json()
     const records = listData.records || []
 
-    // Target date is today if not provided
-    const targetDate = date || new Date().toISOString().split('T')[0]
     const searchName = food_name.toLowerCase()
 
     // Score-based name matching — returns 0 (no match) to 4 (exact)

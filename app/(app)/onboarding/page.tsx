@@ -356,7 +356,7 @@ export default function OnboardingPage() {
               }
               className="px-6 py-3 bg-green-600 text-white rounded-full font-semibold hover:bg-green-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {step === 3 && !form.food_preferences && !form.food_dislikes ? 'Skip →' : 'Next →'}
+              {step === 3 && chipFoods.length === 0 && !extraPreferences && !form.food_dislikes ? 'Skip →' : 'Next →'}
             </button>
           ) : (
             <div className="flex flex-col items-center gap-3">
