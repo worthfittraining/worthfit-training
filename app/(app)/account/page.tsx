@@ -189,6 +189,8 @@ export default function AccountPage() {
           DOB: dob,
         }),
       })
+      // Keep profile state in sync
+      setProfile(prev => ({ ...prev, Name: `${firstName.trim()} ${lastName.trim()}`.trim(), DOB: dob }))
       setProfileMsg('Saved!')
       setTimeout(() => setProfileMsg(''), 2500)
     } catch (err) {
@@ -208,6 +210,8 @@ export default function AccountPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, Preferences: preferences, Dislikes: dislikes }),
       })
+      // Keep profile state in sync so Nali's next chat uses fresh preferences
+      setProfile(prev => ({ ...prev, Preferences: preferences, Dislikes: dislikes }))
       setPrefMsg('Saved!')
       setTimeout(() => setPrefMsg(''), 2500)
     } catch {

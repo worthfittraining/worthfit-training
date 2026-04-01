@@ -26,9 +26,13 @@ async function getClientProfile(email: string) {
 }
 
 function getWeekNumber(): number {
+  // Returns a unique week identifier that includes the year, preventing year-boundary collisions.
+  // E.g. week 1 of 2025 (202501) is distinct from week 1 of 2026 (202601).
   const now = new Date()
-  const startOfYear = new Date(now.getFullYear(), 0, 1)
-  return Math.ceil((now.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000))
+  const year = now.getFullYear()
+  const startOfYear = new Date(year, 0, 1)
+  const week = Math.ceil((now.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000))
+  return year * 100 + week  // e.g. 202614 = year 2026, week 14
 }
 
 export async function GET(req: NextRequest) {
@@ -171,8 +175,15 @@ Return ONLY the JSON array, nothing else.`
     if (content.type !== 'text') throw new Error('Unexpected response type')
 
     let jsonText = content.text.trim()
+    // Strip any markdown code fence regardless of language tag (```json, ```javascript, ``` etc.)
     if (jsonText.includes('```')) {
-      jsonText = jsonText.replace(/```json?\n?/g, '').replace(/```/g, '').trim()
+      jsonText = jsonText.replace(/```[a-zA-Z]*\n?/g, '').replace(/```/g, '').trim()
+    }
+    // Also strip any leading/trailing non-JSON text before the array
+    const arrayStart = jsonText.indexOf('[')
+    const arrayEnd = jsonText.lastIndexOf(']')
+    if (arrayStart !== -1 && arrayEnd !== -1 && arrayStart < arrayEnd) {
+      jsonText = jsonText.slice(arrayStart, arrayEnd + 1)
     }
 
     const mealPlan = JSON.parse(jsonText)

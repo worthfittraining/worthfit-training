@@ -33,18 +33,22 @@ export default function RecipesPage() {
   const [mealSlot, setMealSlot] = useState<Record<string, string>>({})
   const [logging, setLogging] = useState<string | null>(null)
   const [logSuccess, setLogSuccess] = useState<string | null>(null)
+  const [logError, setLogError] = useState<string | null>(null)
+  const [fetchError, setFetchError] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
   const fetchRecipes = useCallback(async () => {
     if (!email) return
     setLoading(true)
+    setFetchError(false)
     try {
       const res = await fetch(`/api/recipes?email=${encodeURIComponent(email)}`)
+      if (!res.ok) { setFetchError(true); return }
       const data = await res.json()
       setRecipes(data.recipes || [])
     } catch {
-      setRecipes([])
+      setFetchError(true)
     } finally {
       setLoading(false)
     }
@@ -83,6 +87,7 @@ export default function RecipesPage() {
       : `${recipe.name} (${servings} servings)`
 
     setLogging(recipe.name)
+    setLogError(null)
     try {
       const res = await fetch('/api/log', {
         method: 'POST',
@@ -103,7 +108,13 @@ export default function RecipesPage() {
         setLogSuccess(recipe.name)
         setTimeout(() => setLogSuccess(null), 2500)
         setExpanded(null)
+      } else {
+        setLogError('Failed to save — please try again.')
+        setTimeout(() => setLogError(null), 4000)
       }
+    } catch {
+      setLogError('Network error — check your connection and try again.')
+      setTimeout(() => setLogError(null), 4000)
     } finally {
       setLogging(null)
     }
@@ -158,6 +169,20 @@ export default function RecipesPage() {
         {logSuccess && (
           <div className="mb-4 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700 font-medium text-center">
             ✅ {logSuccess} logged!
+          </div>
+        )}
+        {/* Log error banner */}
+        {logError && (
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 font-medium text-center">
+            ⚠️ {logError}
+          </div>
+        )}
+
+        {/* Fetch error */}
+        {fetchError && (
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-xl px-4 py-4 text-sm text-red-700 text-center">
+            <p className="font-semibold mb-1">Couldn't load recipes</p>
+            <button onClick={fetchRecipes} className="underline text-red-600 hover:text-red-800">Tap to retry</button>
           </div>
         )}
 

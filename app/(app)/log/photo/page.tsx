@@ -75,7 +75,17 @@ export default function PhotoLogPage() {
       setEstimate(data)
       setEditedEstimate(data)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong')
+      const msg = e instanceof Error ? e.message : 'Something went wrong'
+      // Translate generic errors into helpful, actionable messages
+      if (msg.toLowerCase().includes('network') || msg.toLowerCase().includes('fetch')) {
+        setError('Network error — check your connection and try again.')
+      } else if (msg.toLowerCase().includes('too large') || msg.toLowerCase().includes('size')) {
+        setError('Photo is too large. Try taking a lower-resolution photo.')
+      } else if (msg.toLowerCase().includes('unsupported') || msg.toLowerCase().includes('format')) {
+        setError('Photo format not supported. Try a JPEG or PNG.')
+      } else {
+        setError("Couldn't analyze this photo. Make sure it clearly shows the food and try again.")
+      }
     } finally {
       setAnalyzing(false)
     }
@@ -100,10 +110,14 @@ export default function PhotoLogPage() {
           date: localDateString(),
         }),
       })
-      if (!res.ok) throw new Error('Failed to save')
+      if (!res.ok) throw new Error('save_failed')
       router.push('/log')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save')
+      const msg = e instanceof Error ? e.message : ''
+      setError(msg === 'save_failed'
+        ? "Couldn't save to your log — please try again or log it manually from the Log tab."
+        : "Something went wrong saving. Please try again."
+      )
       setSaving(false)
     }
   }

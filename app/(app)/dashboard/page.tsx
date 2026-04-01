@@ -64,7 +64,7 @@ export default function DashboardPage() {
 
       try {
         const [logRes, profileRes] = await Promise.all([
-          fetch(`/api/log?email=${encodeURIComponent(email)}`),
+          fetch(`/api/log?email=${encodeURIComponent(email)}&date=${localDateString()}`),
           fetch(`/api/profile?email=${encodeURIComponent(email)}`),
         ])
 
@@ -118,6 +118,9 @@ export default function DashboardPage() {
       }
     }
     fetchData()
+    // Poll every 30 seconds so food logged via Nali chat appears without a refresh
+    const interval = setInterval(fetchData, 30000)
+    return () => clearInterval(interval)
   }, [user, todayName])
 
   const firstName = user?.firstName || 'there'

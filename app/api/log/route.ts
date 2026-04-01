@@ -224,20 +224,37 @@ export async function DELETE(req: NextRequest) {
     const targetDate = date || new Date().toISOString().split('T')[0]
     const searchName = food_name.toLowerCase()
 
-    // Find the best matching record (today's date, same client, closest name match)
-    const match = records.find((r: { id: string; fields: Record<string, unknown> }) => {
+    // Score-based name matching — returns 0 (no match) to 4 (exact)
+    function nameScore(recordName: string, searchName: string): number {
+      const rn = recordName.toLowerCase().trim()
+      const sn = searchName.toLowerCase().trim()
+      if (rn === sn) return 4                                     // exact
+      if (sn.includes(rn)) return 3                              // search is more specific than stored
+      if (sn.split(' ').length > 1 && rn.includes(sn)) return 2  // multi-word phrase contained in record
+      // Word overlap: require 2+ significant words to match exactly
+      const sWords = sn.split(' ').filter((w: string) => w.length > 3)
+      if (sWords.length < 2) return 0                            // single-word terms must be exact/contained
+      const rWords = rn.split(' ')
+      const hits = sWords.filter((sw: string) => rWords.some((rw: string) => rw === sw))
+      return hits.length >= Math.ceil(sWords.length * 0.6) ? 1 : 0
+    }
+
+    // Find the best-scoring candidate that passes date/client/slot filters
+    let bestMatch: typeof records[0] | null = null
+    let bestScore = 0
+    for (const r of records) {
       const fields = r.fields
       const clientIds: string[] = Array.isArray(fields.client_id) ? fields.client_id as string[] : []
       const recordDate = (fields.Date || fields.date || '') as string
       const recordName = ((fields.food_name || '') as string).toLowerCase()
       const recordSlot = (fields.meal_slot || '') as string
-      const dateMatch = recordDate === targetDate
-      const clientMatch = clientIds.includes(clientId)
-      const nameMatch = recordName.includes(searchName) || searchName.includes(recordName) ||
-        recordName.split(' ').some((w: string) => searchName.includes(w) && w.length > 3)
-      const slotMatch = !meal_slot || recordSlot === meal_slot
-      return dateMatch && clientMatch && nameMatch && slotMatch
-    })
+      if (recordDate !== targetDate) continue
+      if (!clientIds.includes(clientId)) continue
+      if (meal_slot && recordSlot !== meal_slot) continue
+      const score = nameScore(recordName, searchName)
+      if (score > bestScore) { bestScore = score; bestMatch = r }
+    }
+    const match = bestScore > 0 ? bestMatch : null
 
     if (!match) {
       return NextResponse.json({ error: 'No matching food log found', ok: false })

@@ -239,6 +239,8 @@ export default function OnboardingPage() {
                   <input
                     type="number"
                     placeholder="e.g. 65"
+                    min="36"
+                    max="96"
                     value={form.height_in}
                     onChange={e => setForm(f => ({ ...f, height_in: e.target.value }))}
                     className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none placeholder:text-gray-600"
@@ -249,6 +251,8 @@ export default function OnboardingPage() {
                   <input
                     type="number"
                     placeholder="e.g. 150"
+                    min="50"
+                    max="600"
                     value={form.weight_lbs}
                     onChange={e => setForm(f => ({ ...f, weight_lbs: e.target.value }))}
                     className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none placeholder:text-gray-600"
@@ -261,6 +265,8 @@ export default function OnboardingPage() {
                   <input
                     type="number"
                     placeholder="e.g. 30"
+                    min="13"
+                    max="100"
                     value={form.age}
                     onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
                     className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none placeholder:text-gray-600"

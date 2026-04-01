@@ -124,6 +124,10 @@ export async function POST(req: NextRequest) {
     if (!barcode || !name || !calories_per_100g) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
+    // Reject zero or negative serving size — would corrupt per-100g conversion
+    if (serving_size_g !== undefined && serving_size_g !== null && Number(serving_size_g) <= 0) {
+      return NextResponse.json({ error: 'serving_size_g must be greater than 0' }, { status: 400 })
+    }
 
     // Check if barcode already exists in community table
     const existing = await lookupCommunity(barcode)

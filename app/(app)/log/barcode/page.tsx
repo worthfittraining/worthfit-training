@@ -79,7 +79,12 @@ export default function BarcodePage() {
 
   async function submitContribution() {
     if (!contrib.name || !contrib.calories || !contrib.serving_size) return
+    if (Number(contrib.serving_size) <= 0) {
+      setError('Serving size must be greater than 0 grams')
+      return
+    }
     setContributing(true)
+    setError(null)
     // Convert per-serving → per-100g for storage
     const servingG = Number(contrib.serving_size)
     const factor = servingG > 0 ? 100 / servingG : 1
@@ -315,7 +320,7 @@ export default function BarcodePage() {
                   value={contrib.serving_size}
                   onChange={e => setContrib(p => ({ ...p, serving_size: e.target.value }))}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-                  min={0}
+                  min={1}
                 />
               </div>
 
@@ -382,7 +387,7 @@ export default function BarcodePage() {
               </button>
               <button
                 onClick={submitContribution}
-                disabled={contributing || !contrib.name || !contrib.calories || !contrib.serving_size}
+                disabled={contributing || !contrib.name || !contrib.calories || !contrib.serving_size || Number(contrib.serving_size) <= 0 || Number(contrib.calories) <= 0}
                 className="flex-grow bg-green-500 text-white py-3 px-5 rounded-xl font-semibold text-sm disabled:opacity-50"
               >
                 {contributing ? 'Saving...' : '✅ Add & Log It'}

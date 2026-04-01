@@ -225,9 +225,19 @@ async function deleteFoodLog(deleteData: Record<string, unknown>, email: string)
     if (res.ok && data.ok) {
       setLogDeleted((data.deleted as string) || (deleteData.food_name as string) || 'Food')
       setTimeout(() => setLogDeleted(null), 4000)
+    } else {
+      // Food not found — let the user know so they can remove it manually if needed
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `⚠️ I tried to remove "${deleteData.food_name}" but couldn't find it in today's log. It may have already been removed — check your log to confirm.`
+      }])
     }
   } catch (err) {
     console.error('Failed to delete food log:', err)
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: `⚠️ Something went wrong trying to remove "${deleteData.food_name}" — please delete it manually from your Log tab.`
+    }])
   }
 }
 
@@ -251,9 +261,18 @@ async function moveFoodLog(moveData: Record<string, unknown>, email: string) {
     if (res.ok) {
       setLogSaved(`${food_name as string} → ${to_slot as string}`)
       setTimeout(() => setLogSaved(null), 4000)
+    } else {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `⚠️ I tried to move "${food_name}" to ${to_slot} but something went wrong. Please move it manually in your Log tab.`
+      }])
     }
   } catch (err) {
     console.error('Failed to move food log:', err)
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: `⚠️ I wasn't able to move "${food_name}" — please adjust it manually in your Log tab.`
+    }])
   }
 }
 
