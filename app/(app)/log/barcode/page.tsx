@@ -124,23 +124,60 @@ export default function BarcodePage() {
     async function startScanner() {
       if (!videoRef.current) return
       try {
+        // Get the back camera stream directly
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        })
+        if (!active) { stream.getTracks().forEach(t => t.stop()); return }
+
+        // Attach stream to video element
+        const video = videoRef.current
+        video.setAttribute('playsinline', 'true')
+        video.setAttribute('muted', 'true')
+        video.srcObject = stream
+        await video.play()
+
+        // ── Strategy 1: Native BarcodeDetector (Chrome Android, fast + reliable) ──
+        if ('BarcodeDetector' in window) {
+          // @ts-ignore
+          const detector = new window.BarcodeDetector()
+          let rafId: number
+
+          async function scan() {
+            if (!active) return
+            try {
+              // @ts-ignore
+              const barcodes = await detector.detect(video)
+              if (barcodes.length > 0 && active) {
+                active = false
+                stream.getTracks().forEach(t => t.stop())
+                lookupBarcode(barcodes[0].rawValue)
+                return
+              }
+            } catch { /* no barcode this frame, keep going */ }
+            rafId = requestAnimationFrame(scan)
+          }
+
+          rafId = requestAnimationFrame(scan)
+          controlsRef.current = { stop: () => { cancelAnimationFrame(rafId); stream.getTracks().forEach(t => t.stop()) } }
+          return
+        }
+
+        // ── Strategy 2: ZXing fallback (iOS Safari and other browsers) ──
         // @ts-ignore
         const { BrowserMultiFormatReader } = await import('@zxing/browser')
         const reader = new BrowserMultiFormatReader()
-
-        // Use facingMode: 'environment' to reliably get the back camera on mobile.
-        // Listing devices and picking the last one is unreliable on Android Chrome.
-        const controls = await reader.decodeFromConstraints(
-          { video: { facingMode: 'environment' } },
-          videoRef.current,
+        const controls = await reader.decodeFromStream(
+          stream,
+          video,
           (result: any, _err: any, ctrl: any) => {
             if (!active || !result) return
+            active = false
             ctrl.stop()
             controlsRef.current = null
             lookupBarcode(result.getText())
           }
         )
-
         if (active) {
           controlsRef.current = controls
         } else {
