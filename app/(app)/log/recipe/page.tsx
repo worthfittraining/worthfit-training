@@ -3,6 +3,13 @@
 import { useUser } from '@clerk/nextjs'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import PlanGate from '@/app/components/PlanGate'
+
+/** Returns local date string YYYY-MM-DD — avoids UTC off-by-one for US users logging at night */
+function localDateString(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 
 const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack']
 const UNITS = ['g', 'oz', 'lbs', 'ml', 'cup', 'tbsp', 'tsp', 'serving']
@@ -269,6 +276,7 @@ export default function RecipePage() {
           fat_g: loggedMacros.fat_g,
           meal_slot: mealSlot,
           notes: `Recipe: ${ingredients.length} ingredients, ${totalServings} servings total`,
+          date: localDateString(),
         }),
       })
       if (res.ok) router.push('/log')
@@ -283,6 +291,7 @@ export default function RecipePage() {
   const canSave = !!recipeName && ingredients.length > 0
 
   return (
+    <PlanGate feature="recipe">
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-lg mx-auto px-4 py-6">
 
@@ -521,5 +530,6 @@ export default function RecipePage() {
         </button>
       </div>
     </div>
+    </PlanGate>
   )
 }

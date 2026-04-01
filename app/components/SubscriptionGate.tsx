@@ -161,7 +161,7 @@ export default function SubscriptionGate({ children }: { children: React.ReactNo
             <p className="text-xs text-gray-400">
               Questions? Email{' '}
               <a href="mailto:worthfittraining@gmail.com" className="underline">
-                worthfittraining@gmail.com
+                Nali Nutrition support
               </a>
             </p>
           </div>

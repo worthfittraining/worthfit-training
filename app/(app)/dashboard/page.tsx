@@ -23,7 +23,12 @@ type FoodLog = {
   meal_slot: string
 }
 
-const WATER_STORAGE_KEY = () => `water_${new Date().toISOString().split('T')[0]}`
+/** Local date string for water tracker key — avoids UTC off-by-one at night */
+function localDateString(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+const WATER_STORAGE_KEY = () => `water_${localDateString()}`
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 

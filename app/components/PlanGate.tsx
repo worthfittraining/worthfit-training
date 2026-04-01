@@ -5,13 +5,14 @@ import { useEffect, useState } from 'react'
 import { resolvePlan } from '@/lib/plan'
 import type { Plan } from '@/lib/plan'
 
-type FeatureKey = 'barcode' | 'photoLog' | 'mealPlan' | 'groceryList' | 'checkIns'
+type FeatureKey = 'barcode' | 'photoLog' | 'mealPlan' | 'groceryList' | 'checkIns' | 'recipe'
 
 const PLAN_ORDER: Plan[] = ['free', 'standard', 'premium']
 const REQUIRED_PLAN: Record<FeatureKey, Plan> = {
   barcode: 'standard',
   photoLog: 'standard',
   mealPlan: 'standard',
+  recipe: 'standard',
   groceryList: 'premium',
   checkIns: 'premium',
 }
@@ -20,6 +21,7 @@ const FEATURE_LABELS: Record<FeatureKey, string> = {
   barcode: 'Barcode Scanner',
   photoLog: 'Photo Food Logging',
   mealPlan: 'AI Meal Plans',
+  recipe: 'Recipe Builder',
   groceryList: 'Grocery List',
   checkIns: 'AI Check-ins',
 }

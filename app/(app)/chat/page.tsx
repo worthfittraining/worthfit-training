@@ -196,6 +196,12 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
     }
   } catch (err) {
     console.error('Failed to save food log:', err)
+    setLogSaved(null)
+    // Show a brief error hint in the chat so the user knows to retry
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: "⚠️ I wasn't able to save that to your log — please try tapping the save button again or log it manually."
+    }])
   }
 }
 

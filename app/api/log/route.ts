@@ -101,7 +101,10 @@ export async function GET(req: NextRequest) {
       targetDates = [anchorDate]
     }
 
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?maxRecords=200&sort[0][field]=Date&sort[0][direction]=desc`
+    // Filter by client_id in Airtable directly (avoids JS-side filtering over 200-record cap)
+    const dateFilter = targetDates.map(d => `{Date}="${d}"`).join(',')
+    const formula = encodeURIComponent(`AND(FIND("${clientId}",ARRAYJOIN(client_id,",")),OR(${dateFilter}))`)
+    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?filterByFormula=${formula}&maxRecords=200&sort[0][field]=Date&sort[0][direction]=desc`
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
     })
@@ -113,6 +116,7 @@ export async function GET(req: NextRequest) {
     const data = await res.json()
     const allRecords = data.records || []
 
+    // Secondary JS filter as safety net (Airtable formula handles the heavy lifting)
     const filtered = allRecords.filter((r: any) => {
       const fields = r.fields
       const recordDate = fields.Date || fields.date || ''

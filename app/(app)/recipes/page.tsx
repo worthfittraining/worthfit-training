@@ -2,6 +2,7 @@
 
 import { useUser } from '@clerk/nextjs'
 import { useState, useEffect, useCallback } from 'react'
+import PlanGate from '@/app/components/PlanGate'
 
 type SavedRecipe = {
   name: string
@@ -132,6 +133,7 @@ export default function RecipesPage() {
   }
 
   return (
+    <PlanGate feature="recipe">
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-lg mx-auto px-4 py-6">
 
@@ -300,5 +302,6 @@ export default function RecipesPage() {
         )}
       </div>
     </div>
+    </PlanGate>
   )
 }

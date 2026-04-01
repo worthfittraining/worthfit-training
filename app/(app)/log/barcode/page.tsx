@@ -19,6 +19,12 @@ type FoodData = {
 
 type Phase = 'scanning' | 'loading' | 'result' | 'notfound' | 'contributing' | 'submitted'
 
+/** Returns local date string YYYY-MM-DD — avoids UTC off-by-one for US users logging at night */
+function localDateString(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 const UNITS = ['g', 'oz', 'cup', 'tbsp', 'tsp', 'serving']
 
 function calcMacros(food: FoodData, qty: number, unit: string) {
@@ -213,6 +219,7 @@ export default function BarcodePage() {
           ...macros,
           meal_slot: mealSlot,
           notes: `${qty} ${unit}${food.brand ? ` · ${food.brand}` : ''}`,
+          date: localDateString(),
         }),
       })
       if (!res.ok) throw new Error('Failed to save')
