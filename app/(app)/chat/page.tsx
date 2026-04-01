@@ -193,14 +193,20 @@ async function saveFoodLog(logData: Record<string, unknown>, email: string) {
       setSavedInSession(prev => new Set([...prev, foodKey]))
       setLogSaved((logData.food_name as string) || 'Food')
       setTimeout(() => setLogSaved(null), 4000)
+    } else {
+      // API returned an error (4xx/5xx) — tell the user so they know to log manually
+      const errData = await res.json().catch(() => ({}))
+      console.error('saveFoodLog API error:', res.status, errData)
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `⚠️ I said I logged that but it didn't save (error ${res.status}). Please log it manually using the Log tab — I'm sorry about that!`
+      }])
     }
   } catch (err) {
     console.error('Failed to save food log:', err)
-    setLogSaved(null)
-    // Show a brief error hint in the chat so the user knows to retry
     setMessages(prev => [...prev, {
       role: 'assistant',
-      content: "⚠️ I wasn't able to save that to your log — please try tapping the save button again or log it manually."
+      content: "⚠️ I wasn't able to save that to your log — please log it manually using the Log tab."
     }])
   }
 }
