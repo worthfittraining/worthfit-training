@@ -151,8 +151,42 @@ export default function MacrosPage() {
     setSaving(false)
   }
 
+  function calcCalories(protein: string, carbs: string, fat: string): string {
+    const p = Number(protein) || 0
+    const c = Number(carbs) || 0
+    const f = Number(fat) || 0
+    if (!p && !c && !f) return ''
+    return String(Math.round(p * 4 + c * 4 + f * 9))
+  }
+
   function updateDay(day: string, field: keyof DayMacros, value: string) {
-    setWeekly(prev => ({ ...prev, [day]: { ...prev[day], [field]: value } }))
+    setWeekly(prev => {
+      const updated = { ...prev[day], [field]: value }
+      // Auto-recalculate calories whenever protein, carbs, or fat changes
+      if (field !== 'calories') {
+        updated.calories = calcCalories(
+          field === 'protein_g' ? value : updated.protein_g,
+          field === 'carbs_g' ? value : updated.carbs_g,
+          field === 'fat_g' ? value : updated.fat_g,
+        )
+      }
+      return { ...prev, [day]: updated }
+    })
+  }
+
+  function updateDefault(field: keyof DayMacros, value: string) {
+    setDefaultMacros(prev => {
+      const updated = { ...prev, [field]: value }
+      // Auto-recalculate calories whenever protein, carbs, or fat changes
+      if (field !== 'calories') {
+        updated.calories = calcCalories(
+          field === 'protein_g' ? value : updated.protein_g,
+          field === 'carbs_g' ? value : updated.carbs_g,
+          field === 'fat_g' ? value : updated.fat_g,
+        )
+      }
+      return updated
+    })
   }
 
   function copyDefaultToAll() {
@@ -374,7 +408,7 @@ export default function MacrosPage() {
                   type="number"
                   min="0"
                   value={defaultMacros[key as keyof DayMacros]}
-                  onChange={e => setDefaultMacros(prev => ({ ...prev, [key]: e.target.value }))}
+                  onChange={e => updateDefault(key as keyof DayMacros, e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
                 />
               </div>
