@@ -218,7 +218,7 @@ export default function DashboardPage() {
         )}
 
         {/* Calorie Ring Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div className={`bg-white rounded-2xl shadow-sm border p-5 transition-colors duration-500 ${calHit ? 'border-green-300 bg-green-50' : 'border-gray-100'}`}>
           <div className="flex items-center gap-6">
             {/* Donut */}
             <div className="relative flex-shrink-0">
@@ -295,7 +295,10 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 gap-4">
           {/* Fiber Ring */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col items-center">
-            <h2 className="text-xs font-semibold text-gray-400 tracking-wide mb-3 self-start">FIBER</h2>
+            <div className="flex items-center gap-1.5 self-start mb-3">
+              <h2 className="text-xs font-semibold text-gray-400 tracking-wide">FIBER</h2>
+              {fiberHit && <span className="inline-flex items-center justify-center w-4 h-4 bg-green-500 rounded-full text-white text-xs leading-none">✓</span>}
+            </div>
             {(() => {
               const fiberPct = Math.min((totals.fiber / targets.fiber) * 100, 100)
               const r = 36, circ = 2 * Math.PI * r
@@ -331,7 +334,10 @@ export default function DashboardPage() {
 
           {/* Water Tracker */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col items-center">
-            <h2 className="text-xs font-semibold text-gray-400 tracking-wide mb-3 self-start">WATER</h2>
+            <div className="flex items-center gap-1.5 self-start mb-3">
+              <h2 className="text-xs font-semibold text-gray-400 tracking-wide">WATER</h2>
+              {waterHit && <span className="inline-flex items-center justify-center w-4 h-4 bg-green-500 rounded-full text-white text-xs leading-none">✓</span>}
+            </div>
             {(() => {
               const waterPct = Math.min((waterOz / waterGoal) * 100, 100)
               const r = 36, circ = 2 * Math.PI * r
