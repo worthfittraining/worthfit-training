@@ -22,12 +22,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SubscriptionGate>
     <div className="flex flex-col min-h-screen">
-      <main className={hideNav ? 'flex-1' : 'flex-1 pb-20'}>
+      <main className={hideNav ? 'flex-1' : 'flex-1 pb-24'}>
         {children}
       </main>
 
       {!hideNav && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 pb-safe">
           <div className="max-w-2xl mx-auto flex">
             {NAV_ITEMS.map(item => {
               const isActive = pathname === item.href ||
@@ -36,11 +36,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors ${
+                  className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors ${
                     isActive ? 'text-green-600' : 'text-gray-400 hover:text-gray-600'
                   }`}
                 >
-                  <span className="text-lg leading-none">{item.icon}</span>
+                  <span className="text-xl leading-none">{item.icon}</span>
                   <span className={`text-xs font-medium ${isActive ? 'text-green-600' : 'text-gray-400'}`}>
                     {item.label}
                   </span>

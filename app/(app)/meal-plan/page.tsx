@@ -506,12 +506,12 @@ export default function MealPlanPage() {
       {/* ── QUESTIONNAIRE MODAL ── */}
       {showQuestionnaire && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4" onClick={() => setShowQuestionnaire(false)}>
-          <div className="bg-white rounded-3xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="px-5 pt-5 pb-2 border-b border-gray-100">
+          <div className="bg-white rounded-3xl w-full max-w-md flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+            <div className="px-5 pt-5 pb-2 border-b border-gray-100 shrink-0">
               <h2 className="text-lg font-bold text-gray-900">Plan your week 📋</h2>
               <p className="text-sm text-gray-500 mt-0.5">Tell Nali how you want to eat this week</p>
             </div>
-            <div className="p-5 space-y-5">
+            <div className="p-5 space-y-5 overflow-y-auto flex-1">
               {/* Unique meals selectors */}
               {([
                 { label: 'Breakfasts', key: 'uniqueBreakfasts' as const },
@@ -566,15 +566,15 @@ export default function MealPlanPage() {
                 />
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-2 pt-1">
-                <button onClick={() => setShowQuestionnaire(false)} className="flex-1 py-3 border border-gray-200 text-gray-600 font-medium rounded-xl hover:bg-gray-50 transition-colors text-sm">
-                  Cancel
-                </button>
-                <button onClick={generateMealPlan} className="flex-2 flex-grow py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-colors text-sm">
-                  ✨ Generate Plan →
-                </button>
-              </div>
+            </div>
+            {/* Actions — outside scrollable area so always visible */}
+            <div className="flex gap-2 shrink-0 border-t border-gray-100 px-5 py-4">
+              <button onClick={() => setShowQuestionnaire(false)} className="flex-1 py-3 border border-gray-200 text-gray-600 font-medium rounded-xl hover:bg-gray-50 transition-colors text-sm">
+                Cancel
+              </button>
+              <button onClick={generateMealPlan} className="flex-2 flex-grow py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-colors text-sm">
+                ✨ Generate Plan →
+              </button>
             </div>
           </div>
         </div>
