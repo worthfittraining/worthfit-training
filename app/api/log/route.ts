@@ -103,12 +103,11 @@ export async function GET(req: NextRequest) {
       targetDates = [anchorDate]
     }
 
-    // Build a filter formula so Airtable does the filtering — avoids 200-record cap issue
-    // FIND() checks if clientId appears in the linked record ID list (serialized as string)
+    // Filter by date in Airtable (Date is a plain text field so this works reliably).
+    // Client_id is a linked record field — Airtable formulas can't match by record ID,
+    // so we filter by client in JavaScript below after fetching the date-filtered set.
     const dateConditions = targetDates.map(d => `{Date}='${d}'`).join(',')
-    const filterFormula = encodeURIComponent(
-      `AND(FIND('${clientId}',ARRAYJOIN(client_id,',')),OR(${dateConditions}))`
-    )
+    const filterFormula = encodeURIComponent(`OR(${dateConditions})`)
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?filterByFormula=${filterFormula}&sort[0][field]=Date&sort[0][direction]=desc`
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
@@ -220,10 +219,9 @@ export async function DELETE(req: NextRequest) {
     // Target date is today if not provided
     const targetDate = date || new Date().toISOString().split('T')[0]
 
-    // Fetch logs filtered by client and date so we don't scan everyone's records
-    const deleteFilterFormula = encodeURIComponent(
-      `AND(FIND('${clientId}',ARRAYJOIN(client_id,',')),{Date}='${targetDate}')`
-    )
+    // Filter by date only — client_id is a linked record field and can't be matched
+    // by record ID in Airtable formulas, so JavaScript handles client filtering below
+    const deleteFilterFormula = encodeURIComponent(`{Date}='${targetDate}'`)
     const listUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?filterByFormula=${deleteFilterFormula}&sort[0][field]=Date&sort[0][direction]=desc`
     const listRes = await fetch(listUrl, {
       headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
