@@ -68,6 +68,7 @@ export default function DashboardPage() {
           fetch(`/api/profile?email=${encodeURIComponent(email)}`),
         ])
 
+
         const logData = await logRes.json()
         const fetchedLogs: FoodLog[] = Array.isArray(logData) ? logData : (logData.logs || [])
         setLogs(fetchedLogs)
@@ -82,6 +83,8 @@ export default function DashboardPage() {
 
         if (profileRes.ok) {
           const profile = await profileRes.json()
+          // Profile fiber target — used as fallback when per-day macros don't have fiber set
+          const profileFiber = Number(profile.Fiber_g) || 28
           // Try to load today's day-specific macros first
           let usedDayMacros = false
           if (profile.Weekly_Macros) {
@@ -94,7 +97,8 @@ export default function DashboardPage() {
                   protein: Number(todayMacros.protein_g) || 150,
                   carbs: Number(todayMacros.carbs_g) || 200,
                   fat: Number(todayMacros.fat_g) || 65,
-                  fiber: Number(todayMacros.fiber_g) || 28,
+                  // Per-day macros don't have a fiber field — always fall back to the profile's fiber target
+                  fiber: Number(todayMacros.fiber_g) || profileFiber,
                 })
                 usedDayMacros = true
               }
@@ -106,7 +110,7 @@ export default function DashboardPage() {
               protein: Number(profile.Protein_g) || 150,
               carbs: Number(profile.Carbs_g) || 200,
               fat: Number(profile.Fat_g) || 65,
-              fiber: Number(profile.Fiber_g) || 28,
+              fiber: profileFiber,
             })
           }
           if (profile.Water_goal_oz) setWaterGoal(Number(profile.Water_goal_oz))

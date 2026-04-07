@@ -63,7 +63,13 @@ export function resolvePlan(raw: string | undefined | null): Plan {
 
 // ── Daily message counter (localStorage) ──────────────────────────────────
 
-const MESSAGE_STORAGE_KEY = () => `nali_msgs_${new Date().toISOString().split('T')[0]}`
+// Use local date so the daily message counter resets at local midnight, not UTC midnight.
+// Without this, US users (e.g. Eastern, UTC-5) would see their limit reset at 7 PM local time.
+function localDateKey(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+const MESSAGE_STORAGE_KEY = () => `nali_msgs_${localDateKey()}`
 
 export function getNaliMessageCount(): number {
   if (typeof window === 'undefined') return 0

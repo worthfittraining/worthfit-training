@@ -89,8 +89,15 @@ export async function PATCH(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { email, ...fields } = body
+  const { email, ...rawFields } = body
   if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 })
+
+  // Block fields that must only be set by Stripe webhooks or the Playbook sync endpoint.
+  // Without this guard, any authenticated user could send { Plan: "premium" } and self-upgrade for free.
+  const PROTECTED_FIELDS = ['Plan', 'Playbook_Active', 'Stripe_Customer_Id', 'Stripe_Subscription_Id', 'Subscription_Status', 'Trial_End']
+  const fields = Object.fromEntries(
+    Object.entries(rawFields).filter(([k]) => !PROTECTED_FIELDS.includes(k))
+  )
 
   const existing = await getClientByEmail(email)
   if (!existing) return NextResponse.json({ error: 'Client not found' }, { status: 404 })

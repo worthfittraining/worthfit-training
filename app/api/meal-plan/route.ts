@@ -18,8 +18,9 @@ async function getClientRecordId(email: string): Promise<string | null> {
 
 async function getClientProfile(email: string) {
   try {
+    const normalizedEmail = email.toLowerCase().trim()
     const records = await getBase()('Clients').select({
-      filterByFormula: `{Email} = '${email}'`,
+      filterByFormula: `LOWER({Email}) = '${normalizedEmail}'`,
       maxRecords: 1,
     }).firstPage()
     return records.length > 0 ? records[0].fields : null
@@ -45,11 +46,20 @@ export async function GET(req: NextRequest) {
     if (!clientRecordId) return NextResponse.json({ meals: [] })
 
     const weekNumber = getWeekNumber()
+    // Filter by week_number only — ARRAYJOIN on linked record fields returns display names
+    // not record IDs, so client_id matching must be done in JavaScript below.
     const allRecords = await getBase()('Meal Plans').select({
-      filterByFormula: `AND(FIND('${clientRecordId}',ARRAYJOIN(client_id,',')),{week_number}=${weekNumber})`,
+      filterByFormula: `{week_number}=${weekNumber}`,
     }).all()
 
-    const meals = allRecords
+    // Filter by clientRecordId in JavaScript — Airtable ARRAYJOIN on linked fields
+    // returns display names, not record IDs, so formula-based matching is unreliable.
+    const clientRecords = allRecords.filter(r => {
+      const ids: string[] = Array.isArray(r.fields.client_id) ? r.fields.client_id as string[] : []
+      return ids.includes(clientRecordId)
+    })
+
+    const meals = clientRecords
       .map(r => ({
         id: r.id,
         recipe_name: r.fields.recipe_name,
@@ -190,31 +200,43 @@ Return ONLY the JSON array, nothing else.`
 
     console.log('Generated', mealPlan.length, 'meals, saving to Airtable...')
 
-    // Delete existing plan for this week — filter in Airtable to avoid fetching all records
-    const existingRecords = await getBase()('Meal Plans').select({
-      filterByFormula: `AND(FIND('${clientRecordId}',ARRAYJOIN(client_id,',')),{week_number}=${weekNumber})`,
+    // Delete existing plan for this week.
+    // Filter by week_number only — ARRAYJOIN on linked record fields returns display names not IDs.
+    // Client filtering is done in JavaScript.
+    const existingRecordsAll = await getBase()('Meal Plans').select({
+      filterByFormula: `{week_number}=${weekNumber}`,
     }).all()
-    const toDelete = existingRecords
-    for (const record of toDelete) {
-      await getBase()('Meal Plans').destroy(record.id)
+    const toDelete = existingRecordsAll.filter(r => {
+      const ids: string[] = Array.isArray(r.fields.client_id) ? r.fields.client_id as string[] : []
+      return ids.includes(clientRecordId)
+    })
+    // Batch delete in groups of 10 (Airtable limit) to avoid rate limiting at scale
+    for (let i = 0; i < toDelete.length; i += 10) {
+      const batch = toDelete.slice(i, i + 10).map(r => r.id)
+      if (batch.length > 0) await getBase()('Meal Plans').destroy(batch)
     }
 
-    // Save new meals
-    const savedMeals = []
-    for (const meal of mealPlan) {
-      const record = await getBase()('Meal Plans').create({
-        recipe_name: String(meal.recipe_name || ''),
-        client_id: [clientRecordId],
-        week_number: weekNumber,
-        Day: String(meal.day || ''),
-        Meal_slot: String(meal.meal_slot || ''),
-        calories: Number(meal.calories) || 0,
-        protein_g: Number(meal.protein_g) || 0,
-        carbs_g: Number(meal.carbs_g) || 0,
-        fat_g: Number(meal.fat_g) || 0,
-        Notes: String(meal.notes || ''),
-      } as Airtable.FieldSet)
-      savedMeals.push({ id: record.id, ...meal })
+    // Save new meals in batches of 10 (Airtable batch limit) to avoid rate limiting at scale
+    const savedMeals: typeof mealPlan = []
+    for (let i = 0; i < mealPlan.length; i += 10) {
+      const batch = mealPlan.slice(i, i + 10)
+      const created = await getBase()('Meal Plans').create(
+        batch.map((meal: typeof mealPlan[0]) => ({
+          fields: {
+            recipe_name: String(meal.recipe_name || ''),
+            client_id: [clientRecordId],
+            week_number: weekNumber,
+            Day: String(meal.day || ''),
+            Meal_slot: String(meal.meal_slot || ''),
+            calories: Number(meal.calories) || 0,
+            protein_g: Number(meal.protein_g) || 0,
+            carbs_g: Number(meal.carbs_g) || 0,
+            fat_g: Number(meal.fat_g) || 0,
+            Notes: String(meal.notes || ''),
+          } as Airtable.FieldSet,
+        }))
+      )
+      created.forEach((record, idx) => savedMeals.push({ id: record.id, ...batch[idx] }))
     }
 
     console.log('Saved', savedMeals.length, 'meals successfully!')
