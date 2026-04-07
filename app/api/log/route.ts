@@ -103,10 +103,11 @@ export async function GET(req: NextRequest) {
       targetDates = [anchorDate]
     }
 
-    // Filter by date in Airtable (Date is a plain text field so this works reliably).
+    // Filter by date in Airtable. Use DATETIME_FORMAT to handle both plain-text Date fields
+    // and Airtable Date type fields (which may store full ISO timestamps like 2026-04-07T00:00:00.000Z).
     // Client_id is a linked record field — Airtable formulas can't match by record ID,
     // so we filter by client in JavaScript below after fetching the date-filtered set.
-    const dateConditions = targetDates.map(d => `{Date}='${d}'`).join(',')
+    const dateConditions = targetDates.map(d => `DATETIME_FORMAT({Date},'YYYY-MM-DD')='${d}'`).join(',')
     const filterFormula = encodeURIComponent(`OR(${dateConditions})`)
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?filterByFormula=${filterFormula}&sort[0][field]=Date&sort[0][direction]=desc`
     const res = await fetch(url, {
@@ -120,10 +121,12 @@ export async function GET(req: NextRequest) {
     const data = await res.json()
     const allRecords = data.records || []
 
-    // Filter client-side as a safety net (the Airtable formula already handles this)
+    // Filter client-side as a safety net.
+    // Slice recordDate to 10 chars (YYYY-MM-DD) to handle Airtable Date type fields
+    // that may return full ISO timestamps like "2026-04-07T00:00:00.000Z".
     const filtered = allRecords.filter((r: any) => {
       const fields = r.fields
-      const recordDate = fields.Date || fields.date || ''
+      const recordDate = (fields.Date || fields.date || '').slice(0, 10)
       const clientIds: string[] = Array.isArray(fields.client_id) ? fields.client_id : []
       return targetDates.includes(recordDate) && clientIds.includes(clientId)
     })
@@ -220,8 +223,9 @@ export async function DELETE(req: NextRequest) {
     const targetDate = date || new Date().toISOString().split('T')[0]
 
     // Filter by date only — client_id is a linked record field and can't be matched
-    // by record ID in Airtable formulas, so JavaScript handles client filtering below
-    const deleteFilterFormula = encodeURIComponent(`{Date}='${targetDate}'`)
+    // by record ID in Airtable formulas, so JavaScript handles client filtering below.
+    // Use DATETIME_FORMAT to handle both text and Airtable Date type fields.
+    const deleteFilterFormula = encodeURIComponent(`DATETIME_FORMAT({Date},'YYYY-MM-DD')='${targetDate}'`)
     const listUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?filterByFormula=${deleteFilterFormula}&sort[0][field]=Date&sort[0][direction]=desc`
     const listRes = await fetch(listUrl, {
       headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
@@ -254,7 +258,7 @@ export async function DELETE(req: NextRequest) {
     for (const r of records) {
       const fields = r.fields
       const clientIds: string[] = Array.isArray(fields.client_id) ? fields.client_id as string[] : []
-      const recordDate = (fields.Date || fields.date || '') as string
+      const recordDate = ((fields.Date || fields.date || '') as string).slice(0, 10)
       const recordName = ((fields.food_name || '') as string).toLowerCase()
       const recordSlot = (fields.meal_slot || '') as string
       if (recordDate !== targetDate) continue
