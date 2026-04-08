@@ -163,8 +163,8 @@ export default function NewLogPage() {
         setSearchQuery('')
         setSearchResults([])
         setSearchError('')
-        setQty('100')
-        setUnit('g')
+        setQty('1')
+        setUnit('serving')
         setNotes('')
         setManualForm({ food_name: '', calories: '', protein_g: '', carbs_g: '', fat_g: '', fiber_g: '' })
       } else {
@@ -284,7 +284,7 @@ export default function NewLogPage() {
                         // Auto-reset qty when switching to/from servings
                         // so the macro display is always sensible
                         if (newUnit === 'serving') setQty('1')
-                        else if (unit === 'serving') setQty('100')
+                        else if (unit === 'serving') setQty('1')
                       }}
                       className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
                     >
