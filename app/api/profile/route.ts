@@ -97,7 +97,7 @@ export async function PATCH(req: NextRequest) {
   const PROTECTED_FIELDS = ['Plan', 'Playbook_Active', 'Stripe_Customer_Id', 'Stripe_Subscription_Id', 'Subscription_Status', 'Trial_End']
   const fields = Object.fromEntries(
     Object.entries(rawFields).filter(([k]) => !PROTECTED_FIELDS.includes(k))
-  )
+  ) as Airtable.FieldSet
 
   const existing = await getClientByEmail(email)
   if (!existing) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
