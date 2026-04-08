@@ -24,6 +24,10 @@ const COMMON_FOODS = [
   { name: 'Pasta (cooked)', serving: '100g', calories: 158, protein_g: 5.8, carbs_g: 31, fat_g: 0.9, cal_per_100g: 158, protein_per_100g: 5.8, carbs_per_100g: 31, fat_per_100g: 0.9 },
   { name: 'Bread (white, 1 slice)', serving: '1 slice (28g)', calories: 79, protein_g: 2.7, carbs_g: 15, fat_g: 1, cal_per_100g: 266, protein_per_100g: 9, carbs_per_100g: 49, fat_per_100g: 3.2 },
   { name: 'Bread (whole wheat, 1 slice)', serving: '1 slice (28g)', calories: 69, protein_g: 3.6, carbs_g: 12, fat_g: 1.1, cal_per_100g: 247, protein_per_100g: 13, carbs_per_100g: 41, fat_per_100g: 3.4 },
+  { name: 'Sourdough bread (1 slice)', serving: '1 slice (35g)', calories: 93, protein_g: 3.7, carbs_g: 18, fat_g: 0.6, cal_per_100g: 265, protein_per_100g: 10.5, carbs_per_100g: 51, fat_per_100g: 1.7 },
+  { name: 'Bagel (plain)', serving: '1 medium (105g)', calories: 270, protein_g: 10, carbs_g: 53, fat_g: 1.5, cal_per_100g: 257, protein_per_100g: 9.5, carbs_per_100g: 50, fat_per_100g: 1.4 },
+  { name: 'English muffin', serving: '1 muffin (57g)', calories: 132, protein_g: 4.4, carbs_g: 25, fat_g: 1.1, cal_per_100g: 232, protein_per_100g: 7.7, carbs_per_100g: 44, fat_per_100g: 1.9 },
+  { name: 'Pita bread', serving: '1 pita (60g)', calories: 165, protein_g: 5.5, carbs_g: 33, fat_g: 0.7, cal_per_100g: 275, protein_per_100g: 9.1, carbs_per_100g: 55, fat_per_100g: 1.2 },
   { name: 'Banana', serving: '1 medium (118g)', calories: 105, protein_g: 1.3, carbs_g: 27, fat_g: 0.4, cal_per_100g: 89, protein_per_100g: 1.1, carbs_per_100g: 23, fat_per_100g: 0.3 },
   { name: 'Apple', serving: '1 medium (182g)', calories: 95, protein_g: 0.5, carbs_g: 25, fat_g: 0.3, cal_per_100g: 52, protein_per_100g: 0.3, carbs_per_100g: 14, fat_per_100g: 0.2 },
   { name: 'Blueberries', serving: '100g', calories: 57, protein_g: 0.7, carbs_g: 14, fat_g: 0.3, cal_per_100g: 57, protein_per_100g: 0.7, carbs_per_100g: 14, fat_per_100g: 0.3 },
@@ -151,9 +155,8 @@ export async function GET(req: NextRequest) {
 }
 
 async function fetchUSDA(query: string, signal: AbortSignal): Promise<FoodResult[]> {
-  const apiKey = process.env.USDA_API_KEY
-  // If no API key yet, return empty (built-in foods still show)
-  if (!apiKey) return []
+  // Fall back to DEMO_KEY if no custom key is set (rate-limited but functional)
+  const apiKey = process.env.USDA_API_KEY || 'DEMO_KEY'
 
   try {
     const res = await fetch(
