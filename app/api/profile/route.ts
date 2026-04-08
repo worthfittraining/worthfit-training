@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     await createClient(profileData)
   }
 
-  // Add new Nali Nutrition sign-ups to Flodesk automatically
+  // Add new Nutrition by Nali sign-ups to Flodesk automatically
   // Existing users re-submitting onboarding are skipped (no duplicate adds)
   if (isNewUser && process.env.FLODESK_API_KEY) {
     try {
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           email,
           first_name: firstName,
-          segments: ['Nali Nutrition'],
+          segments: ['Nutrition by Nali'],
         }),
       })
       console.log('Flodesk: added new sign-up', email)

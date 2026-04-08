@@ -5,7 +5,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-green-50 to-white p-8">
       <div className="max-w-2xl text-center">
         <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 text-sm font-semibold px-4 py-2 rounded-full mb-6">
-          🥗 Nali Nutrition
+          🥗 Nutrition by Nali
         </div>
         <h1 className="text-5xl font-bold text-gray-900 mb-4">
           Your AI Nutrition Coach

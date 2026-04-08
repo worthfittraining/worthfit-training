@@ -147,7 +147,7 @@ export default function SubscribePage() {
         {/* Header */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 text-sm font-semibold px-4 py-2 rounded-full mb-4">
-            🥗 Nali Nutrition
+            🥗 Nutrition by Nali
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Choose your plan</h1>
           <p className="text-gray-500 text-base">Start free, upgrade anytime. No commitment required.</p>
@@ -244,7 +244,7 @@ export default function SubscribePage() {
         <p className="text-center text-xs text-gray-400 mt-2">
           By subscribing you agree to our{' '}
           <a href="/terms" className="underline hover:text-gray-600">Terms & Conditions</a>.
-          Subscription fees are non-refundable. Worth Fit Training LLC, Kentucky.
+          Subscription fees are non-refundable. Nutrition by Nali LLC, Kentucky.
         </p>
       </div>
     </div>

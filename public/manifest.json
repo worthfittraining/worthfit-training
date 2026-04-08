@@ -1,7 +1,7 @@
 {
-  "name": "WorthFit Nutrition",
-  "short_name": "WorthFit",
-  "description": "Your personal AI nutrition coach by WorthFit Training",
+  "name": "Nutrition by Nali",
+  "short_name": "Nali",
+  "description": "Your personal AI nutrition coach",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",

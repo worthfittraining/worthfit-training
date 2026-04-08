@@ -1,5 +1,5 @@
 /**
- * Plan tiers and feature flags for WorthFit Training
+ * Plan tiers and feature flags for Nutrition by Nali
  *
  * Free     — $0    Food logging (manual + search), 5 Nali messages/day, no memory
  * Standard — $9.99 + barcode scanner, photo log, meal plans, 30 Nali messages/day, 24hr memory

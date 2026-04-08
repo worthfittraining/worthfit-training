@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     const client = await findClientByEmail(normalizedEmail)
 
     if (!client) {
-      // User hasn't signed up for Worth Fit yet — store their email so when
+      // User hasn't signed up for Nutrition by Nali yet — store their email so when
       // they do sign up, they'll get Standard automatically.
       // We create a minimal placeholder record that onboarding will fill in.
       if (isActive) {
@@ -126,5 +126,5 @@ export async function POST(req: NextRequest) {
 
 // Health check — Zapier sometimes does a GET to verify the webhook URL is live
 export async function GET() {
-  return NextResponse.json({ ok: true, service: 'Nali Nutrition Playbook Sync', status: 'ready' })
+  return NextResponse.json({ ok: true, service: 'Nutrition by Nali Playbook Sync', status: 'ready' })
 }

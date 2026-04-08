@@ -14,13 +14,13 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'Nali Nutrition',
-  description: 'Your personal AI nutrition coach by Nali Nutrition',
+  title: 'Nutrition by Nali',
+  description: 'Your personal AI nutrition coach',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Nali Nutrition',
+    title: 'Nutrition by Nali',
   },
   icons: {
     icon: [
@@ -35,8 +35,8 @@ export const metadata: Metadata = {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'default',
-    'apple-mobile-web-app-title': 'Nali Nutrition',
-    'application-name': 'Nali Nutrition',
+    'apple-mobile-web-app-title': 'Nutrition by Nali',
+    'application-name': 'Nutrition by Nali',
     'msapplication-TileColor': '#16a34a',
     'msapplication-tap-highlight': 'no',
   },

@@ -1,7 +1,7 @@
 export default function TermsPage() {
   const effectiveDate = 'April 1, 2026'
-  const companyName = 'Worth Fit Training'
-  const appName = 'Nali Nutrition'
+  const companyName = 'Nutrition by Nali'
+  const appName = 'Nutrition by Nali'
   const contactEmail = 'worthfittraining@gmail.com'
   const state = 'Kentucky'
 
@@ -16,7 +16,7 @@ export default function TermsPage() {
 
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-8">
           <p className="text-sm text-amber-800">
-            <strong>Plain-English Summary:</strong> Nali Nutrition is a nutrition and fitness tracking tool — not a medical service. Nali is an AI assistant, not a doctor, dietitian, or licensed health professional. Always consult a qualified healthcare provider before making changes to your diet, exercise routine, or health plan. By using this app, you agree to these terms.
+            <strong>Plain-English Summary:</strong> Nutrition by Nali is a nutrition and fitness tracking tool — not a medical service. Nali is an AI assistant, not a doctor, dietitian, or licensed health professional. Always consult a qualified healthcare provider before making changes to your diet, exercise routine, or health plan. By using this app, you agree to these terms.
           </p>
         </div>
 
@@ -277,7 +277,7 @@ export default function TermsPage() {
           {/* Legal note */}
           <div className="border-t border-gray-200 pt-6">
             <p className="text-xs text-gray-400 leading-relaxed">
-              <strong>Note for Worth Fit Training:</strong> These Terms were generated to provide a strong starting point for legal protection. We strongly recommend having a licensed attorney in the Commonwealth of Kentucky review these Terms before or shortly after launching your paid subscription tiers. An attorney familiar with health app regulations, HIPAA applicability, and FTC guidelines for health claims can ensure your Terms fully protect your business.
+              <strong>Note for Nutrition by Nali:</strong> These Terms were generated to provide a strong starting point for legal protection. We strongly recommend having a licensed attorney in the Commonwealth of Kentucky review these Terms before or shortly after launching your paid subscription tiers. An attorney familiar with health app regulations, HIPAA applicability, and FTC guidelines for health claims can ensure your Terms fully protect your business.
             </p>
           </div>
 

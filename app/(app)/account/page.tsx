@@ -681,7 +681,7 @@ export default function AccountPage() {
           Sign Out
         </button>
 
-        <p className="text-center text-xs text-gray-300 pb-2">Nali Nutrition</p>
+        <p className="text-center text-xs text-gray-300 pb-2">Nutrition by Nali</p>
       </div>
     </div>
   )
