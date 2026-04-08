@@ -667,7 +667,7 @@ export default function AccountPage() {
             <div className="flex items-center gap-3"><span className="text-lg">💳</span><span className="text-sm font-medium text-gray-700">View Plans</span></div>
             <span className="text-gray-300 text-sm">→</span>
           </a>
-          <a href="mailto:hello@nutritionbynali.com" className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors rounded-b-2xl">
+          <a href="mailto:worthfittraining@gmail.com" className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors rounded-b-2xl">
             <div className="flex items-center gap-3"><span className="text-lg">💬</span><span className="text-sm font-medium text-gray-700">Contact Support</span></div>
             <span className="text-gray-300 text-sm">→</span>
           </a>
