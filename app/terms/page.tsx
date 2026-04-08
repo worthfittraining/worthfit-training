@@ -2,7 +2,7 @@ export default function TermsPage() {
   const effectiveDate = 'April 1, 2026'
   const companyName = 'Nutrition by Nali'
   const appName = 'Nutrition by Nali'
-  const contactEmail = 'worthfittraining@gmail.com'
+  const contactEmail = 'hello@nutritionbynali.com'
   const state = 'Kentucky'
 
   return (

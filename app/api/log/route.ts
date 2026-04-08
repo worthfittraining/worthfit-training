@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN!
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID!
@@ -71,6 +72,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const email = req.nextUrl.searchParams.get('email')
     if (!email) {
@@ -152,6 +155,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const body = await req.json()
     const { id, food_name, calories, protein_g, carbs_g, fat_g, meal_slot, notes } = body
@@ -188,6 +193,8 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const id = req.nextUrl.searchParams.get('id')
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN!
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID!
@@ -117,6 +118,8 @@ export async function GET(req: NextRequest) {
 
 // ─── POST — save a user-contributed product ───────────────────────────────────
 export async function POST(req: NextRequest) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const body = await req.json()
     const { barcode, name, brand, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, serving_size_g, added_by } = body

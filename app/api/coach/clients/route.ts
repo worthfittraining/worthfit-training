@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
 import Airtable from 'airtable'
+import { auth } from '@clerk/nextjs/server'
 
 const base = new Airtable({ apiKey: process.env.AIRTABLE_TOKEN }).base(process.env.AIRTABLE_BASE_ID!)
 
 export async function GET() {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const today = new Date().toISOString().split('T')[0]
 

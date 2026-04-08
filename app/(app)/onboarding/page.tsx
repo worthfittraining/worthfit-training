@@ -95,10 +95,13 @@ export default function OnboardingPage() {
       })
       if (res.ok) {
         router.push('/dashboard')
+      } else {
+        alert('Something went wrong saving your profile. Please try again.')
+        setLoading(false)
       }
     } catch (err) {
       console.error(err)
-    } finally {
+      alert('Something went wrong. Please check your connection and try again.')
       setLoading(false)
     }
   }

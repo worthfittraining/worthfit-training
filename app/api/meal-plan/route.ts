@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Airtable from 'airtable'
 import Anthropic from '@anthropic-ai/sdk'
+import { auth } from '@clerk/nextjs/server'
 
 const getBase = () => new Airtable({ apiKey: process.env.AIRTABLE_TOKEN }).base(process.env.AIRTABLE_BASE_ID!)
 const getAnthropic = () => new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -38,6 +39,8 @@ function getWeekNumber(): number {
 }
 
 export async function GET(req: NextRequest) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const email = req.nextUrl.searchParams.get('email')
     if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 })
@@ -81,6 +84,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const { id, recipe_name, calories, protein_g, carbs_g, fat_g, notes } = await req.json()
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
@@ -102,6 +107,8 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const {
       email,
