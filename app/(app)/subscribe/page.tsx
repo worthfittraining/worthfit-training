@@ -239,7 +239,7 @@ export default function SubscribePage() {
         {/* Footer note */}
         <p className="text-center text-xs text-gray-400">
           Cancel or change plans anytime from your account settings. Questions?{' '}
-          <a href="mailto:worthfittraining@gmail.com" className="underline">worthfittraining@gmail.com</a>
+          <a href="mailto:hello@nutritionbynali.com" className="underline">hello@nutritionbynali.com</a>
         </p>
         <p className="text-center text-xs text-gray-400 mt-2">
           By subscribing you agree to our{' '}
