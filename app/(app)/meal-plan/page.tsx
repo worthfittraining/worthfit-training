@@ -505,8 +505,8 @@ export default function MealPlanPage() {
 
       {/* ── QUESTIONNAIRE MODAL ── */}
       {showQuestionnaire && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4" onClick={() => setShowQuestionnaire(false)}>
-          <div className="bg-white rounded-3xl w-full max-w-md flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-end sm:items-center justify-center p-4 pb-8" onClick={() => setShowQuestionnaire(false)}>
+          <div className="bg-white rounded-3xl w-full max-w-md flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
             <div className="px-5 pt-5 pb-2 border-b border-gray-100 shrink-0">
               <h2 className="text-lg font-bold text-gray-900">Plan your week 📋</h2>
               <p className="text-sm text-gray-500 mt-0.5">Tell Nali how you want to eat this week</p>

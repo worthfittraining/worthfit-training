@@ -222,7 +222,6 @@ export default function NewLogPage() {
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleSearch())}
-                    onFocus={e => e.target.select()}
                     placeholder="e.g. sourdough bread, chicken breast..."
                     className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 placeholder:text-gray-600"
                   />
