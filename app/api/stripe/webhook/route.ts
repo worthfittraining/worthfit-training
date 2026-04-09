@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     return planFromPriceId(priceId)
   }
 
-  switch (event.type) {
+  try { switch (event.type) {
     // ── Trial started / Subscription created ──
     case 'customer.subscription.created': {
       const sub = event.data.object as Stripe.Subscription
@@ -107,6 +107,9 @@ export async function POST(req: NextRequest) {
 
     default:
       break
+  } } catch (err) {
+    console.error('Webhook handler error:', err)
+    return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 
   return NextResponse.json({ received: true })
