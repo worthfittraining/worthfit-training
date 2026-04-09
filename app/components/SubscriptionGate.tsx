@@ -49,20 +49,20 @@ export default function SubscriptionGate({ children }: { children: React.ReactNo
         }
 
         // Step 2: Free plan users — always allowed through
-        const plan = profile.Plan as string | undefined
-        if (plan === 'free') {
-          setChecked(true)
-          return
-        }
+const plan = profile.Plan as string | undefined
+if (plan === 'free') {
+  setChecked(true)
+  return
+}
 
-        // Step 3: Playbook members always get through — they have standard access for free
-        const playbookActive = profile.Playbook_Active === true || profile.Playbook_Active === 1
-        if (playbookActive) {
-          setChecked(true)
-          return
-        }
+// Step 3: Playbook members always get through — they have standard access for free
+const playbookActive = profile.Playbook_Active === true || profile.Playbook_Active === 1
+if (playbookActive) {
+  setChecked(true)
+  return
+}
 
-        // Step 4: Paid plan — check subscription status
+// Step 4: Paid plan — check subscription status
         const status = profile.Subscription_Status as string | undefined
         const isComped = profile.Comp_Access === true || profile.Comp_Access === 'true' || profile.Comp_Access === 1
 
