@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import Stripe from 'stripe'
 
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN!
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID!
 const CLIENTS_TABLE = 'Clients'
+
+const getStripe = () => new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 // Secret key to verify requests are genuinely from your Zapier zap
 // Set PLAYBOOK_WEBHOOK_SECRET in Vercel env vars — use any long random string
@@ -106,8 +109,34 @@ export async function POST(req: NextRequest) {
     await updateClientPlaybookStatus(client.id, isActive)
 
     const currentPlan = String(client.fields.Plan || 'free')
-    const action = isActive ? 'granted_standard' : 'revoked_standard'
+    const currentStatus = String(client.fields.Subscription_Status || '')
+    const stripeSubId = client.fields.Stripe_Subscription_Id as string | undefined
 
+    let stripeAction = 'none'
+
+    // If they're being activated as a Playbook member and are currently paying for
+    // Standard, cancel their subscription at period end — they get it free via Playbook.
+    // We only cancel Standard, not Premium (they may want to keep paying for Premium features).
+    if (
+      isActive &&
+      currentPlan === 'standard' &&
+      ['active', 'trialing'].includes(currentStatus) &&
+      stripeSubId
+    ) {
+      try {
+        await getStripe().subscriptions.update(stripeSubId, {
+          cancel_at_period_end: true,
+        })
+        stripeAction = 'scheduled_cancellation'
+        console.log(`Playbook sync: scheduled Stripe cancellation at period end for ${normalizedEmail} (sub: ${stripeSubId})`)
+      } catch (stripeErr) {
+        // Non-fatal — Playbook access is already granted, just log the error
+        console.error(`Playbook sync: failed to cancel Stripe sub for ${normalizedEmail}:`, stripeErr)
+        stripeAction = 'cancellation_failed'
+      }
+    }
+
+    const action = isActive ? 'granted_standard' : 'revoked_standard'
     console.log(`Playbook sync: ${action} for ${normalizedEmail} (current Plan: ${currentPlan})`)
 
     return NextResponse.json({
@@ -115,8 +144,8 @@ export async function POST(req: NextRequest) {
       action,
       email: normalizedEmail,
       playbook_active: isActive,
-      // Their paid plan (if any) is unaffected — only Playbook_Active changed
       plan_unchanged: currentPlan,
+      stripe_action: stripeAction,
     })
   } catch (error) {
     console.error('Playbook sync error:', error)
