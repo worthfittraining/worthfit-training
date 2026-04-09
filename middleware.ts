@@ -8,6 +8,7 @@ const isPublicRoute = createRouteMatcher([
   '/subscribe(.*)',
   '/terms(.*)',
   '/api/playbook-sync',
+  '/api/stripe/webhook',
 ])
 
 export default clerkMiddleware(async (auth, request) => {
