@@ -373,7 +373,6 @@ export default function OnboardingPage() {
                     className="sr-only"
                   />
                   <div
-                    onClick={() => setAgreedToTerms(v => !v)}
                     className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${agreedToTerms ? 'bg-green-500 border-green-500' : 'border-gray-300 bg-white'}`}
                   >
                     {agreedToTerms && <span className="text-white text-xs font-bold">✓</span>}
