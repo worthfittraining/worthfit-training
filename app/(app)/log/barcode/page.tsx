@@ -51,6 +51,7 @@ export default function BarcodePage() {
   const controlsRef = useRef<any>(null)
 
   const [phase, setPhase] = useState<Phase>('scanning')
+  const [cameraReady, setCameraReady] = useState(false)
   const [food, setFood] = useState<FoodData | null>(null)
   const [qty, setQty] = useState(100)
   const [unit, setUnit] = useState('g')
@@ -135,6 +136,12 @@ export default function BarcodePage() {
     async function startScanner() {
       if (!videoRef.current) return
       try {
+        // Check if mediaDevices is available (requires HTTPS)
+        if (!navigator.mediaDevices?.getUserMedia) {
+          setError('Camera not supported. Make sure you\'re using HTTPS.')
+          return
+        }
+
         // Get the back camera stream directly
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -142,11 +149,13 @@ export default function BarcodePage() {
         if (!active) { stream.getTracks().forEach(t => t.stop()); return }
 
         // Attach stream to video element
+        // NOTE: playsInline + muted must also be set as properties (not just attributes) for iOS Safari
         const video = videoRef.current
-        video.setAttribute('playsinline', 'true')
-        video.setAttribute('muted', 'true')
+        video.playsInline = true
+        video.muted = true
         video.srcObject = stream
         await video.play()
+        if (active) setCameraReady(true)
 
         // ── Strategy 1: Native BarcodeDetector (Chrome Android, fast + reliable) ──
         if ('BarcodeDetector' in window) {
@@ -194,8 +203,17 @@ export default function BarcodePage() {
         } else {
           controls.stop()
         }
-      } catch {
-        if (active) setError('Camera not available. Please allow camera access.')
+      } catch (err: any) {
+        if (!active) return
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          setError('Camera access denied. Go to your browser Settings → allow camera for this site, then reload.')
+        } else if (err.name === 'NotFoundError') {
+          setError('No camera found on this device.')
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+          setError('Camera is in use by another app. Close other apps and try again.')
+        } else {
+          setError('Camera not available. Please allow camera access and reload.')
+        }
       }
     }
 
@@ -255,22 +273,45 @@ export default function BarcodePage() {
 
       {/* Scanner view — always in DOM so video ref works */}
       <div className={`relative ${phase === 'scanning' ? 'flex-1' : 'hidden'} flex items-center justify-center bg-black`}>
-        <video ref={videoRef} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="relative w-72 h-36">
-            <div className="absolute -top-0.5 -left-0.5 w-7 h-7 border-t-4 border-l-4 border-green-400 rounded-tl-lg" />
-            <div className="absolute -top-0.5 -right-0.5 w-7 h-7 border-t-4 border-r-4 border-green-400 rounded-tr-lg" />
-            <div className="absolute -bottom-0.5 -left-0.5 w-7 h-7 border-b-4 border-l-4 border-green-400 rounded-bl-lg" />
-            <div className="absolute -bottom-0.5 -right-0.5 w-7 h-7 border-b-4 border-r-4 border-green-400 rounded-br-lg" />
+        {/* playsInline + muted + autoPlay must be JSX props for iOS Safari to show video inline */}
+        <video ref={videoRef} className="w-full h-full object-cover" playsInline muted autoPlay />
+
+        {/* Waiting for camera overlay — shown until stream is live */}
+        {!cameraReady && !error && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
+            <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin mb-4" />
+            <p className="text-white/70 text-sm">Opening camera…</p>
           </div>
-        </div>
-        <p className="absolute bottom-8 text-white text-sm bg-black/50 px-4 py-2 rounded-full">
-          Point camera at a barcode
-        </p>
+        )}
+
+        {cameraReady && (
+          <>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="relative w-72 h-36">
+                <div className="absolute -top-0.5 -left-0.5 w-7 h-7 border-t-4 border-l-4 border-green-400 rounded-tl-lg" />
+                <div className="absolute -top-0.5 -right-0.5 w-7 h-7 border-t-4 border-r-4 border-green-400 rounded-tr-lg" />
+                <div className="absolute -bottom-0.5 -left-0.5 w-7 h-7 border-b-4 border-l-4 border-green-400 rounded-bl-lg" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-7 h-7 border-b-4 border-r-4 border-green-400 rounded-br-lg" />
+              </div>
+            </div>
+            <p className="absolute bottom-8 text-white text-sm bg-black/50 px-4 py-2 rounded-full">
+              Point camera at a barcode
+            </p>
+          </>
+        )}
+
         {error && (
-          <p className="absolute top-4 left-4 right-4 text-center bg-red-500 text-white text-sm py-2 px-4 rounded-lg">
-            {error}
-          </p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black px-6 text-center">
+            <p className="text-5xl mb-4">📷</p>
+            <p className="text-white font-semibold mb-2">Camera Unavailable</p>
+            <p className="text-white/70 text-sm mb-6">{error}</p>
+            <button
+              onClick={() => router.push('/log/new')}
+              className="bg-white text-gray-900 font-semibold px-6 py-3 rounded-xl text-sm"
+            >
+              Enter food manually instead
+            </button>
+          </div>
         )}
       </div>
 
