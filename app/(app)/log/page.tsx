@@ -151,7 +151,10 @@ export default function LogPage() {
     Calories?: number; Protein_g?: number; Carbs_g?: number; Fat_g?: number
     Rest_Calories?: number; Rest_Protein_g?: number; Rest_Carbs_g?: number; Rest_Fat_g?: number
   } | null>(null)
-  const [isRestDay, setIsRestDay] = useState(false)
+  const REST_DAY_KEY = `rest_day_${localDateString()}`
+  const [isRestDay, setIsRestDay] = useState(() => {
+    try { return localStorage.getItem(`rest_day_${localDateString()}`) === 'true' } catch { return false }
+  })
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null)
   const [editSaving, setEditSaving] = useState(false)
 
@@ -316,7 +319,11 @@ export default function LogPage() {
                   <p className="text-xs text-gray-400">Switch to rest-day macro targets</p>
                 </div>
                 <button
-                  onClick={() => setIsRestDay(r => !r)}
+                  onClick={() => setIsRestDay(r => {
+                    const next = !r
+                    try { localStorage.setItem(REST_DAY_KEY, String(next)) } catch {}
+                    return next
+                  })}
                   className={`relative w-11 h-6 rounded-full transition-colors ${isRestDay ? 'bg-blue-500' : 'bg-gray-200'}`}
                 >
                   <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isRestDay ? 'translate-x-5' : ''}`} />
