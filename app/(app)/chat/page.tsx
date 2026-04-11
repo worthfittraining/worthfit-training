@@ -130,9 +130,18 @@ function localDateString(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+const CHAT_HISTORY_KEY = 'nali_chat_history'
+const MAX_STORED_MESSAGES = 60
+const HISTORY_TTL_MS: Record<Plan, number> = {
+  free: 0,                           // no history
+  standard: 24 * 60 * 60 * 1000,   // 24 hours
+  premium: Infinity,                 // forever
+}
+
 export default function ChatPage() {
   const { user } = useUser()
   const [messages, setMessages] = useState<Message[]>([])
+  const [historyLoaded, setHistoryLoaded] = useState(false)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [mode, setMode] = useState('coach')
@@ -157,15 +166,48 @@ export default function ChatPage() {
     setMsgCount(getNaliMessageCount())
   }, [])
 
+  // Load chat history from localStorage on mount (once user + plan are known)
   useEffect(() => {
-    if (messages.length === 0 && user) {
-      const firstName = user.firstName || 'there'
-      setMessages([{
-        role: 'assistant',
-        content: `Hey ${firstName}! I'm Nali, your nutrition coach. How can I help you today?`
-      }])
+    if (!user || historyLoaded) return
+    const ttl = HISTORY_TTL_MS[plan]
+    const canLoadHistory = ttl > 0 // free users (ttl=0) never get history
+
+    if (canLoadHistory) {
+      try {
+        const stored = localStorage.getItem(CHAT_HISTORY_KEY)
+        if (stored) {
+          const { messages: saved, savedAt } = JSON.parse(stored)
+          const expired = isFinite(ttl) ? Date.now() - savedAt > ttl : false
+          if (!expired && Array.isArray(saved) && saved.length > 0) {
+            setMessages(saved)
+            setHistoryLoaded(true)
+            return
+          }
+          // Expired — clear it
+          localStorage.removeItem(CHAT_HISTORY_KEY)
+        }
+      } catch { /* ignore malformed data */ }
     }
-  }, [user, messages.length])
+
+    // No history, expired, or free user — show welcome message
+    const firstName = user.firstName || 'there'
+    setMessages([{
+      role: 'assistant',
+      content: `Hey ${firstName}! I'm Nali, your nutrition coach. How can I help you today?`
+    }])
+    setHistoryLoaded(true)
+  }, [user, historyLoaded, plan])
+
+  // Persist messages to localStorage (standard + premium only)
+  useEffect(() => {
+    if (!historyLoaded || messages.length === 0) return
+    const ttl = HISTORY_TTL_MS[plan]
+    if (ttl === 0) return // free users — never save
+    try {
+      const toStore = messages.slice(-MAX_STORED_MESSAGES)
+      localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify({ messages: toStore, savedAt: Date.now() }))
+    } catch { /* storage full or unavailable */ }
+  }, [messages, historyLoaded, plan])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -428,7 +470,7 @@ async function moveFoodLog(moveData: Record<string, unknown>, email: string) {
             onKeyDown={handleKeyDown}
             placeholder="Ask Nali anything..."
             rows={1}
-            className="flex-1 resize-none border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 max-h-32"
+            className="flex-1 resize-none border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 max-h-32"
           />
           <button
             onClick={sendMessage}
