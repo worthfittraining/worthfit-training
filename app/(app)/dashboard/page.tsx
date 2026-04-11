@@ -380,6 +380,28 @@ export default function DashboardPage() {
               <button onClick={() => addWater(-8)} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded-lg border border-gray-200">-8oz</button>
               <button onClick={() => addWater(8)} className={`text-xs font-medium px-3 py-1 rounded-lg transition-colors ${waterHit ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}>+8oz</button>
             </div>
+            <div className="flex items-center gap-1 mt-2">
+              <input
+                type="number"
+                min="1"
+                placeholder="oz"
+                className="w-14 text-xs text-center border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-300 text-gray-700"
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    const val = parseInt((e.target as HTMLInputElement).value)
+                    if (val > 0) { addWater(val); (e.target as HTMLInputElement).value = '' }
+                  }
+                }}
+              />
+              <button
+                onClick={e => {
+                  const input = (e.currentTarget.previousSibling as HTMLInputElement)
+                  const val = parseInt(input.value)
+                  if (val > 0) { addWater(val); input.value = '' }
+                }}
+                className="text-xs font-medium px-2 py-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+              >+custom</button>
+            </div>
             <p className="text-xs text-gray-400 mt-1">Goal: {waterGoal}oz</p>
           </div>
         </div>
