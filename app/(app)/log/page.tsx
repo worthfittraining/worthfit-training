@@ -77,9 +77,9 @@ function EditModal({ draft, onSave, onClose, saving }: {
 }) {
   const [local, setLocal] = useState(draft)
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
-      <div className="relative bg-white w-full max-w-md rounded-t-3xl p-5 pb-8 shadow-2xl" onClick={e => e.stopPropagation()}>
+      <div className="relative bg-white w-full max-w-md rounded-3xl p-5 pb-6 shadow-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
         <h2 className="text-base font-bold text-gray-800 mb-4">Edit Entry</h2>
 

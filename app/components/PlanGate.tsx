@@ -49,8 +49,11 @@ export default function PlanGate({ feature, children }: Props) {
     const email = user?.primaryEmailAddress?.emailAddress
     if (!email) return
     fetch(`/api/profile?email=${encodeURIComponent(email)}`)
-      .then(r => r.json())
-      .then(d => setPlan(resolvePlan(d.Plan)))
+      .then(r => {
+        if (!r.ok) { setPlan('free'); return null }
+        return r.json()
+      })
+      .then(d => { if (d) setPlan(resolvePlan(d.Plan)) })
       .catch(() => setPlan('free'))
   }, [user])
 

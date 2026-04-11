@@ -271,7 +271,7 @@ export default function AccountPage() {
     setRestSaving(true)
     setRestMsg('')
     try {
-      await fetch('/api/profile', {
+      const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -282,10 +282,11 @@ export default function AccountPage() {
           Rest_Fat_g: restForm.fat_g ? Number(restForm.fat_g) : null,
         }),
       })
+      if (!res.ok) throw new Error('Save failed')
       setRestMsg('✅ Rest day targets saved!')
       setTimeout(() => { setRestMsg(''); setShowRestDay(false) }, 2000)
     } catch {
-      setRestMsg('Error — try again')
+      setRestMsg('❌ Failed to save — please try again')
     } finally {
       setRestSaving(false)
     }

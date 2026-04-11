@@ -38,7 +38,8 @@ export default function SubscriptionGate({ children }: { children: React.ReactNo
       try {
         const email = user!.primaryEmailAddress!.emailAddress
         const res = await fetch(`/api/profile?email=${encodeURIComponent(email)}`)
-        if (!res.ok) { setChecked(true); return }
+        // Non-200 or no profile → send to onboarding (never silently let through)
+        if (!res.ok) { router.replace('/onboarding'); return }
         const profile = await res.json()
 
         // Step 1: No profile at all → needs onboarding

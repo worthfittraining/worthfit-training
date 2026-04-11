@@ -102,7 +102,12 @@ export async function PATCH(req: NextRequest) {
   const existing = await getClientByEmail(email)
   if (!existing) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
 
-  await updateClient(existing.id, fields)
+  try {
+    await updateClient(existing.id, fields)
+  } catch (err) {
+    console.error('PATCH /api/profile updateClient error:', err)
+    return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
+  }
   return NextResponse.json({ success: true })
 }
 
