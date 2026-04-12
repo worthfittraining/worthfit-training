@@ -140,6 +140,7 @@ function EditModal({ draft, onSave, onClose, saving }: {
 export default function LogPage() {
   const { user } = useUser()
   const [view, setView] = useState<'today' | 'week'>('today')
+  const [selectedDate, setSelectedDate] = useState(localDateString())
   const [logs, setLogs] = useState<FoodLog[]>([])
   const [weekLogs, setWeekLogs] = useState<FoodLog[]>([])
   const [loading, setLoading] = useState(true)
@@ -159,8 +160,15 @@ export default function LogPage() {
   const [editSaving, setEditSaving] = useState(false)
 
   useEffect(() => {
-    if (user) { fetchLogs(); fetchProfile() }
+    if (user) { fetchLogs(selectedDate); fetchProfile() }
   }, [user])
+
+  // Re-fetch logs whenever the selected date changes (skip initial mount — user effect handles that)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    if (!mounted) { setMounted(true); return }
+    if (user) fetchLogs(selectedDate)
+  }, [selectedDate])
 
   useEffect(() => {
     if (view === 'week' && weekLogs.length === 0 && user) fetchWeekLogs()
@@ -175,12 +183,13 @@ export default function LogPage() {
     } catch { /* ignore */ }
   }
 
-  async function fetchLogs() {
+  async function fetchLogs(date?: string) {
     const email = user?.primaryEmailAddress?.emailAddress
     if (!email) return
+    setLoading(true)
     try {
-      // Always pass local date so the server doesn't use UTC and show wrong day for US users at night
-      const res = await fetch(`/api/log?email=${encodeURIComponent(email)}&date=${localDateString()}`)
+      const fetchDate = date ?? selectedDate
+      const res = await fetch(`/api/log?email=${encodeURIComponent(email)}&date=${fetchDate}`)
       const data = await res.json()
       setLogs(data.logs || [])
     } catch (e) { console.error(e) }
@@ -252,6 +261,22 @@ export default function LogPage() {
     finally { setEditSaving(false) }
   }
 
+  const today = localDateString()
+  const isViewingToday = selectedDate === today
+
+  function goToPrevDay() {
+    const d = new Date(selectedDate + 'T00:00:00')
+    d.setDate(d.getDate() - 1)
+    setSelectedDate(localDateString(d))
+  }
+
+  function goToNextDay() {
+    const d = new Date(selectedDate + 'T00:00:00')
+    d.setDate(d.getDate() + 1)
+    const next = localDateString(d)
+    if (next <= today) setSelectedDate(next)
+  }
+
   const totalCalories = logs.reduce((s, l) => s + (l.calories || 0), 0)
   const totalProtein = logs.reduce((s, l) => s + (l.protein_g || 0), 0)
   const totalCarbs = logs.reduce((s, l) => s + (l.carbs_g || 0), 0)
@@ -278,7 +303,6 @@ export default function LogPage() {
   const daysHitProtein = weekDays.filter(d => d.logged && protTarget && d.protein_g >= protTarget * 0.9).length
   const daysHitCalories = weekDays.filter(d => d.logged && calTarget && d.calories >= calTarget * 0.9 && d.calories <= calTarget * 1.1).length
   const loggedDays = weekDays.filter(d => d.logged).length
-  const today = localDateString()
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -303,13 +327,34 @@ export default function LogPage() {
 
         {view === 'today' && (
           <>
-            <div className="grid grid-cols-3 gap-3 mb-6">
-              <Link href="/log/photo" className="bg-white border-2 border-green-400 text-green-600 py-4 rounded-xl font-semibold text-center hover:bg-green-50 transition text-sm">📷<br />Photo</Link>
-              <Link href="/log/barcode" className="bg-white border-2 border-indigo-400 text-indigo-600 py-4 rounded-xl font-semibold text-center hover:bg-indigo-50 transition text-sm">🔍<br />Barcode</Link>
-              <Link href="/log/recipe" className="bg-white border-2 border-orange-400 text-orange-600 py-4 rounded-xl font-semibold text-center hover:bg-orange-50 transition text-sm">🍳<br />Recipe</Link>
-              <Link href="/log/new" className="bg-white border-2 border-blue-400 text-blue-600 py-4 rounded-xl font-semibold text-center hover:bg-blue-50 transition text-sm">✏️<br />Manual</Link>
-              <Link href="/chat" className="bg-white border-2 border-purple-400 text-purple-600 py-4 rounded-xl font-semibold text-center hover:bg-purple-50 transition text-sm col-span-2">💬 Ask Nali</Link>
+            {/* Date navigation */}
+            <div className="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3 mb-4">
+              <button onClick={goToPrevDay} className="text-gray-400 hover:text-gray-700 text-xl font-bold w-8 flex items-center justify-center transition-colors">‹</button>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-gray-800">{getDateLabel(selectedDate)}</p>
+                {!isViewingToday && <p className="text-xs text-gray-400">{selectedDate}</p>}
+              </div>
+              <button
+                onClick={goToNextDay}
+                disabled={isViewingToday}
+                className={`text-xl font-bold w-8 flex items-center justify-center transition-colors ${isViewingToday ? 'text-gray-200 cursor-default' : 'text-gray-400 hover:text-gray-700'}`}
+              >›</button>
             </div>
+
+            {/* Add food buttons — only show when viewing today */}
+            {isViewingToday ? (
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                <Link href="/log/photo" className="bg-white border-2 border-green-400 text-green-600 py-4 rounded-xl font-semibold text-center hover:bg-green-50 transition text-sm">📷<br />Photo</Link>
+                <Link href="/log/barcode" className="bg-white border-2 border-indigo-400 text-indigo-600 py-4 rounded-xl font-semibold text-center hover:bg-indigo-50 transition text-sm">🔍<br />Barcode</Link>
+                <Link href="/log/recipe" className="bg-white border-2 border-orange-400 text-orange-600 py-4 rounded-xl font-semibold text-center hover:bg-orange-50 transition text-sm">🍳<br />Recipe</Link>
+                <Link href="/log/new" className="bg-white border-2 border-blue-400 text-blue-600 py-4 rounded-xl font-semibold text-center hover:bg-blue-50 transition text-sm">✏️<br />Manual</Link>
+                <Link href="/chat" className="bg-white border-2 border-purple-400 text-purple-600 py-4 rounded-xl font-semibold text-center hover:bg-purple-50 transition text-sm col-span-2">💬 Ask Nali</Link>
+              </div>
+            ) : (
+              <div className="text-center mb-4">
+                <button onClick={() => setSelectedDate(today)} className="text-sm text-green-600 hover:underline">← Back to today to add new entries</button>
+              </div>
+            )}
 
             {/* Rest day toggle — only shown if rest-day targets are configured */}
             {hasRestTargets && (
@@ -332,7 +377,9 @@ export default function LogPage() {
             )}
 
             <div className="bg-white rounded-2xl shadow p-4 mb-6">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">{isRestDay ? '😴 Rest Day Totals' : "Today's Totals"}</h2>
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                {isRestDay ? '😴 Rest Day Totals' : isViewingToday ? "Today's Totals" : `${getDateLabel(selectedDate)} Totals`}
+              </h2>
               <div className="grid grid-cols-4 gap-2 text-center">
                 <div><p className={`text-xl font-bold ${calTarget && totalCalories > calTarget * 1.1 ? 'text-purple-500' : calTarget && totalCalories >= calTarget * 0.9 ? 'text-green-500' : 'text-orange-500'}`}>{totalCalories}</p><p className="text-xs text-gray-400">{calTarget ? `/ ${calTarget}` : ''} kcal</p></div>
                 <div><p className={`text-xl font-bold ${protTarget && totalProtein >= protTarget * 0.9 ? 'text-green-500' : 'text-blue-500'}`}>{totalProtein}g</p><p className="text-xs text-gray-400">{protTarget ? `/ ${protTarget}g` : ''} prot</p></div>
@@ -345,8 +392,8 @@ export default function LogPage() {
             {!loading && logs.length === 0 && (
               <div className="bg-white rounded-2xl shadow p-8 text-center">
                 <p className="text-4xl mb-3">🍽️</p>
-                <p className="text-gray-500">Nothing logged yet today.</p>
-                <p className="text-sm text-gray-400 mt-1">Use the buttons above to log your meals.</p>
+                <p className="text-gray-500">{isViewingToday ? 'Nothing logged yet today.' : `Nothing logged on ${getDateLabel(selectedDate)}.`}</p>
+                <p className="text-sm text-gray-400 mt-1">{isViewingToday ? 'Use the buttons above to log your meals.' : 'Use the arrows to navigate to another day.'}</p>
               </div>
             )}
             {!loading && MEAL_ORDER.map((slot) => {
@@ -372,6 +419,16 @@ export default function LogPage() {
                           </div>
                           {log.notes && <p className="text-xs text-gray-400 mt-1 italic">{log.notes}</p>}
                         </div>
+                        {!isViewingToday && (
+                          <button
+                            onClick={() => copyToToday(log)}
+                            disabled={copying === log.id}
+                            title="Copy to today"
+                            className={`text-xs font-semibold shrink-0 mt-0.5 px-1.5 py-1 rounded-lg transition-colors ${copySuccess === log.id ? 'text-green-600 bg-green-50' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}`}
+                          >
+                            {copying === log.id ? '...' : copySuccess === log.id ? '✓' : '+ today'}
+                          </button>
+                        )}
                         <button
                           onClick={() => setEditDraft({ id: log.id, food_name: log.food_name, calories: log.calories, protein_g: log.protein_g, carbs_g: log.carbs_g, fat_g: log.fat_g, meal_slot: log.meal_slot })}
                           className="text-gray-300 hover:text-blue-400 transition-colors text-sm shrink-0 mt-0.5 px-1"
@@ -412,7 +469,14 @@ export default function LogPage() {
                 {weekDays.map(day => (
                   <div key={day.date} className={`bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3 ${!day.logged ? 'opacity-50' : ''}`}>
                     <div className="grid grid-cols-5 items-center">
-                      <div className="col-span-1"><p className="text-sm font-semibold text-gray-700">{day.label}</p></div>
+                      <div className="col-span-1">
+                        <button
+                          onClick={() => { setSelectedDate(day.date); setView('today') }}
+                          className="text-left"
+                        >
+                          <p className="text-sm font-semibold text-green-600 hover:underline">{day.label}</p>
+                        </button>
+                      </div>
                       {day.logged ? (
                         <>
                           <HitBadge value={day.calories} target={calTarget} label="kcal" />
