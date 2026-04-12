@@ -142,10 +142,17 @@ export default function BarcodePage() {
           return
         }
 
-        // Get the back camera stream directly
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-        })
+        // Get the back camera stream — getUserMedia can also hang on some iOS WebViews,
+        // so race it against an 8s timeout to avoid the spinner hanging forever
+        const streamOrTimeout = await Promise.race([
+          navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          }),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('CameraTimeout')), 8000)
+          ),
+        ])
+        const stream = streamOrTimeout as MediaStream
         if (!active) { stream.getTracks().forEach(t => t.stop()); return }
 
         // Attach stream to video element
@@ -155,7 +162,7 @@ export default function BarcodePage() {
         video.muted = true
         video.srcObject = stream
 
-        // video.play() can hang indefinitely on iOS WebViews (e.g. Google app) —
+        // video.play() can also hang indefinitely on iOS WebViews (e.g. Google app) —
         // race against a 3s timeout so we always proceed if the stream is attached
         try {
           await Promise.race([
@@ -221,6 +228,8 @@ export default function BarcodePage() {
           setError('No camera found on this device.')
         } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
           setError('Camera is in use by another app. Close other apps and try again.')
+        } else if (err.message === 'CameraTimeout') {
+          setError('Camera took too long to open. Try force-closing the app and reopening, or use the Google Chrome browser instead.')
         } else {
           setError('Camera not available. Please allow camera access and reload.')
         }
