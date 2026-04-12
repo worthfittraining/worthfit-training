@@ -62,6 +62,21 @@ export default function BarcodePage() {
   const [contrib, setContrib] = useState({ name: '', brand: '', calories: '', protein: '', carbs: '', fat: '', serving_size: '' })
   const [contributing, setContributing] = useState(false)
 
+  // Hard fallback: if camera isn't open after 12s and no error shown,
+  // the WebView is silently blocking it — show a clear message
+  useEffect(() => {
+    if (phase !== 'scanning') return
+    const id = setTimeout(() => {
+      setCameraReady(prev => {
+        if (!prev) {
+          setError('Camera isn\'t opening in this browser. Please open the app in Safari for the best experience, or use "Enter food manually" below.')
+        }
+        return prev
+      })
+    }, 12000)
+    return () => clearTimeout(id)
+  }, [phase])
+
   async function lookupBarcode(barcode: string) {
     setPhase('loading')
     setScannedCode(barcode)
