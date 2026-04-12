@@ -21,19 +21,23 @@ async function findClientByEmail(email: string): Promise<{ id: string; fields: R
   return data.records?.[0] ?? null
 }
 
-async function updateClientPlaybookStatus(recordId: string, active: boolean): Promise<void> {
+async function updateClientPlaybookStatus(recordId: string, active: boolean, currentPlan?: string): Promise<void> {
   const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(CLIENTS_TABLE)}/${recordId}`
+  const fields: Record<string, unknown> = { Playbook_Active: active }
+  // When activating, always ensure Plan = standard
+  // When deactivating, only drop to free if they aren't on premium (Stripe subscribers keep their plan)
+  if (active) {
+    fields.Plan = 'standard'
+  } else if (!active && currentPlan !== 'premium') {
+    fields.Plan = 'free'
+  }
   await fetch(url, {
     method: 'PATCH',
     headers: {
       Authorization: `Bearer ${AIRTABLE_TOKEN}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      fields: {
-        Playbook_Active: active,
-      },
-    }),
+    body: JSON.stringify({ fields }),
   })
 }
 
@@ -93,7 +97,7 @@ export async function POST(req: NextRequest) {
             fields: {
               Email: normalizedEmail,
               Playbook_Active: true,
-              Plan: 'free', // Will be resolved to standard via Playbook_Active flag
+              Plan: 'standard',
             },
           }),
         })
@@ -105,10 +109,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // User exists — update their Playbook_Active status
-    await updateClientPlaybookStatus(client.id, isActive)
-
     const currentPlan = String(client.fields.Plan || 'free')
+
+    // User exists — update their Playbook_Active status + Plan
+    await updateClientPlaybookStatus(client.id, isActive, currentPlan)
     const currentStatus = String(client.fields.Subscription_Status || '')
     const stripeSubId = client.fields.Stripe_Subscription_Id as string | undefined
 
