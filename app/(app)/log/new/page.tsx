@@ -339,10 +339,22 @@ export default function NewLogPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Meal</label>
-                <select value={mealSlot} onChange={e => setMealSlot(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
-                  {MEAL_SLOTS.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                </select>
+                <div className="grid grid-cols-2 gap-1">
+                  {MEAL_SLOTS.map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setMealSlot(s)}
+                      className={`py-2 rounded-xl text-sm font-medium transition-colors ${
+                        mealSlot === s
+                          ? 'bg-green-500 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Date</label>
