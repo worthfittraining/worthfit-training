@@ -154,7 +154,17 @@ export default function BarcodePage() {
         video.playsInline = true
         video.muted = true
         video.srcObject = stream
-        await video.play()
+
+        // video.play() can hang indefinitely on iOS WebViews (e.g. Google app) —
+        // race against a 3s timeout so we always proceed if the stream is attached
+        try {
+          await Promise.race([
+            video.play(),
+            new Promise<void>(resolve => setTimeout(resolve, 3000)),
+          ])
+        } catch {
+          // Muted video shouldn't be blocked by autoplay policy; ignore and proceed
+        }
         if (active) setCameraReady(true)
 
         // ── Strategy 1: Native BarcodeDetector (Chrome Android, fast + reliable) ──
@@ -500,17 +510,21 @@ export default function BarcodePage() {
             </div>
 
             <div className="mb-5">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Meal</label>
-              <select
-                value={mealSlot}
-                onChange={(e) => setMealSlot(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-400"
-              >
-                <option value="breakfast">Breakfast</option>
-                <option value="lunch">Lunch</option>
-                <option value="dinner">Dinner</option>
-                <option value="snack">Snack</option>
-              </select>
+              <label className="block text-xs font-medium text-gray-500 mb-2">Meal</label>
+              <div className="grid grid-cols-2 gap-1">
+                {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setMealSlot(s)}
+                    className={`py-2 rounded-xl text-sm font-medium transition-colors ${
+                      mealSlot === s ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {error && (
