@@ -11,8 +11,8 @@ const PLAN_ORDER: Plan[] = ['free', 'standard', 'premium']
 const REQUIRED_PLAN: Record<FeatureKey, Plan> = {
   barcode: 'standard',
   photoLog: 'standard',
-  mealPlan: 'standard',
-  recipe: 'standard',
+  mealPlan: 'premium',
+  recipe: 'premium',
   groceryList: 'premium',
   checkIns: 'premium',
 }
