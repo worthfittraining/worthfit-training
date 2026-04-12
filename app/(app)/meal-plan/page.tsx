@@ -3,6 +3,32 @@
 import { useUser } from '@clerk/nextjs'
 import { useEffect, useState } from 'react'
 import PlanGate from '@/app/components/PlanGate'
+import { resolvePlan, PLAN_LIMITS } from '@/lib/plan'
+
+/** Returns ISO week key like "2026-W15" — resets weekly limit on Mondays */
+function isoWeekKey(): string {
+  const d = new Date()
+  const day = d.getDay() === 0 ? 7 : d.getDay() // Sun=7
+  const thursday = new Date(d)
+  thursday.setDate(d.getDate() - day + 4)
+  const yearStart = new Date(thursday.getFullYear(), 0, 1)
+  const week = Math.ceil(((thursday.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
+  return `${thursday.getFullYear()}-W${String(week).padStart(2, '0')}`
+}
+
+const MEAL_GEN_KEY = () => `meal_plan_gen_${isoWeekKey()}`
+
+function getMealPlanGenCount(): number {
+  if (typeof window === 'undefined') return 0
+  return parseInt(localStorage.getItem(MEAL_GEN_KEY()) || '0', 10)
+}
+
+function incrementMealPlanGenCount(): number {
+  if (typeof window === 'undefined') return 0
+  const next = getMealPlanGenCount() + 1
+  localStorage.setItem(MEAL_GEN_KEY(), String(next))
+  return next
+}
 
 type Meal = {
   id: string
@@ -96,6 +122,10 @@ export default function MealPlanPage() {
   // Profile + plan tier
   const [profile, setProfile] = useState<Profile | null>(null)
   const [userPlan, setUserPlan] = useState<string>('free')
+  const [genCount, setGenCount] = useState(0)
+
+  // Load weekly gen count from localStorage on mount
+  useEffect(() => { setGenCount(getMealPlanGenCount()) }, [])
 
   // Questionnaire modal
   const [showQuestionnaire, setShowQuestionnaire] = useState(false)
@@ -133,7 +163,7 @@ export default function MealPlanPage() {
       if (res.ok) {
         const data = await res.json()
         setProfile(data)
-        setUserPlan(data.Plan || 'free')
+        setUserPlan(resolvePlan(data.Plan))
         if (Number(data.Meals_Per_Day) >= 4) {
           setQuestionnaire(q => ({ ...q, includeSnacks: true }))
         }
@@ -168,6 +198,13 @@ export default function MealPlanPage() {
       setMeals(normalizeMeals(Array.isArray(data) ? data : (data.meals || [])))
       setGroceryList(null)
       setPageView('plan')
+      // Track weekly generation count for standard plan limiting
+      const plan = resolvePlan(userPlan)
+      const weeklyLimit = PLAN_LIMITS[plan].mealPlansPerWeek
+      if (isFinite(weeklyLimit)) {
+        const newCount = incrementMealPlanGenCount()
+        setGenCount(newCount)
+      }
     } catch (err) { console.error(err); alert('Something went wrong. Please try again!') }
     finally { setGenerating(false) }
   }
@@ -258,6 +295,9 @@ export default function MealPlanPage() {
     fat_g: dayMeals.reduce((s, m) => s + m.fat_g, 0),
   }
   const isPremium = userPlan === 'premium'
+  const resolvedPlan = resolvePlan(userPlan)
+  const weeklyLimit = PLAN_LIMITS[resolvedPlan].mealPlansPerWeek
+  const weeklyLimitReached = isFinite(weeklyLimit) && genCount >= weeklyLimit
 
   return (
     <PlanGate feature="mealPlan">
@@ -269,13 +309,28 @@ export default function MealPlanPage() {
           <a href="/dashboard" className="text-sm text-gray-500 hover:text-gray-700">← Dashboard</a>
           <h1 className="text-lg font-bold text-gray-800">Meal Planner</h1>
           <button
-            onClick={() => setShowQuestionnaire(true)}
-            disabled={generating}
-            className="bg-green-500 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-green-600 disabled:bg-gray-300 transition-colors"
+            onClick={() => weeklyLimitReached ? null : setShowQuestionnaire(true)}
+            disabled={generating || weeklyLimitReached}
+            className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
+              weeklyLimitReached
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-green-500 text-white hover:bg-green-600 disabled:bg-gray-300'
+            }`}
           >
-            {generating ? 'Generating...' : meals.length > 0 ? '↺ Regenerate' : '✨ Generate'}
+            {generating ? 'Generating...' : weeklyLimitReached ? '1/week used ⭐' : meals.length > 0 ? '↺ Regenerate' : '✨ Generate'}
           </button>
         </div>
+
+        {/* Weekly limit reached banner */}
+        {weeklyLimitReached && (
+          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-center">
+            <p className="text-sm font-semibold text-amber-800 mb-1">You've used your 1 meal plan generation this week</p>
+            <p className="text-xs text-amber-600 mb-2">Resets every Monday. Upgrade to Premium for unlimited generations.</p>
+            <a href="/subscribe" className="inline-block bg-green-600 text-white text-xs font-semibold px-4 py-1.5 rounded-full hover:bg-green-700 transition-colors">
+              Upgrade to Premium →
+            </a>
+          </div>
+        )}
 
         {/* Tab nav */}
         <div className="flex gap-1 bg-white rounded-xl p-1 shadow-sm border border-gray-100 mb-5">

@@ -2,8 +2,9 @@
  * Plan tiers and feature flags for Nutrition by Nali
  *
  * Free     — $0    Food logging (manual + search), 5 Nali messages/day, no memory
- * Standard — $9.99 + barcode scanner, photo log, meal plans, 30 Nali messages/day, 24hr memory
- * Premium  — $29.99 + grocery list, AI check-ins, unlimited Nali, 7-day memory
+ * Standard — $9.99 + barcode scanner, photo log, meal plans (1/week), 10 Nali messages/day, 24hr memory
+ * Premium  — $29.99 + grocery list, AI check-ins, measurements + charts, unlimited meal plans,
+ *             unlimited Nali, unlimited memory
  */
 
 export type Plan = 'free' | 'standard' | 'premium'
@@ -12,29 +13,35 @@ export const PLAN_LIMITS = {
   free: {
     naliMessagesPerDay: 5,
     memoryHours: 0,
+    mealPlansPerWeek: 0,
     barcode: false,
     photoLog: false,
     mealPlan: false,
     groceryList: false,
     checkIns: false,
+    measurements: false,
   },
   standard: {
-    naliMessagesPerDay: 30,
+    naliMessagesPerDay: 10,
     memoryHours: 24,
+    mealPlansPerWeek: 1,
     barcode: true,
     photoLog: true,
     mealPlan: true,
     groceryList: false,
     checkIns: false,
+    measurements: false,
   },
   premium: {
     naliMessagesPerDay: Infinity,
-    memoryHours: 168, // 7 days
+    memoryHours: Infinity,
+    mealPlansPerWeek: Infinity,
     barcode: true,
     photoLog: true,
     mealPlan: true,
     groceryList: true,
     checkIns: true,
+    measurements: true,
   },
 } as const
 

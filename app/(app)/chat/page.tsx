@@ -135,7 +135,7 @@ const MAX_STORED_MESSAGES = 60
 const HISTORY_TTL_MS: Record<Plan, number> = {
   free: 0,                           // no history
   standard: 24 * 60 * 60 * 1000,   // 24 hours
-  premium: Infinity,                 // forever
+  premium: Infinity,                 // unlimited
 }
 
 export default function ChatPage() {
@@ -455,7 +455,7 @@ async function moveFoodLog(moveData: Record<string, unknown>, email: string) {
               You've used all {PLAN_LIMITS[plan].naliMessagesPerDay} Nali messages for today
             </p>
             <p className="text-xs text-amber-600 mb-2">
-              {plan === 'free' ? 'Standard gets 30/day, Premium gets unlimited.' : 'Upgrade to Premium for unlimited messages.'}
+              {plan === 'free' ? 'Standard gets 10/day, Premium gets unlimited.' : 'Upgrade to Premium for unlimited messages.'}
             </p>
             <a href="/subscribe" className="inline-block bg-green-600 text-white text-xs font-semibold px-4 py-1.5 rounded-full hover:bg-green-700 transition-colors">
               Upgrade Plan →
