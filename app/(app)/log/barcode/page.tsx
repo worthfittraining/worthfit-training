@@ -62,6 +62,9 @@ export default function BarcodePage() {
   const [contrib, setContrib] = useState({ name: '', brand: '', calories: '', protein: '', carbs: '', fat: '', serving_size: '' })
   const [contributing, setContributing] = useState(false)
 
+  // Detect platform for error messages
+  const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent)
+
   // Hard fallback: if camera isn't open after 12s and no error shown,
   // the WebView is silently blocking it — show a clear message
   useEffect(() => {
@@ -69,7 +72,9 @@ export default function BarcodePage() {
     const id = setTimeout(() => {
       setCameraReady(prev => {
         if (!prev) {
-          setError('Camera isn\'t opening. On your iPhone, go to Settings → Privacy & Security → Camera → Safari and make sure it\'s allowed. Then close Safari completely and try again.')
+          setError(isIOS
+            ? 'Camera isn\'t opening. Go to iPhone Settings → Privacy & Security → Camera → Safari and make sure it\'s allowed. Then close Safari and try again.'
+            : 'Camera isn\'t opening. Go to your phone\'s Settings → Apps → Chrome (or your browser) → Permissions → Camera and make sure it\'s allowed. Then reload the page.')
         }
         return prev
       })
@@ -244,7 +249,9 @@ export default function BarcodePage() {
         } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
           setError('Camera is in use by another app. Close other apps and try again.')
         } else if (err.message === 'CameraTimeout') {
-          setError('Camera took too long to open. Go to iPhone Settings → Privacy & Security → Camera → Safari and make sure it\'s enabled. Then force-close Safari and try again.')
+          setError(isIOS
+            ? 'Camera took too long to open. Go to iPhone Settings → Privacy & Security → Camera → Safari, make sure it\'s enabled, then force-close Safari and try again.'
+            : 'Camera took too long to open. Go to your phone Settings → Apps → your browser → Permissions → Camera, make sure it\'s allowed, then reload the page.')
         } else {
           setError('Camera not available. Please allow camera access and reload.')
         }

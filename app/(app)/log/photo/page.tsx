@@ -39,20 +39,33 @@ export default function PhotoLogPage() {
 
   function handleFile(file: File) {
     if (!file) return
-    // Normalize to supported Claude vision types — iOS HEIC and others default to jpeg
-    const SUPPORTED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-    const raw = file.type || 'image/jpeg'
-    const type = SUPPORTED.includes(raw) ? raw : 'image/jpeg'
-    setMediaType(type)
+    setEstimate(null)
+    setEditedEstimate(null)
+    setError(null)
+    setMediaType('image/jpeg')
+
     const reader = new FileReader()
     reader.onloadend = () => {
-      const result = reader.result as string
-      const base64 = result.split(',')[1]
-      setImageBase64(base64)
-      setPreview(result)
-      setEstimate(null)
-      setEditedEstimate(null)
-      setError(null)
+      const dataUrl = reader.result as string
+      // Resize + compress before sending — Samsung Galaxy / high-res cameras
+      // produce 8-12MB photos that crash the browser or exceed API limits
+      const img = new Image()
+      img.onload = () => {
+        const MAX = 1200 // px on longest side — enough for Nali to read the food
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height))
+        const w = Math.round(img.width * scale)
+        const h = Math.round(img.height * scale)
+        const canvas = document.createElement('canvas')
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+        ctx.drawImage(img, 0, 0, w, h)
+        const compressed = canvas.toDataURL('image/jpeg', 0.82)
+        setImageBase64(compressed.split(',')[1])
+        setPreview(compressed)
+      }
+      img.src = dataUrl
     }
     reader.readAsDataURL(file)
   }
