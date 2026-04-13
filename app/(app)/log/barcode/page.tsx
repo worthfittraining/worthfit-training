@@ -69,7 +69,7 @@ export default function BarcodePage() {
     const id = setTimeout(() => {
       setCameraReady(prev => {
         if (!prev) {
-          setError('Camera isn\'t opening in this browser. Please open the app in Safari for the best experience, or use "Enter food manually" below.')
+          setError('Camera isn\'t opening. On your iPhone, go to Settings → Privacy & Security → Camera → Safari and make sure it\'s allowed. Then close Safari completely and try again.')
         }
         return prev
       })
@@ -244,7 +244,7 @@ export default function BarcodePage() {
         } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
           setError('Camera is in use by another app. Close other apps and try again.')
         } else if (err.message === 'CameraTimeout') {
-          setError('Camera took too long to open. Try force-closing the app and reopening, or use the Google Chrome browser instead.')
+          setError('Camera took too long to open. Go to iPhone Settings → Privacy & Security → Camera → Safari and make sure it\'s enabled. Then force-close Safari and try again.')
         } else {
           setError('Camera not available. Please allow camera access and reload.')
         }
