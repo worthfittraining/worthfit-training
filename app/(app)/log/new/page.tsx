@@ -168,10 +168,15 @@ export default function NewLogPage() {
         setNotes('')
         setManualForm({ food_name: '', calories: '', protein_g: '', carbs_g: '', fat_g: '', fiber_g: '' })
       } else {
-        alert('Failed to save. Please try again.')
+        const errData = await res.json().catch(() => ({}))
+        if (res.status === 404) {
+          alert('We couldn\'t find your account — please email support at worthfittraining@gmail.com so we can fix this quickly!')
+        } else {
+          alert(`Failed to save (error ${res.status}). Please try again or contact support.`)
+        }
       }
     } catch {
-      alert('Something went wrong.')
+      alert('Something went wrong. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -382,6 +387,11 @@ export default function NewLogPage() {
             className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-medium py-3 rounded-xl transition-colors">
             {saving ? 'Saving...' : savedFoods.length > 0 ? '+ Add Another Food' : 'Save to Log'}
           </button>
+          {!canSave && !saving && (
+            <p className="text-center text-xs text-gray-400 mt-2">
+              {manualMode ? 'Enter a food name above to save' : 'Search for a food above to save'}
+            </p>
+          )}
         </form>
       </div>
     </div>
