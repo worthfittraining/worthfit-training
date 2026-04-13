@@ -4,6 +4,8 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import PlanGate from '@/app/components/PlanGate'
+import { canUsePhotoLog, incrementPhotoLogCount, getPhotoLogCount, PLAN_LIMITS, resolvePlan } from '@/lib/plan'
+import { useEffect } from 'react'
 
 type NutritionEstimate = {
   food_name: string
@@ -36,6 +38,18 @@ export default function PhotoLogPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editedEstimate, setEditedEstimate] = useState<NutritionEstimate | null>(null)
+  const [userPlan, setUserPlan] = useState<'free' | 'standard' | 'premium'>('standard')
+  const [photoCount, setPhotoCount] = useState(0)
+
+  useEffect(() => {
+    const email = user?.primaryEmailAddress?.emailAddress
+    if (!email) return
+    fetch(`/api/profile?email=${encodeURIComponent(email)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.Plan) setUserPlan(resolvePlan(data.Plan)) })
+      .catch(() => {})
+    setPhotoCount(getPhotoLogCount())
+  }, [user])
 
   function handleFile(file: File) {
     if (!file) return
@@ -72,6 +86,11 @@ export default function PhotoLogPage() {
 
   async function analyzePhoto() {
     if (!imageBase64) return
+    if (!canUsePhotoLog(userPlan)) {
+      const limit = PLAN_LIMITS[userPlan].photoLogsPerDay
+      setError(`You've used all ${limit} photo analyses for today. ${userPlan === 'standard' ? 'Upgrade to Premium for 15/day.' : 'Limit resets at midnight.'}`)
+      return
+    }
     setAnalyzing(true)
     setError(null)
     try {
@@ -87,6 +106,8 @@ export default function PhotoLogPage() {
       const data: NutritionEstimate = await res.json()
       setEstimate(data)
       setEditedEstimate(data)
+      const newCount = incrementPhotoLogCount()
+      setPhotoCount(newCount)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Something went wrong'
       // Translate generic errors into helpful, actionable messages
@@ -219,12 +240,18 @@ export default function PhotoLogPage() {
                 </button>
                 <button
                   onClick={analyzePhoto}
-                  disabled={analyzing}
+                  disabled={analyzing || !canUsePhotoLog(userPlan)}
                   className="flex-grow bg-green-500 text-white py-3 px-6 rounded-xl font-semibold hover:bg-green-600 disabled:opacity-60 transition"
                 >
                   {analyzing ? '🔍 Analyzing...' : '✨ Analyze with Nali'}
                 </button>
               </div>
+              {PLAN_LIMITS[userPlan].photoLogsPerDay !== Infinity && (
+                <p className="text-center text-xs text-gray-400 mt-2">
+                  {photoCount}/{PLAN_LIMITS[userPlan].photoLogsPerDay} photo analyses used today
+                  {userPlan === 'standard' && photoCount >= PLAN_LIMITS[userPlan].photoLogsPerDay && ' · Upgrade to Premium for 15/day'}
+                </p>
+              )}
               {analyzing && (
                 <p className="text-center text-sm text-gray-500 mt-3 animate-pulse">
                   Nali is examining your meal...

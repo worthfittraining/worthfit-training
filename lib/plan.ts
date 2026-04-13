@@ -2,9 +2,9 @@
  * Plan tiers and feature flags for Nutrition by Nali
  *
  * Free     — $0    Food logging (manual + search), 5 Nali messages/day, no memory
- * Standard — $9.99 + barcode scanner, photo log, meal plans (1/week), 10 Nali messages/day, 24hr memory
+ * Standard — $9.99 + barcode scanner, photo log (5/day), meal plans (1/week), 10 Nali messages/day, 24hr memory
  * Premium  — $29.99 + grocery list, AI check-ins, measurements + charts, unlimited meal plans,
- *             unlimited Nali, unlimited memory
+ *             photo log (15/day), unlimited Nali, unlimited memory
  */
 
 export type Plan = 'free' | 'standard' | 'premium'
@@ -14,6 +14,7 @@ export const PLAN_LIMITS = {
     naliMessagesPerDay: 5,
     memoryHours: 0,
     mealPlansPerWeek: 0,
+    photoLogsPerDay: 0,
     barcode: false,
     photoLog: false,
     mealPlan: false,
@@ -25,6 +26,7 @@ export const PLAN_LIMITS = {
     naliMessagesPerDay: 10,
     memoryHours: 24,
     mealPlansPerWeek: 1,
+    photoLogsPerDay: 5,
     barcode: true,
     photoLog: true,
     mealPlan: true,
@@ -36,6 +38,7 @@ export const PLAN_LIMITS = {
     naliMessagesPerDay: Infinity,
     memoryHours: Infinity,
     mealPlansPerWeek: Infinity,
+    photoLogsPerDay: 15,
     barcode: true,
     photoLog: true,
     mealPlan: true,
@@ -95,4 +98,28 @@ export function canSendNaliMessage(plan: Plan): boolean {
   const limit = PLAN_LIMITS[plan].naliMessagesPerDay
   if (!isFinite(limit)) return true
   return getNaliMessageCount() < limit
+}
+
+// ── Daily photo log counter (localStorage) ────────────────────────────────
+
+const PHOTO_STORAGE_KEY = () => `photo_log_${localDateKey()}`
+
+export function getPhotoLogCount(): number {
+  if (typeof window === 'undefined') return 0
+  return parseInt(localStorage.getItem(PHOTO_STORAGE_KEY()) || '0', 10)
+}
+
+export function incrementPhotoLogCount(): number {
+  if (typeof window === 'undefined') return 0
+  const key = PHOTO_STORAGE_KEY()
+  const next = parseInt(localStorage.getItem(key) || '0', 10) + 1
+  localStorage.setItem(key, String(next))
+  return next
+}
+
+export function canUsePhotoLog(plan: Plan): boolean {
+  const limit = PLAN_LIMITS[plan].photoLogsPerDay
+  if (!isFinite(limit)) return true
+  if (limit === 0) return false
+  return getPhotoLogCount() < limit
 }
