@@ -46,8 +46,13 @@ export async function POST(req: NextRequest) {
       .join('')
 
     return NextResponse.json({ content: text })
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('Chat API error:', err)
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    // Check for Anthropic credit/billing errors and return a clean message
+    const errStr = String(err)
+    if (errStr.includes('credit') || errStr.includes('billing') || errStr.includes('balance')) {
+      return NextResponse.json({ error: 'Nali is temporarily unavailable. Please try again in a few minutes.' }, { status: 503 })
+    }
+    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
   }
 }

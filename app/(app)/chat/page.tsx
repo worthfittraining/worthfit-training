@@ -376,8 +376,11 @@ async function moveFoodLog(moveData: Record<string, unknown>, email: string) {
     } catch (err) {
       console.error('Chat error:', err)
       const errMsg = err instanceof Error ? err.message : String(err)
-      // Replace the placeholder with the error message
-      setMessages(prev => [...prev.slice(0, -1), { role: 'assistant', content: `Error: ${errMsg}` }])
+      // Show a friendly message — never expose raw API errors to users
+      const friendlyMsg = errMsg.toLowerCase().includes('credit') || errMsg.toLowerCase().includes('billing') || errMsg.toLowerCase().includes('balance') || errMsg.toLowerCase().includes('503')
+        ? "I'm temporarily unavailable — please try again in a few minutes! In the meantime you can log food manually from the Log tab. 🙏"
+        : "Sorry, something went wrong on my end. Please try again!"
+      setMessages(prev => [...prev.slice(0, -1), { role: 'assistant', content: friendlyMsg }])
     } finally {
       setLoading(false)
     }
