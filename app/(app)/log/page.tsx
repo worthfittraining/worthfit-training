@@ -273,8 +273,7 @@ export default function LogPage() {
   function goToNextDay() {
     const d = new Date(selectedDate + 'T00:00:00')
     d.setDate(d.getDate() + 1)
-    const next = localDateString(d)
-    if (next <= today) setSelectedDate(next)
+    setSelectedDate(localDateString(d))
   }
 
   const totalCalories = logs.reduce((s, l) => s + (l.calories || 0), 0)
@@ -336,18 +335,17 @@ export default function LogPage() {
               </div>
               <button
                 onClick={goToNextDay}
-                disabled={isViewingToday}
-                className={`text-xl font-bold w-8 flex items-center justify-center transition-colors ${isViewingToday ? 'text-gray-200 cursor-default' : 'text-gray-400 hover:text-gray-700'}`}
+                className="text-xl font-bold w-8 flex items-center justify-center transition-colors text-gray-400 hover:text-gray-700"
               >›</button>
             </div>
 
             {/* Add food buttons — only show when viewing today */}
-            {isViewingToday ? (
+            {selectedDate >= today ? (
               <div className="grid grid-cols-3 gap-3 mb-6">
                 <Link href="/log/photo" className="bg-white border-2 border-green-400 text-green-600 py-4 rounded-xl font-semibold text-center hover:bg-green-50 transition text-sm">📷<br />Photo</Link>
                 <Link href="/log/barcode" className="bg-white border-2 border-indigo-400 text-indigo-600 py-4 rounded-xl font-semibold text-center hover:bg-indigo-50 transition text-sm">🔍<br />Barcode</Link>
                 <Link href="/log/recipe" className="bg-white border-2 border-orange-400 text-orange-600 py-4 rounded-xl font-semibold text-center hover:bg-orange-50 transition text-sm">🍳<br />Recipe</Link>
-                <Link href="/log/new" className="bg-white border-2 border-blue-400 text-blue-600 py-4 rounded-xl font-semibold text-center hover:bg-blue-50 transition text-sm">✏️<br />Manual</Link>
+                <Link href={`/log/new?date=${selectedDate}`} className="bg-white border-2 border-blue-400 text-blue-600 py-4 rounded-xl font-semibold text-center hover:bg-blue-50 transition text-sm">✏️<br />Manual</Link>
                 <Link href="/chat" className="bg-white border-2 border-purple-400 text-purple-600 py-4 rounded-xl font-semibold text-center hover:bg-purple-50 transition text-sm col-span-2">💬 Ask Nali</Link>
               </div>
             ) : (

@@ -72,7 +72,13 @@ export default function NewLogPage() {
   function localDateString(d: Date = new Date()): string {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   }
-  const [logDate, setLogDate] = useState(localDateString())
+  const [logDate, setLogDate] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search).get('date')
+      if (p && /^\d{4}-\d{2}-\d{2}$/.test(p)) return p
+    }
+    return localDateString()
+  })
   // Track foods saved this session so user can keep adding without leaving the page
   const [savedFoods, setSavedFoods] = useState<string[]>([])
 
