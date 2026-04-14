@@ -325,7 +325,7 @@ export default function RecipePage() {
           date: localDateString(),
         }),
       })
-      if (res.ok) router.push('/log')
+      if (res.ok) { router.push('/log'); router.refresh() }
       else alert('Failed to save. Please try again.')
     } catch {
       alert('Something went wrong.')
@@ -343,7 +343,7 @@ export default function RecipePage() {
 
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <a href="/log" className="text-sm text-gray-500 hover:text-gray-700">← Back</a>
+          <button onClick={() => { router.push('/log'); router.refresh() }} className="text-sm text-gray-500 hover:text-gray-700">← Back</button>
           <h1 className="text-lg font-bold text-gray-800">🍳 Recipe Builder</h1>
           <div className="w-12" />
         </div>

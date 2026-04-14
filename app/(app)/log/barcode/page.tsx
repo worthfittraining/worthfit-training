@@ -287,7 +287,7 @@ export default function BarcodePage() {
         }),
       })
       if (!res.ok) throw new Error('Failed to save')
-      router.push('/log')
+      router.push('/log'); router.refresh()
     } catch {
       setError('Failed to save')
       setSaving(false)
@@ -303,7 +303,7 @@ export default function BarcodePage() {
         <button
           onClick={() => {
             if (controlsRef.current) { try { controlsRef.current.stop() } catch {} }
-            router.push('/log')
+            router.push('/log'); router.refresh()
           }}
           className="text-2xl leading-none"
         >

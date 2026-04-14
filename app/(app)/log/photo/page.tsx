@@ -145,7 +145,7 @@ export default function PhotoLogPage() {
         }),
       })
       if (!res.ok) throw new Error('save_failed')
-      router.push('/log')
+      router.push('/log'); router.refresh()
     } catch (e) {
       const msg = e instanceof Error ? e.message : ''
       setError(msg === 'save_failed'
@@ -176,7 +176,7 @@ export default function PhotoLogPage() {
       <div className="max-w-md mx-auto">
         <div className="flex items-center gap-3 mb-6">
           <button
-            onClick={() => router.push('/log')}
+            onClick={() => { router.push('/log'); router.refresh() }}
             className="text-gray-500 hover:text-gray-800 text-2xl leading-none"
           >
             ←
