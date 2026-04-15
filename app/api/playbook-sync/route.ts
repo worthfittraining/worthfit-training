@@ -12,7 +12,7 @@ const getStripe = () => new Stripe(process.env.STRIPE_SECRET_KEY!)
 const WEBHOOK_SECRET = process.env.PLAYBOOK_WEBHOOK_SECRET
 
 async function findClientByEmail(email: string): Promise<{ id: string; fields: Record<string, unknown> } | null> {
-  const formula = encodeURIComponent(`{Email}="${email.toLowerCase().trim()}"`)
+   const formula = encodeURIComponent(`LOWER({Email})="${email.toLowerCase().trim()}"`)
   const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(CLIENTS_TABLE)}?filterByFormula=${formula}&maxRecords=1`
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
