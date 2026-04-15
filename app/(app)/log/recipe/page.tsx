@@ -89,98 +89,87 @@ export default function RecipePage() {
   const barcodeVideoRef = useRef<HTMLVideoElement>(null)
   const barcodeControlsRef = useRef<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
 
-  // Start/stop barcode scanner when showBarcode changes
+  // Stop scanner when showBarcode is hidden
   useEffect(() => {
-    if (!showBarcode) {
-      if (barcodeControlsRef.current) {
-        try { barcodeControlsRef.current.stop() } catch {}
-        barcodeControlsRef.current = null
-      }
-      return
-    }
-    let active = true
-    async function startScanner() {
-      if (!barcodeVideoRef.current) return
-      try {
-        if (!navigator.mediaDevices?.getUserMedia) {
-          setBarcodeError('Camera not supported in this browser.')
-          return
-        }
-        // Race getUserMedia against 8s timeout — prevents hanging forever on iOS
-        const streamOrTimeout = await Promise.race([
-          navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-          }),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('CameraTimeout')), 8000)
-          ),
-        ])
-        const stream = streamOrTimeout as MediaStream
-        if (!active) { stream.getTracks().forEach(t => t.stop()); return }
-
-        const video = barcodeVideoRef.current
-        video.playsInline = true
-        video.muted = true
-        video.srcObject = stream
-        try {
-          await Promise.race([video.play(), new Promise<void>(r => setTimeout(r, 3000))])
-        } catch { /* autoplay policy — muted video should be fine */ }
-
-        // @ts-ignore
-        const { BrowserMultiFormatReader } = await import('@zxing/browser')
-        const reader = new BrowserMultiFormatReader()
-        const controls = await reader.decodeFromStream(stream, video, async (result: any, _err: any, ctrl: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-          if (!active || !result) return
-          active = false
-          ctrl.stop()
-          barcodeControlsRef.current = null
-          setBarcodeLoading(true)
-          try {
-            const res = await fetch(`/api/barcode?code=${result.getText()}`)
-            if (res.status === 404) { setBarcodeError('Product not found — try searching manually'); setBarcodeLoading(false); return }
-            const food = await res.json()
-            const sr: SearchResult = {
-              name: food.name,
-              serving: food.serving_size_g ? `${food.serving_size_g}g` : '100g',
-              calories: Math.round(food.calories_per_100g * (food.serving_size_g || 100) / 100),
-              protein_g: Math.round(food.protein_per_100g * (food.serving_size_g || 100) / 100 * 10) / 10,
-              carbs_g: Math.round(food.carbs_per_100g * (food.serving_size_g || 100) / 100 * 10) / 10,
-              fat_g: Math.round(food.fat_per_100g * (food.serving_size_g || 100) / 100 * 10) / 10,
-              cal_per_100g: food.calories_per_100g,
-              protein_per_100g: food.protein_per_100g,
-              carbs_per_100g: food.carbs_per_100g,
-              fat_per_100g: food.fat_per_100g,
-            }
-            addIngredient(sr)
-            setShowBarcode(false)
-          } catch {
-            setBarcodeError('Error looking up barcode')
-          } finally {
-            setBarcodeLoading(false)
-          }
-        })
-        if (active) barcodeControlsRef.current = controls
-        else controls.stop()
-      } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-        if (!active) return
-        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-          setBarcodeError('Camera access denied — please allow camera in your browser settings.')
-        } else if (err.message === 'CameraTimeout') {
-          setBarcodeError('Camera took too long to open. Try opening nutritionbynali.com directly in Safari.')
-        } else {
-          setBarcodeError('Camera not available. Please allow camera access and try again.')
-        }
-      }
-    }
-    startScanner()
-    return () => {
-      active = false
-      if (barcodeControlsRef.current) {
-        try { barcodeControlsRef.current.stop() } catch {}
-        barcodeControlsRef.current = null
-      }
+    if (!showBarcode && barcodeControlsRef.current) {
+      try { barcodeControlsRef.current.stop() } catch {}
+      barcodeControlsRef.current = null
     }
   }, [showBarcode])
+
+  // Called DIRECTLY from the barcode button click — iOS Safari requires getUserMedia
+  // to be called synchronously within a user gesture, not deferred via useEffect
+  async function startBarcodeScanner() {
+    setBarcodeError(null)
+    setShowBarcode(true)
+    if (!barcodeVideoRef.current) return
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setBarcodeError('Camera not supported in this browser.')
+        return
+      }
+      const streamOrTimeout = await Promise.race([
+        navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('CameraTimeout')), 8000)
+        ),
+      ])
+      const stream = streamOrTimeout as MediaStream
+      const video = barcodeVideoRef.current
+      video.playsInline = true
+      video.muted = true
+      video.srcObject = stream
+      try {
+        await Promise.race([video.play(), new Promise<void>(r => setTimeout(r, 3000))])
+      } catch { /* muted video autoplay — ignore */ }
+
+      // @ts-ignore
+      const { BrowserMultiFormatReader } = await import('@zxing/browser')
+      const reader = new BrowserMultiFormatReader()
+      let active = true
+      const controls = await reader.decodeFromStream(stream, video, async (result: any, _err: any, ctrl: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        if (!active || !result) return
+        active = false
+        ctrl.stop()
+        barcodeControlsRef.current = null
+        setBarcodeLoading(true)
+        try {
+          const res = await fetch(`/api/barcode?code=${result.getText()}`)
+          if (res.status === 404) { setBarcodeError('Product not found — try searching manually'); setBarcodeLoading(false); return }
+          const food = await res.json()
+          const sr: SearchResult = {
+            name: food.name,
+            serving: food.serving_size_g ? `${food.serving_size_g}g` : '100g',
+            calories: Math.round(food.calories_per_100g * (food.serving_size_g || 100) / 100),
+            protein_g: Math.round(food.protein_per_100g * (food.serving_size_g || 100) / 100 * 10) / 10,
+            carbs_g: Math.round(food.carbs_per_100g * (food.serving_size_g || 100) / 100 * 10) / 10,
+            fat_g: Math.round(food.fat_per_100g * (food.serving_size_g || 100) / 100 * 10) / 10,
+            cal_per_100g: food.calories_per_100g,
+            protein_per_100g: food.protein_per_100g,
+            carbs_per_100g: food.carbs_per_100g,
+            fat_per_100g: food.fat_per_100g,
+          }
+          addIngredient(sr)
+          setShowBarcode(false)
+        } catch {
+          setBarcodeError('Error looking up barcode')
+        } finally {
+          setBarcodeLoading(false)
+        }
+      })
+      barcodeControlsRef.current = { stop: () => { active = false; try { controls.stop() } catch {} } }
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setBarcodeError('Camera access denied — go to Settings → Safari → Camera → Allow, then try again.')
+      } else if (err.message === 'CameraTimeout') {
+        setBarcodeError('Camera took too long to open. Try opening nutritionbynali.com directly in Safari.')
+      } else {
+        setBarcodeError('Camera not available. Please allow camera access and try again.')
+      }
+    }
+  }
 
   async function handleSearch() {
     if (!searchQuery.trim()) return
@@ -371,7 +360,7 @@ export default function RecipePage() {
                 + Search
               </button>
               <button
-                onClick={() => { setShowSearch(false); setManualMode(false); setBarcodeError(null); setShowBarcode(b => !b) }}
+                onClick={() => { setShowSearch(false); setManualMode(false); setBarcodeError(null); if (!showBarcode) { startBarcodeScanner() } else { setShowBarcode(false) } }}
                 className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-medium hover:bg-indigo-100 transition"
               >
                 🔍 Barcode

@@ -53,6 +53,7 @@ export default function BarcodePage() {
   const [phase, setPhase] = useState<Phase>('scanning')
   const [cameraStarted, setCameraStarted] = useState(false)
   const [cameraReady, setCameraReady] = useState(false)
+  const streamRef = useRef<MediaStream | null>(null)
   const [food, setFood] = useState<FoodData | null>(null)
   const [qty, setQty] = useState(100)
   const [unit, setUnit] = useState('g')
@@ -69,7 +70,7 @@ export default function BarcodePage() {
   // Hard fallback: if camera isn't open after 12s and no error shown,
   // the WebView is silently blocking it — show a clear message
   useEffect(() => {
-    if (phase !== 'scanning' || !cameraStarted) return
+    if (phase !== 'scanning' || !cameraStarted || cameraReady || error) return
     const id = setTimeout(() => {
       setCameraReady(prev => {
         if (!prev) {
@@ -81,7 +82,7 @@ export default function BarcodePage() {
       })
     }, 12000)
     return () => clearTimeout(id)
-  }, [phase, cameraStarted])
+  }, [phase, cameraStarted, cameraReady, error])
 
   async function lookupBarcode(barcode: string) {
     setPhase('loading')
@@ -151,124 +152,117 @@ export default function BarcodePage() {
     }
   }
 
+  // Cleanup on unmount
   useEffect(() => {
-    let active = true
-
-    async function startScanner() {
-      if (!videoRef.current) return
-      try {
-        // Check if mediaDevices is available (requires HTTPS)
-        if (!navigator.mediaDevices?.getUserMedia) {
-          setError('Camera not supported. Make sure you\'re using HTTPS.')
-          return
-        }
-
-        // Get the back camera stream — getUserMedia can also hang on some iOS WebViews,
-        // so race it against an 8s timeout to avoid the spinner hanging forever
-        const streamOrTimeout = await Promise.race([
-          navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-          }),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('CameraTimeout')), 8000)
-          ),
-        ])
-        const stream = streamOrTimeout as MediaStream
-        if (!active) { stream.getTracks().forEach(t => t.stop()); return }
-
-        // Attach stream to video element
-        // NOTE: playsInline + muted must also be set as properties (not just attributes) for iOS Safari
-        const video = videoRef.current
-        video.playsInline = true
-        video.muted = true
-        video.srcObject = stream
-
-        // video.play() can also hang indefinitely on iOS WebViews (e.g. Google app) —
-        // race against a 3s timeout so we always proceed if the stream is attached
-        try {
-          await Promise.race([
-            video.play(),
-            new Promise<void>(resolve => setTimeout(resolve, 3000)),
-          ])
-        } catch {
-          // Muted video shouldn't be blocked by autoplay policy; ignore and proceed
-        }
-        if (active) setCameraReady(true)
-
-        // ── Strategy 1: Native BarcodeDetector (Chrome Android, fast + reliable) ──
-        if ('BarcodeDetector' in window) {
-          // @ts-ignore
-          const detector = new window.BarcodeDetector()
-          let rafId: number
-
-          async function scan() {
-            if (!active) return
-            try {
-              // @ts-ignore
-              const barcodes = await detector.detect(video)
-              if (barcodes.length > 0 && active) {
-                active = false
-                stream.getTracks().forEach(t => t.stop())
-                lookupBarcode(barcodes[0].rawValue)
-                return
-              }
-            } catch { /* no barcode this frame, keep going */ }
-            rafId = requestAnimationFrame(scan)
-          }
-
-          rafId = requestAnimationFrame(scan)
-          controlsRef.current = { stop: () => { cancelAnimationFrame(rafId); stream.getTracks().forEach(t => t.stop()) } }
-          return
-        }
-
-        // ── Strategy 2: ZXing fallback (iOS Safari and other browsers) ──
-        // @ts-ignore
-        const { BrowserMultiFormatReader } = await import('@zxing/browser')
-        const reader = new BrowserMultiFormatReader()
-        const controls = await reader.decodeFromStream(
-          stream,
-          video,
-          (result: any, _err: any, ctrl: any) => {
-            if (!active || !result) return
-            active = false
-            ctrl.stop()
-            controlsRef.current = null
-            lookupBarcode(result.getText())
-          }
-        )
-        if (active) {
-          controlsRef.current = controls
-        } else {
-          controls.stop()
-        }
-      } catch (err: any) {
-        if (!active) return
-        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-          setError('Camera access denied. Go to your browser Settings → allow camera for this site, then reload.')
-        } else if (err.name === 'NotFoundError') {
-          setError('No camera found on this device.')
-        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-          setError('Camera is in use by another app. Close other apps and try again.')
-        } else if (err.message === 'CameraTimeout') {
-          setError(isIOS
-            ? 'Camera took too long to open. Go to iPhone Settings → Privacy & Security → Camera → Safari, make sure it\'s enabled, then force-close Safari and try again.'
-            : 'Camera took too long to open. Go to your phone Settings → Apps → your browser → Permissions → Camera, make sure it\'s allowed, then reload the page.')
-        } else {
-          setError('Camera not available. Please allow camera access and reload.')
-        }
-      }
-    }
-
-    if (cameraStarted) startScanner()
-
     return () => {
-      active = false
       if (controlsRef.current) {
         try { controlsRef.current.stop() } catch {}
         controlsRef.current = null
       }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop())
+        streamRef.current = null
+      }
     }
-  }, [cameraStarted])
+  }, [])
+
+  // Called DIRECTLY from the tap button — iOS Safari requires getUserMedia
+  // to be invoked synchronously within a user gesture, not via useEffect
+  async function startCamera() {
+    if (!videoRef.current) return
+    setCameraStarted(true)
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setError('Camera not supported. Make sure you\'re using HTTPS.')
+        return
+      }
+
+      const streamOrTimeout = await Promise.race([
+        navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('CameraTimeout')), 8000)
+        ),
+      ])
+      const stream = streamOrTimeout as MediaStream
+      streamRef.current = stream
+
+      const video = videoRef.current
+      video.playsInline = true
+      video.muted = true
+      video.srcObject = stream
+
+      try {
+        await Promise.race([
+          video.play(),
+          new Promise<void>(resolve => setTimeout(resolve, 3000)),
+        ])
+      } catch { /* muted video autoplay — ignore */ }
+
+      setCameraReady(true)
+
+      // ── Strategy 1: Native BarcodeDetector (Chrome Android) ──
+      if ('BarcodeDetector' in window) {
+        // @ts-ignore
+        const detector = new window.BarcodeDetector()
+        let active = true
+        let rafId: number
+        async function scan() {
+          if (!active) return
+          try {
+            // @ts-ignore
+            const barcodes = await detector.detect(video)
+            if (barcodes.length > 0 && active) {
+              active = false
+              stream.getTracks().forEach(t => t.stop())
+              lookupBarcode(barcodes[0].rawValue)
+              return
+            }
+          } catch { /* no barcode this frame */ }
+          rafId = requestAnimationFrame(scan)
+        }
+        rafId = requestAnimationFrame(scan)
+        controlsRef.current = { stop: () => { active = false; cancelAnimationFrame(rafId); stream.getTracks().forEach(t => t.stop()) } }
+        return
+      }
+
+      // ── Strategy 2: ZXing fallback (iOS Safari) ──
+      // @ts-ignore
+      const { BrowserMultiFormatReader } = await import('@zxing/browser')
+      const reader = new BrowserMultiFormatReader()
+      let zxingActive = true
+      const controls = await reader.decodeFromStream(
+        stream,
+        video,
+        (result: any, _err: any, ctrl: any) => {
+          if (!zxingActive || !result) return
+          zxingActive = false
+          ctrl.stop()
+          controlsRef.current = null
+          lookupBarcode(result.getText())
+        }
+      )
+      controlsRef.current = { stop: () => { zxingActive = false; try { controls.stop() } catch {} } }
+
+    } catch (err: any) {
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setError(isIOS
+          ? 'Camera access denied. Go to Settings → Safari → Camera and set it to Allow, then try again.'
+          : 'Camera access denied. Go to your browser Settings → allow camera for this site, then reload.')
+      } else if (err.name === 'NotFoundError') {
+        setError('No camera found on this device.')
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        setError('Camera is in use by another app. Close other apps and try again.')
+      } else if (err.message === 'CameraTimeout') {
+        setError(isIOS
+          ? 'Camera took too long to open. Go to iPhone Settings → Privacy & Security → Camera → Safari, make sure it\'s enabled, then force-close Safari and try again.'
+          : 'Camera took too long to open. Check your browser camera permissions and reload.')
+      } else {
+        setError('Camera not available. Please allow camera access and try again.')
+      }
+    }
+  }
 
   async function saveLog() {
     if (!food || !user?.primaryEmailAddress?.emailAddress) return
@@ -323,7 +317,7 @@ export default function BarcodePage() {
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
             <p className="text-6xl mb-6">📷</p>
             <button
-              onClick={() => setCameraStarted(true)}
+              onClick={startCamera}
               className="bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-4 rounded-2xl text-lg"
             >
               Tap to Start Scanner
