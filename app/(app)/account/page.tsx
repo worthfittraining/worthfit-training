@@ -425,7 +425,7 @@ export default function AccountPage() {
             <div className="h-8 bg-gray-100 rounded animate-pulse w-1/2" />
           ) : profile.Comp_Access ? (
             <p className="text-sm text-gray-500">You have complimentary access. Enjoy!</p>
-          ) : profile.Subscription_Status === 'active' || profile.Subscription_Status === 'trialing' ? (
+          ) : profile.Subscription_Status === 'active' || profile.Subscription_Status === 'trialing' || profile.Plan === 'standard' || profile.Plan === 'premium' ? (
             <button
               onClick={openBillingPortal}
               disabled={portalLoading}
