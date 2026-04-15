@@ -2,6 +2,7 @@
 
 import { useUser } from '@clerk/nextjs'
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { resolvePlan, PLAN_LIMITS, getNaliMessageCount, incrementNaliMessageCount, canSendNaliMessage } from '@/lib/plan'
 import type { Plan } from '@/lib/plan'
 
@@ -140,6 +141,7 @@ const HISTORY_TTL_MS: Record<Plan, number> = {
 
 export default function ChatPage() {
   const { user } = useUser()
+  const router = useRouter()
   const [messages, setMessages] = useState<Message[]>([])
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const [input, setInput] = useState('')
@@ -422,14 +424,14 @@ async function moveFoodLog(moveData: Record<string, unknown>, email: string) {
         <div className="bg-green-50 border-b border-green-200 px-4 py-2 text-sm text-green-700 flex items-center gap-2">
           <span>✅</span>
           <span><strong>{logSaved}</strong> saved to your food log!</span>
-          <a href="/log" className="underline ml-1">View log →</a>
+          <button onClick={() => { router.push('/log'); router.refresh() }} className="underline ml-1">View log →</button>
         </div>
       )}
       {logDeleted && (
         <div className="bg-red-50 border-b border-red-200 px-4 py-2 text-sm text-red-700 flex items-center gap-2">
           <span>🗑️</span>
           <span><strong>{logDeleted}</strong> removed from your food log.</span>
-          <a href="/log" className="underline ml-1">View log →</a>
+          <button onClick={() => { router.push('/log'); router.refresh() }} className="underline ml-1">View log →</button>
         </div>
       )}
 
