@@ -51,6 +51,7 @@ export default function BarcodePage() {
   const controlsRef = useRef<any>(null)
 
   const [phase, setPhase] = useState<Phase>('scanning')
+  const [cameraStarted, setCameraStarted] = useState(false)
   const [cameraReady, setCameraReady] = useState(false)
   const [food, setFood] = useState<FoodData | null>(null)
   const [qty, setQty] = useState(100)
@@ -68,7 +69,7 @@ export default function BarcodePage() {
   // Hard fallback: if camera isn't open after 12s and no error shown,
   // the WebView is silently blocking it — show a clear message
   useEffect(() => {
-    if (phase !== 'scanning') return
+    if (phase !== 'scanning' || !cameraStarted) return
     const id = setTimeout(() => {
       setCameraReady(prev => {
         if (!prev) {
@@ -80,7 +81,7 @@ export default function BarcodePage() {
       })
     }, 12000)
     return () => clearTimeout(id)
-  }, [phase])
+  }, [phase, cameraStarted])
 
   async function lookupBarcode(barcode: string) {
     setPhase('loading')
@@ -258,7 +259,7 @@ export default function BarcodePage() {
       }
     }
 
-    startScanner()
+    if (cameraStarted) startScanner()
 
     return () => {
       active = false
@@ -267,7 +268,7 @@ export default function BarcodePage() {
         controlsRef.current = null
       }
     }
-  }, [])
+  }, [cameraStarted])
 
   async function saveLog() {
     if (!food || !user?.primaryEmailAddress?.emailAddress) return
@@ -317,8 +318,21 @@ export default function BarcodePage() {
         {/* playsInline + muted + autoPlay must be JSX props for iOS Safari to show video inline */}
         <video ref={videoRef} className="w-full h-full object-cover" playsInline muted autoPlay />
 
+        {/* Tap to start — iOS Safari requires getUserMedia to be called from a user gesture */}
+        {!cameraStarted && !error && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
+            <p className="text-6xl mb-6">📷</p>
+            <button
+              onClick={() => setCameraStarted(true)}
+              className="bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-4 rounded-2xl text-lg"
+            >
+              Tap to Start Scanner
+            </button>
+          </div>
+        )}
+
         {/* Waiting for camera overlay — shown until stream is live */}
-        {!cameraReady && !error && (
+        {cameraStarted && !cameraReady && !error && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
             <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin mb-4" />
             <p className="text-white/70 text-sm">Opening camera…</p>
