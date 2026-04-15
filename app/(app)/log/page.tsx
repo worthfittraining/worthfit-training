@@ -163,6 +163,24 @@ export default function LogPage() {
     if (user) { fetchLogs(selectedDate); fetchProfile() }
   }, [user])
 
+  // Re-fetch when page becomes visible — handles native back button, app switching,
+  // and any navigation that bypasses router.refresh() (e.g. phone back swipe)
+  useEffect(() => {
+    function onVisible() {
+      if (user && document.visibilityState === 'visible') fetchLogs(selectedDate)
+    }
+    // pageshow fires on bfcache restore (phone back button)
+    function onPageShow(e: PageTransitionEvent) {
+      if (e.persisted && user) fetchLogs(selectedDate)
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('pageshow', onPageShow)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('pageshow', onPageShow)
+    }
+  }, [user, selectedDate])
+
   // Re-fetch logs whenever the selected date changes (skip initial mount — user effect handles that)
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
@@ -189,7 +207,7 @@ export default function LogPage() {
     setLoading(true)
     try {
       const fetchDate = date ?? selectedDate
-      const res = await fetch(`/api/log?email=${encodeURIComponent(email)}&date=${fetchDate}`)
+      const res = await fetch(`/api/log?email=${encodeURIComponent(email)}&date=${fetchDate}`, { cache: 'no-store' })
       const data = await res.json()
       setLogs(data.logs || [])
     } catch (e) { console.error(e) }

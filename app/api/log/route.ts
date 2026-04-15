@@ -147,7 +147,7 @@ export async function GET(req: NextRequest) {
       date: r.fields.Date || r.fields.date || '',
     }))
 
-    return NextResponse.json({ logs })
+    return NextResponse.json({ logs }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (error) {
     console.error('GET /api/log error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
