@@ -16,6 +16,7 @@ type Profile = {
   Dislikes?: string
   DOB?: string
   Subscription_Status?: string
+  Plan?: string
   Trial_End?: string
   Comp_Access?: boolean
   Stripe_Customer_Id?: string
