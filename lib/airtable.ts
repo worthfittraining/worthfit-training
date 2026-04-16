@@ -11,8 +11,9 @@ type Fields = Airtable.FieldSet
 // ── CLIENTS ──────────────────────────────────────
 
 export async function getClientByEmail(email: string) {
+  const normalizedEmail = email.toLowerCase().trim()
   const records = await getBase()('Clients')
-    .select({ filterByFormula: `{Email} = "${email}"` })
+    .select({ filterByFormula: `LOWER({Email}) = "${normalizedEmail}"` })
     .firstPage()
   return records[0] || null
 }

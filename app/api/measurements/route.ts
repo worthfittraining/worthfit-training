@@ -13,11 +13,12 @@ export async function GET(req: NextRequest) {
 
   const email = req.nextUrl.searchParams.get('email')
   if (!email) return NextResponse.json({ error: 'Missing email' }, { status: 400 })
+  const normalizedEmail = email.toLowerCase().trim()
 
   try {
     const records = await getBase()('Measurements')
       .select({
-        filterByFormula: `{Email} = "${email}"`,
+        filterByFormula: `LOWER({Email}) = "${normalizedEmail}"`,
         sort: [{ field: 'Date', direction: 'asc' }],
         maxRecords: 365,
       })
