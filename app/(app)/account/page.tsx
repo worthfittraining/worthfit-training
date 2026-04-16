@@ -19,6 +19,7 @@ type Profile = {
   Plan?: string
   Trial_End?: string
   Comp_Access?: boolean
+  Playbook_Active?: boolean
   Stripe_Customer_Id?: string
   // Stats used for macro recalculation
   height_in?: number
@@ -74,6 +75,11 @@ function StatusBadge({ profile }: { profile: Profile }) {
     return <span className="bg-yellow-100 text-yellow-700 text-xs font-semibold px-3 py-1 rounded-full">🕐 Trial{daysLeft && daysLeft > 0 ? ` · ${daysLeft}d left` : ''}</span>
   }
   if (status === 'past_due') return <span className="bg-red-100 text-red-700 text-xs font-semibold px-3 py-1 rounded-full">⚠️ Payment Due</span>
+  // Playbook members get Standard access without a Stripe subscription
+  if (profile.Playbook_Active) return <span className="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full">✅ Standard</span>
+  // Paid plan without an active Stripe status (e.g. manually set in Airtable)
+  if (profile.Plan === 'premium') return <span className="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full">✅ Premium</span>
+  if (profile.Plan === 'standard') return <span className="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full">✅ Standard</span>
   return <span className="bg-gray-100 text-gray-500 text-xs font-semibold px-3 py-1 rounded-full">Free</span>
 }
 
@@ -426,7 +432,10 @@ export default function AccountPage() {
             <div className="h-8 bg-gray-100 rounded animate-pulse w-1/2" />
           ) : profile.Comp_Access ? (
             <p className="text-sm text-gray-500">You have complimentary access. Enjoy!</p>
-          ) : profile.Subscription_Status === 'active' || profile.Subscription_Status === 'trialing' || profile.Plan === 'standard' || profile.Plan === 'premium' ? (
+          ) : profile.Playbook_Active && !profile.Subscription_Status ? (
+            // Playbook members get Standard via Playbook — no Stripe subscription to manage
+            <p className="text-sm text-gray-500">Your Standard access is included with your Playbook membership. 🎉</p>
+          ) : profile.Subscription_Status === 'active' || profile.Subscription_Status === 'trialing' || profile.Subscription_Status === 'past_due' ? (
             <button
               onClick={openBillingPortal}
               disabled={portalLoading}
