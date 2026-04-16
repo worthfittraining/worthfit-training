@@ -96,12 +96,12 @@ export default function CoachDashboard() {
         <h2 className="text-sm font-semibold text-gray-500 mb-3">YOUR CLIENTS</h2>
 
         {loading ? (
-          <div className="text-center text-gray-400 py-12">Loading clients...</div>
+          <div className="text-center text-gray-500 py-12">Loading clients...</div>
         ) : clients.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
             <div className="text-4xl mb-3">👥</div>
             <p className="text-gray-500">No clients yet.</p>
-            <p className="text-gray-400 text-sm mt-1">Clients will appear here after they complete onboarding.</p>
+            <p className="text-gray-500 text-sm mt-1">Clients will appear here after they complete onboarding.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -115,7 +115,7 @@ export default function CoachDashboard() {
                       </div>
                       <div>
                         <div className="font-semibold text-gray-800">{String(client.Name || 'Unknown')}</div>
-                        <div className="text-xs text-gray-400">{String(client.Email || '')}</div>
+                        <div className="text-xs text-gray-500">{String(client.Email || '')}</div>
                       </div>
                     </div>
                   </div>
@@ -149,7 +149,7 @@ export default function CoachDashboard() {
                   </div>
                 </div>
 
-                <div className="flex gap-4 text-xs text-gray-400">
+                <div className="flex gap-4 text-xs text-gray-500">
                   <span>Goal: <span className="text-gray-600 capitalize">{String(client.Goal || 'Not set').replace(/_/g, ' ')}</span></span>
                   <span>Week <span className="text-gray-600">{client.Program_week || 1}</span></span>
                   {client.Onboarding_complete && <span className="text-green-500">✓ Onboarded</span>}

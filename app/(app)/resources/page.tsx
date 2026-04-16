@@ -82,7 +82,7 @@ function ResourceCard({ resource }: { resource: Resource }) {
               <p className="text-xs text-gray-500 mt-1 leading-relaxed">{resource.summary}</p>
             )}
           </div>
-          <div className={`flex-shrink-0 text-gray-400 transition-transform duration-200 mt-0.5 ${
+          <div className={`flex-shrink-0 text-gray-500 transition-transform duration-200 mt-0.5 ${
             expanded ? 'rotate-180 text-green-500' : ''
           }`}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -95,7 +95,7 @@ function ResourceCard({ resource }: { resource: Resource }) {
       {/* Expanded content */}
       {expanded && (
         <div className="px-4 pb-5 pt-1 border-t border-gray-50">
-          <p className="text-xs text-gray-400 mb-4 italic">{resource.summary}</p>
+          <p className="text-xs text-gray-500 mb-4 italic">{resource.summary}</p>
           <ArticleContent text={resource.content} />
         </div>
       )}
@@ -182,7 +182,7 @@ export default function ResourcesPage() {
           <div className="text-center py-12">
             <div className="text-4xl mb-3">📭</div>
             <p className="text-gray-500 font-medium">No resources yet</p>
-            <p className="text-gray-400 text-sm mt-1">Check back soon — guides are on the way.</p>
+            <p className="text-gray-500 text-sm mt-1">Check back soon — guides are on the way.</p>
           </div>
         ) : (
           <div className="space-y-8">

@@ -51,7 +51,9 @@ async function getAllAirtableRecords() {
   let page = 0
 
   do {
-    const params = new URLSearchParams({ 'fields[]': ['Email', 'Playbook_Active'], pageSize: '100' })
+    const params = new URLSearchParams({ pageSize: '100' })
+    params.append('fields[]', 'Email')
+    params.append('fields[]', 'Playbook_Active')
     if (offset) params.set('offset', offset)
 
     const data = await airtableFetch(`https://api.airtable.com/v0/${BASE_ID}/${TABLE}?${params}`)

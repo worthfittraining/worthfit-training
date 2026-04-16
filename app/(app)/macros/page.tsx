@@ -242,7 +242,7 @@ export default function MacrosPage() {
 
   if (loading) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <p className="text-gray-400">Loading your macros...</p>
+      <p className="text-gray-500">Loading your macros...</p>
     </div>
   )
 
@@ -267,9 +267,9 @@ export default function MacrosPage() {
           >
             <div>
               <p className="text-sm font-semibold text-gray-700">🔄 Change my goal &amp; recalculate</p>
-              <p className="text-xs text-gray-400 mt-0.5">Switch to maintenance, a surplus, or a new deficit</p>
+              <p className="text-xs text-gray-500 mt-0.5">Switch to maintenance, a surplus, or a new deficit</p>
             </div>
-            <span className="text-gray-400 text-lg">{showRecalc ? '▲' : '▼'}</span>
+            <span className="text-gray-500 text-lg">{showRecalc ? '▲' : '▼'}</span>
           </button>
 
           {showRecalc && (
@@ -290,7 +290,7 @@ export default function MacrosPage() {
                       }`}
                     >
                       <div className="text-base leading-tight">{g.label}</div>
-                      <div className="text-xs text-gray-400 mt-0.5">{g.desc}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{g.desc}</div>
                     </button>
                   ))}
                 </div>
@@ -311,7 +311,7 @@ export default function MacrosPage() {
                       }`}
                     >
                       <span className="text-sm font-medium text-gray-700">{a.label}</span>
-                      <span className="text-xs text-gray-400">{a.desc}</span>
+                      <span className="text-xs text-gray-500">{a.desc}</span>
                     </button>
                   ))}
                 </div>
@@ -327,7 +327,7 @@ export default function MacrosPage() {
                     { key: 'age', label: 'Age' },
                   ].map(({ key, label }) => (
                     <div key={key}>
-                      <label className="text-xs text-gray-400 block mb-1">{label}</label>
+                      <label className="text-xs text-gray-500 block mb-1">{label}</label>
                       <input
                         type="number"
                         min="0"
@@ -338,7 +338,7 @@ export default function MacrosPage() {
                     </div>
                   ))}
                   <div>
-                    <label className="text-xs text-gray-400 block mb-1">Sex</label>
+                    <label className="text-xs text-gray-500 block mb-1">Sex</label>
                     <select
                       value={recalcStats.sex}
                       onChange={e => { setRecalcStats(p => ({ ...p, sex: e.target.value })); setRecalcPreview(null) }}
@@ -394,7 +394,7 @@ export default function MacrosPage() {
         {/* Default macros */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4">
           <h2 className="text-sm font-semibold text-gray-700 mb-1">Default Daily Macros</h2>
-          <p className="text-xs text-gray-400 mb-3">Used on any day without specific targets set</p>
+          <p className="text-xs text-gray-500 mb-3">Used on any day without specific targets set</p>
           <div className="grid grid-cols-2 gap-3">
             {[
               { key: 'calories', label: 'Calories', unit: 'kcal' },
@@ -421,7 +421,7 @@ export default function MacrosPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-gray-700">Set different macros per day</p>
-              <p className="text-xs text-gray-400 mt-0.5">Great for carb cycling or training/rest days</p>
+              <p className="text-xs text-gray-500 mt-0.5">Great for carb cycling or training/rest days</p>
             </div>
             <button
               onClick={() => setUsePerDay(p => !p)}
@@ -436,7 +436,7 @@ export default function MacrosPage() {
         {usePerDay && (
           <div className="space-y-3 mb-4">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-gray-400 tracking-wide uppercase">Day-by-day targets</p>
+              <p className="text-xs font-semibold text-gray-500 tracking-wide uppercase">Day-by-day targets</p>
               <button
                 onClick={copyDefaultToAll}
                 className="text-xs text-green-600 font-medium hover:underline"
@@ -461,7 +461,7 @@ export default function MacrosPage() {
                       { key: 'fat_g', label: 'Fat (g)', placeholder: defaultMacros.fat_g },
                     ].map(({ key, label, placeholder }) => (
                       <div key={key}>
-                        <label className="text-xs text-gray-400 block mb-1">{label}</label>
+                        <label className="text-xs text-gray-500 block mb-1">{label}</label>
                         <input
                           type="number"
                           min="0"

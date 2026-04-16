@@ -247,7 +247,7 @@ export default function PhotoLogPage() {
                 </button>
               </div>
               {PLAN_LIMITS[userPlan].photoLogsPerDay !== Infinity && (
-                <p className="text-center text-xs text-gray-400 mt-2">
+                <p className="text-center text-xs text-gray-500 mt-2">
                   {photoCount}/{PLAN_LIMITS[userPlan].photoLogsPerDay} photo analyses used today
                   {userPlan === 'standard' && photoCount >= PLAN_LIMITS[userPlan].photoLogsPerDay && ' · Upgrade to Premium for 15/day'}
                 </p>

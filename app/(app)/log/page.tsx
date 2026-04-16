@@ -47,14 +47,14 @@ function getDateLabel(dateStr: string): string {
 }
 
 function HitBadge({ value, target, label }: { value: number; target: number; label: string }) {
-  if (!target) return <div className="text-center"><span className="text-xs text-gray-500">{value}</span><p className="text-xs text-gray-400">{label}</p></div>
+  if (!target) return <div className="text-center"><span className="text-xs text-gray-500">{value}</span><p className="text-xs text-gray-500">{label}</p></div>
   const pct = value / target
   const hit = pct >= 0.9
   const over = pct > 1.1
   return (
     <div className="text-center">
       <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${over ? 'bg-purple-100 text-purple-700' : hit ? 'bg-green-100 text-green-700' : 'text-gray-500'}`}>{value}</span>
-      <p className="text-xs text-gray-400 mt-0.5">{label}</p>
+      <p className="text-xs text-gray-500 mt-0.5">{label}</p>
     </div>
   )
 }
@@ -346,14 +346,14 @@ export default function LogPage() {
           <>
             {/* Date navigation */}
             <div className="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-gray-100 px-4 py-3 mb-4">
-              <button onClick={goToPrevDay} className="text-gray-400 hover:text-gray-700 text-xl font-bold w-8 flex items-center justify-center transition-colors">‹</button>
+              <button onClick={goToPrevDay} className="text-gray-500 hover:text-gray-700 text-xl font-bold w-8 flex items-center justify-center transition-colors">‹</button>
               <div className="text-center">
                 <p className="text-sm font-semibold text-gray-800">{getDateLabel(selectedDate)}</p>
-                {!isViewingToday && <p className="text-xs text-gray-400">{selectedDate}</p>}
+                {!isViewingToday && <p className="text-xs text-gray-500">{selectedDate}</p>}
               </div>
               <button
                 onClick={goToNextDay}
-                className="text-xl font-bold w-8 flex items-center justify-center transition-colors text-gray-400 hover:text-gray-700"
+                className="text-xl font-bold w-8 flex items-center justify-center transition-colors text-gray-500 hover:text-gray-700"
               >›</button>
             </div>
 
@@ -377,7 +377,7 @@ export default function LogPage() {
               <div className="flex items-center justify-between bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-2.5 mb-3">
                 <div>
                   <p className="text-sm font-medium text-gray-700">Rest Day</p>
-                  <p className="text-xs text-gray-400">Switch to rest-day macro targets</p>
+                  <p className="text-xs text-gray-500">Switch to rest-day macro targets</p>
                 </div>
                 <button
                   onClick={() => setIsRestDay(r => {
@@ -397,19 +397,19 @@ export default function LogPage() {
                 {isRestDay ? '😴 Rest Day Totals' : isViewingToday ? "Today's Totals" : `${getDateLabel(selectedDate)} Totals`}
               </h2>
               <div className="grid grid-cols-4 gap-2 text-center">
-                <div><p className={`text-xl font-bold ${calTarget && totalCalories > calTarget * 1.1 ? 'text-purple-500' : calTarget && totalCalories >= calTarget * 0.9 ? 'text-green-500' : 'text-orange-500'}`}>{totalCalories}</p><p className="text-xs text-gray-400">{calTarget ? `/ ${calTarget}` : ''} kcal</p></div>
-                <div><p className={`text-xl font-bold ${protTarget && totalProtein >= protTarget * 0.9 ? 'text-green-500' : 'text-blue-500'}`}>{totalProtein}g</p><p className="text-xs text-gray-400">{protTarget ? `/ ${protTarget}g` : ''} prot</p></div>
-                <div><p className="text-xl font-bold text-yellow-500">{totalCarbs}g</p><p className="text-xs text-gray-400">{carbTarget ? `/ ${carbTarget}g` : ''} carbs</p></div>
-                <div><p className="text-xl font-bold text-green-500">{totalFat}g</p><p className="text-xs text-gray-400">{fatTarget ? `/ ${fatTarget}g` : ''} fat</p></div>
+                <div><p className={`text-xl font-bold ${calTarget && totalCalories > calTarget * 1.1 ? 'text-purple-500' : calTarget && totalCalories >= calTarget * 0.9 ? 'text-green-500' : 'text-orange-500'}`}>{totalCalories}</p><p className="text-xs text-gray-500">{calTarget ? `/ ${calTarget}` : ''} kcal</p></div>
+                <div><p className={`text-xl font-bold ${protTarget && totalProtein >= protTarget * 0.9 ? 'text-green-500' : 'text-blue-500'}`}>{totalProtein}g</p><p className="text-xs text-gray-500">{protTarget ? `/ ${protTarget}g` : ''} prot</p></div>
+                <div><p className="text-xl font-bold text-yellow-500">{totalCarbs}g</p><p className="text-xs text-gray-500">{carbTarget ? `/ ${carbTarget}g` : ''} carbs</p></div>
+                <div><p className="text-xl font-bold text-green-500">{totalFat}g</p><p className="text-xs text-gray-500">{fatTarget ? `/ ${fatTarget}g` : ''} fat</p></div>
               </div>
             </div>
 
-            {loading && <div className="text-center text-gray-400 py-12">Loading your log...</div>}
+            {loading && <div className="text-center text-gray-500 py-12">Loading your log...</div>}
             {!loading && logs.length === 0 && (
               <div className="bg-white rounded-2xl shadow p-8 text-center">
                 <p className="text-4xl mb-3">🍽️</p>
                 <p className="text-gray-500">{isViewingToday ? 'Nothing logged yet today.' : `Nothing logged on ${getDateLabel(selectedDate)}.`}</p>
-                <p className="text-sm text-gray-400 mt-1">{isViewingToday ? 'Use the buttons above to log your meals.' : 'Use the arrows to navigate to another day.'}</p>
+                <p className="text-sm text-gray-500 mt-1">{isViewingToday ? 'Use the buttons above to log your meals.' : 'Use the arrows to navigate to another day.'}</p>
               </div>
             )}
             {!loading && MEAL_ORDER.map((slot) => {
@@ -433,24 +433,24 @@ export default function LogPage() {
                           <div className="flex gap-3 mt-1 text-xs text-gray-500">
                             <span>P: {log.protein_g}g</span><span>C: {log.carbs_g}g</span><span>F: {log.fat_g}g</span>
                           </div>
-                          {log.notes && <p className="text-xs text-gray-400 mt-1 italic">{log.notes}</p>}
+                          {log.notes && <p className="text-xs text-gray-500 mt-1 italic">{log.notes}</p>}
                         </div>
                         {!isViewingToday && (
                           <button
                             onClick={() => copyToToday(log)}
                             disabled={copying === log.id}
                             title="Copy to today"
-                            className={`text-xs font-semibold shrink-0 mt-0.5 px-1.5 py-1 rounded-lg transition-colors ${copySuccess === log.id ? 'text-green-600 bg-green-50' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}`}
+                            className={`text-xs font-semibold shrink-0 mt-0.5 px-1.5 py-1 rounded-lg transition-colors ${copySuccess === log.id ? 'text-green-600 bg-green-50' : 'text-gray-500 hover:text-green-600 hover:bg-green-50'}`}
                           >
                             {copying === log.id ? '...' : copySuccess === log.id ? '✓' : '+ today'}
                           </button>
                         )}
                         <button
                           onClick={() => setEditDraft({ id: log.id, food_name: log.food_name, calories: log.calories, protein_g: log.protein_g, carbs_g: log.carbs_g, fat_g: log.fat_g, meal_slot: log.meal_slot })}
-                          className="text-gray-300 hover:text-blue-400 transition-colors text-sm shrink-0 mt-0.5 px-1"
+                          className="text-gray-500 hover:text-blue-400 transition-colors text-sm shrink-0 mt-0.5 px-1"
                           title="Edit"
                         >✏️</button>
-                        <button onClick={() => deleteLog(log.id)} disabled={deleting === log.id} className="text-gray-300 hover:text-red-400 transition-colors text-lg shrink-0 mt-0.5" title="Remove">
+                        <button onClick={() => deleteLog(log.id)} disabled={deleting === log.id} className="text-gray-500 hover:text-red-400 transition-colors text-lg shrink-0 mt-0.5" title="Remove">
                           {deleting === log.id ? '...' : '×'}
                         </button>
                       </div>
@@ -466,16 +466,16 @@ export default function LogPage() {
           <>
             {loggedDays > 0 && (
               <div className="grid grid-cols-3 gap-3 mb-5">
-                <div className="bg-white rounded-2xl p-3 text-center shadow-sm border border-gray-100"><p className="text-2xl font-bold text-green-500">{loggedDays}/7</p><p className="text-xs text-gray-400">days logged</p></div>
-                <div className="bg-white rounded-2xl p-3 text-center shadow-sm border border-gray-100"><p className="text-2xl font-bold text-blue-500">{daysHitProtein}/7</p><p className="text-xs text-gray-400">hit protein</p></div>
-                <div className="bg-white rounded-2xl p-3 text-center shadow-sm border border-gray-100"><p className="text-2xl font-bold text-orange-500">{daysHitCalories}/7</p><p className="text-xs text-gray-400">on calories</p></div>
+                <div className="bg-white rounded-2xl p-3 text-center shadow-sm border border-gray-100"><p className="text-2xl font-bold text-green-500">{loggedDays}/7</p><p className="text-xs text-gray-500">days logged</p></div>
+                <div className="bg-white rounded-2xl p-3 text-center shadow-sm border border-gray-100"><p className="text-2xl font-bold text-blue-500">{daysHitProtein}/7</p><p className="text-xs text-gray-500">hit protein</p></div>
+                <div className="bg-white rounded-2xl p-3 text-center shadow-sm border border-gray-100"><p className="text-2xl font-bold text-orange-500">{daysHitCalories}/7</p><p className="text-xs text-gray-500">on calories</p></div>
               </div>
             )}
             {weekLoading ? (
-              <div className="text-center text-gray-400 py-12">Loading this week...</div>
+              <div className="text-center text-gray-500 py-12">Loading this week...</div>
             ) : (
               <div className="space-y-2">
-                <div className="grid grid-cols-5 px-4 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                <div className="grid grid-cols-5 px-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   <span className="col-span-1">Day</span>
                   <span className="text-center">Kcal</span>
                   <span className="text-center">Prot</span>
@@ -501,7 +501,7 @@ export default function LogPage() {
                           <HitBadge value={day.fat_g} target={fatTarget} label="fat" />
                         </>
                       ) : (
-                        <span className="col-span-4 text-xs text-gray-300 text-center">No data</span>
+                        <span className="col-span-4 text-xs text-gray-500 text-center">No data</span>
                       )}
                     </div>
                     {day.logged && (
@@ -511,7 +511,7 @@ export default function LogPage() {
                           {weekLogs.filter(l => l.date === day.date).map(log => (
                             <div key={log.id} className="flex items-center justify-between text-xs bg-gray-50 rounded-lg px-3 py-2">
                               <div className="flex-1 min-w-0 overflow-hidden">
-                                <span className="font-medium capitalize text-gray-400 mr-1">{log.meal_slot}:</span>
+                                <span className="font-medium capitalize text-gray-500 mr-1">{log.meal_slot}:</span>
                                 <span className="text-gray-700 inline-block max-w-full truncate align-bottom" style={{maxWidth:'calc(100% - 4rem)'}}>{log.food_name}</span>
                               </div>
                               <div className="flex items-center gap-2 shrink-0 ml-2">
@@ -521,7 +521,7 @@ export default function LogPage() {
                                     onClick={() => copyToToday(log)}
                                     disabled={copying === log.id}
                                     title="Copy to today"
-                                    className={`font-bold text-sm transition-colors ${copySuccess === log.id ? 'text-green-500' : 'text-gray-400 hover:text-green-500'}`}
+                                    className={`font-bold text-sm transition-colors ${copySuccess === log.id ? 'text-green-500' : 'text-gray-500 hover:text-green-500'}`}
                                   >
                                     {copying === log.id ? '...' : copySuccess === log.id ? '✓ copied' : '+ copy'}
                                   </button>

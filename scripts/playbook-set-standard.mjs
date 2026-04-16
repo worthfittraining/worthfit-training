@@ -47,10 +47,11 @@ async function fetchPlaybookActive() {
   let offset = null
   do {
     const params = new URLSearchParams({
-      filterByFormula: '{Playbook_Active}=1',
-      fields: ['Email', 'Plan'],
+      filterByFormula: '{Playbook_Active}=TRUE()',
       pageSize: '100',
     })
+    params.append('fields[]', 'Email')
+    params.append('fields[]', 'Plan')
     if (offset) params.set('offset', offset)
     const url = `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE)}?${params}`
     const data = await airtableFetch(url)

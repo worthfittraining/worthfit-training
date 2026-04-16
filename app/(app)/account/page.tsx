@@ -367,7 +367,7 @@ export default function AccountPage() {
               onChange={handlePhotoChange}
             />
           </div>
-          {photoUploading && <p className="text-center text-xs text-gray-400 mb-3">Uploading photo...</p>}
+          {photoUploading && <p className="text-center text-xs text-gray-500 mb-3">Uploading photo...</p>}
 
           {/* Name */}
           <div className="grid grid-cols-2 gap-3 mb-3">
@@ -398,7 +398,7 @@ export default function AccountPage() {
             <label className="block text-xs font-medium text-gray-500 mb-1">Email</label>
             <div className="flex items-center gap-2 border border-gray-100 bg-gray-50 rounded-xl px-3 py-2.5">
               <span className="text-sm text-gray-500 flex-1 truncate">{email}</span>
-              <span className="text-xs text-gray-400 shrink-0">via login</span>
+              <span className="text-xs text-gray-500 shrink-0">via login</span>
             </div>
           </div>
 
@@ -487,7 +487,7 @@ export default function AccountPage() {
                   ].map(m => (
                     <div key={m.label} className="bg-gray-50 rounded-xl py-2">
                       <div className="text-sm font-bold text-gray-900">{m.value ?? '—'}{m.unit}</div>
-                      <div className="text-xs text-gray-400">{m.label}</div>
+                      <div className="text-xs text-gray-500">{m.label}</div>
                     </div>
                   ))}
                 </div>
@@ -518,7 +518,7 @@ export default function AccountPage() {
                     <div>
                       <label className="text-xs font-medium text-gray-500 block mb-1">Sex</label>
                       <select value={recalcForm.sex} onChange={e => setRecalcForm(p => ({ ...p, sex: e.target.value }))}
-                        className={`w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 ${!recalcForm.sex ? 'text-gray-400' : 'text-gray-800'}`}>
+                        className={`w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 ${!recalcForm.sex ? 'text-gray-500' : 'text-gray-800'}`}>
                         <option value="" disabled>Select...</option>
                         <option value="female">Female</option>
                         <option value="male">Male</option>
@@ -528,7 +528,7 @@ export default function AccountPage() {
                   <div>
                     <label className="text-xs font-medium text-gray-500 block mb-1">Goal</label>
                     <select value={recalcForm.goal} onChange={e => setRecalcForm(p => ({ ...p, goal: e.target.value }))}
-                      className={`w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 ${!recalcForm.goal ? 'text-gray-400' : 'text-gray-800'}`}>
+                      className={`w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 ${!recalcForm.goal ? 'text-gray-500' : 'text-gray-800'}`}>
                       <option value="" disabled>Select goal...</option>
                       {GOALS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
                     </select>
@@ -536,7 +536,7 @@ export default function AccountPage() {
                   <div>
                     <label className="text-xs font-medium text-gray-500 block mb-1">Activity level</label>
                     <select value={recalcForm.activity_level} onChange={e => setRecalcForm(p => ({ ...p, activity_level: e.target.value }))}
-                      className={`w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 ${!recalcForm.activity_level ? 'text-gray-400' : 'text-gray-800'}`}>
+                      className={`w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 ${!recalcForm.activity_level ? 'text-gray-500' : 'text-gray-800'}`}>
                       <option value="" disabled>Select level...</option>
                       {ACTIVITY_LEVELS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
                     </select>
@@ -565,7 +565,7 @@ export default function AccountPage() {
           <div className="flex items-center justify-between mb-1">
             <div>
               <h2 className="font-semibold text-gray-800">Rest Day Macros</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Lower targets for non-training days</p>
+              <p className="text-xs text-gray-500 mt-0.5">Lower targets for non-training days</p>
             </div>
             <button
               onClick={() => setShowRestDay(r => !r)}
@@ -585,14 +585,14 @@ export default function AccountPage() {
               ].map(m => (
                 <div key={m.label} className="bg-blue-50 rounded-xl py-2">
                   <div className="text-sm font-bold text-gray-900">{m.value ?? '—'}{m.unit}</div>
-                  <div className="text-xs text-gray-400">{m.label}</div>
+                  <div className="text-xs text-gray-500">{m.label}</div>
                 </div>
               ))}
             </div>
           )}
 
           {!showRestDay && !profile.Rest_Calories && (
-            <p className="text-sm text-gray-400 mt-2">No rest day targets set — toggle above to add them.</p>
+            <p className="text-sm text-gray-500 mt-2">No rest day targets set — toggle above to add them.</p>
           )}
 
           {showRestDay && (
@@ -668,19 +668,19 @@ export default function AccountPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
           <a href="/recipes" className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors rounded-t-2xl">
             <div className="flex items-center gap-3"><span className="text-lg">🍳</span><span className="text-sm font-medium text-gray-700">My Recipes</span></div>
-            <span className="text-gray-300 text-sm">→</span>
+            <span className="text-gray-500 text-sm">→</span>
           </a>
           <a href="/resources" className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors">
             <div className="flex items-center gap-3"><span className="text-lg">📚</span><span className="text-sm font-medium text-gray-700">Nutrition Resources</span></div>
-            <span className="text-gray-300 text-sm">→</span>
+            <span className="text-gray-500 text-sm">→</span>
           </a>
           <a href="/subscribe" className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors">
             <div className="flex items-center gap-3"><span className="text-lg">💳</span><span className="text-sm font-medium text-gray-700">View Plans</span></div>
-            <span className="text-gray-300 text-sm">→</span>
+            <span className="text-gray-500 text-sm">→</span>
           </a>
           <a href="mailto:worthfittraining@gmail.com" className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors rounded-b-2xl">
             <div className="flex items-center gap-3"><span className="text-lg">💬</span><span className="text-sm font-medium text-gray-700">Contact Support</span></div>
-            <span className="text-gray-300 text-sm">→</span>
+            <span className="text-gray-500 text-sm">→</span>
           </a>
         </div>
 
@@ -692,7 +692,7 @@ export default function AccountPage() {
           Sign Out
         </button>
 
-        <p className="text-center text-xs text-gray-300 pb-2">Nutrition by Nali</p>
+        <p className="text-center text-xs text-gray-500 pb-2">Nutrition by Nali</p>
       </div>
     </div>
   )

@@ -37,11 +37,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   key={item.href}
                   href={item.href}
                   className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors ${
-                    isActive ? 'text-green-600' : 'text-gray-400 hover:text-gray-600'
+                    isActive ? 'text-green-600' : 'text-gray-500 hover:text-gray-600'
                   }`}
                 >
                   <span className="text-xl leading-none">{item.icon}</span>
-                  <span className={`text-xs font-medium ${isActive ? 'text-green-600' : 'text-gray-400'}`}>
+                  <span className={`text-xs font-medium ${isActive ? 'text-green-600' : 'text-gray-500'}`}>
                     {item.label}
                   </span>
                 </Link>

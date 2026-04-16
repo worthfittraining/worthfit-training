@@ -208,9 +208,9 @@ export default function OnboardingPage() {
                 placeholder="e.g. sweet potatoes, turkey, steak..."
                 value={extraPreferences}
                 onChange={e => setExtraPreferences(e.target.value)}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-sm text-gray-800 placeholder:text-gray-400"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-sm text-gray-800 placeholder:text-gray-500"
               />
-              <p className="text-xs text-gray-400 mt-1">Tapped foods above are already included — add extras here.</p>
+              <p className="text-xs text-gray-500 mt-1">Tapped foods above are already included — add extras here.</p>
             </div>
 
             {/* Dislikes */}
@@ -223,9 +223,9 @@ export default function OnboardingPage() {
                 placeholder="e.g. tuna, Brussels sprouts, tofu..."
                 value={form.food_dislikes}
                 onChange={e => setForm(f => ({ ...f, food_dislikes: e.target.value }))}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-sm text-gray-900 placeholder:text-gray-400"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-sm text-gray-900 placeholder:text-gray-500"
               />
-              <p className="text-xs text-gray-400 mt-1">Nali will never suggest these in your meal plan.</p>
+              <p className="text-xs text-gray-500 mt-1">Nali will never suggest these in your meal plan.</p>
             </div>
           </div>
         )}
@@ -246,7 +246,7 @@ export default function OnboardingPage() {
                     max="96"
                     value={form.height_in}
                     onChange={e => setForm(f => ({ ...f, height_in: e.target.value }))}
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-gray-900 placeholder:text-gray-400"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-gray-900 placeholder:text-gray-500"
                   />
                 </div>
                 <div>
@@ -258,7 +258,7 @@ export default function OnboardingPage() {
                     max="600"
                     value={form.weight_lbs}
                     onChange={e => setForm(f => ({ ...f, weight_lbs: e.target.value }))}
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-gray-900 placeholder:text-gray-400"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-gray-900 placeholder:text-gray-500"
                   />
                 </div>
               </div>
@@ -272,7 +272,7 @@ export default function OnboardingPage() {
                     max="100"
                     value={form.age}
                     onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-gray-900 placeholder:text-gray-400"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none text-gray-900 placeholder:text-gray-500"
                   />
                 </div>
                 <div>
@@ -280,7 +280,7 @@ export default function OnboardingPage() {
                   <select
                     value={form.sex}
                     onChange={e => setForm(f => ({ ...f, sex: e.target.value, breastfeeding: false }))}
-                    className={`w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none ${!form.sex ? 'text-gray-400' : 'text-gray-800'}`}
+                    className={`w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 outline-none ${!form.sex ? 'text-gray-500' : 'text-gray-800'}`}
                   >
                     <option value="" disabled>Select...</option>
                     <option value="female">Female</option>

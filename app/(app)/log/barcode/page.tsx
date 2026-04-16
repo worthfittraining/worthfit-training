@@ -403,7 +403,7 @@ export default function BarcodePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">Serving Size (g) * <span className="font-normal text-gray-400">— check the label</span></label>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Serving Size (g) * <span className="font-normal text-gray-500">— check the label</span></label>
                 <input
                   type="number"
                   placeholder="e.g. 170"
@@ -414,7 +414,7 @@ export default function BarcodePage() {
                 />
               </div>
 
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-1">Nutrition per serving (from the label)</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide pt-1">Nutrition per serving (from the label)</p>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -504,7 +504,7 @@ export default function BarcodePage() {
               )}
               <div>
                 <h2 className="text-lg font-bold text-gray-800 leading-tight">{food.name}</h2>
-                {food.brand && <p className="text-sm text-gray-400">{food.brand}</p>}
+                {food.brand && <p className="text-sm text-gray-500">{food.brand}</p>}
               </div>
             </div>
 

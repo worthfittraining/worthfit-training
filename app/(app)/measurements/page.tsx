@@ -86,9 +86,9 @@ function SparklineChart({ data, color }: { data: { date: string; value: number }
         })}
       </svg>
       <div className="flex justify-between text-xs mt-1">
-        <span className="text-gray-400">{formatDate(data[0].date)}</span>
+        <span className="text-gray-500">{formatDate(data[0].date)}</span>
         <span className={`font-semibold ${diffColor}`}>{diffLabel}</span>
-        <span className="text-gray-400">{formatDate(data[data.length - 1].date)}</span>
+        <span className="text-gray-500">{formatDate(data[data.length - 1].date)}</span>
       </div>
     </div>
   )
@@ -207,12 +207,12 @@ export default function MeasurementsPage() {
           )}
 
           {loading ? (
-            <div className="text-center text-gray-400 py-16">Loading...</div>
+            <div className="text-center text-gray-500 py-16">Loading...</div>
           ) : measurements.length === 0 ? (
             <div className="text-center py-16">
               <div className="text-5xl mb-4">📏</div>
               <p className="text-gray-600 font-medium mb-2">No measurements yet</p>
-              <p className="text-gray-400 text-sm mb-6">Track your weight and body measurements over time to see your progress.</p>
+              <p className="text-gray-500 text-sm mb-6">Track your weight and body measurements over time to see your progress.</p>
               <button
                 onClick={() => setShowForm(true)}
                 className="bg-green-500 text-white px-6 py-3 rounded-xl font-medium hover:bg-green-600 transition"
@@ -225,7 +225,7 @@ export default function MeasurementsPage() {
               {/* Latest snapshot */}
               {latest && (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Latest — {formatDate(latest.date)}</p>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Latest — {formatDate(latest.date)}</p>
                   <div className="grid grid-cols-3 gap-3">
                     {(Object.keys(METRIC_LABELS) as MetricKey[]).map(key => {
                       const val = latest[key]
@@ -233,7 +233,7 @@ export default function MeasurementsPage() {
                       return (
                         <div key={key} className="text-center">
                           <p className="text-lg font-bold text-gray-800">{val}</p>
-                          <p className="text-xs text-gray-400">{METRIC_LABELS[key]}</p>
+                          <p className="text-xs text-gray-500">{METRIC_LABELS[key]}</p>
                         </div>
                       )
                     })}
@@ -270,7 +270,7 @@ export default function MeasurementsPage() {
 
               {/* History list */}
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">History</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-1">History</p>
                 {[...measurements].reverse().map(m => (
                   <div key={m.id} className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
                     <div className="flex items-start justify-between">
@@ -287,12 +287,12 @@ export default function MeasurementsPage() {
                             )
                           })}
                         </div>
-                        {m.notes ? <p className="text-xs text-gray-400 mt-1 italic">{m.notes}</p> : null}
+                        {m.notes ? <p className="text-xs text-gray-500 mt-1 italic">{m.notes}</p> : null}
                       </div>
                       <button
                         onClick={() => deleteMeasurement(m.id)}
                         disabled={deletingId === m.id}
-                        className="text-gray-300 hover:text-red-400 transition-colors text-sm ml-3 shrink-0"
+                        className="text-gray-500 hover:text-red-400 transition-colors text-sm ml-3 shrink-0"
                       >
                         {deletingId === m.id ? '...' : '✕'}
                       </button>
@@ -310,7 +310,7 @@ export default function MeasurementsPage() {
             <div className="bg-white rounded-3xl w-full max-w-md max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
               <div className="px-5 pt-5 pb-3 border-b border-gray-100 shrink-0">
                 <h2 className="text-lg font-bold text-gray-900">Log Measurements</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Fill in what you have — all fields are optional</p>
+                <p className="text-xs text-gray-500 mt-0.5">Fill in what you have — all fields are optional</p>
               </div>
 
               <div className="p-5 space-y-4 overflow-y-auto flex-1">
@@ -337,7 +337,7 @@ export default function MeasurementsPage() {
                   />
                 </div>
 
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Body Measurements (inches)</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Body Measurements (inches)</p>
 
                 <div className="grid grid-cols-2 gap-3">
                   {(['waist_in', 'hips_in', 'chest_in', 'arms_in', 'thighs_in'] as const).map(key => (

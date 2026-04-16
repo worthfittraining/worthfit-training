@@ -190,7 +190,7 @@ export default function SubscribePage() {
                   <p className="text-sm font-semibold text-gray-500 mb-1">{tier.label}</p>
                   <div className="flex items-end gap-1 mb-1">
                     <span className="text-3xl font-bold text-gray-900">{tier.price}</span>
-                    <span className="text-sm text-gray-400 pb-1">{tier.period}</span>
+                    <span className="text-sm text-gray-500 pb-1">{tier.period}</span>
                   </div>
                   <p className="text-xs text-gray-500">{tier.tagline}</p>
                 </div>
@@ -199,10 +199,10 @@ export default function SubscribePage() {
                 <ul className="space-y-2.5 mb-6 flex-1">
                   {tier.features.map((f, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
-                      <span className={f.included ? 'text-green-500 mt-0.5' : 'text-gray-300 mt-0.5'}>
+                      <span className={f.included ? 'text-green-500 mt-0.5' : 'text-gray-500 mt-0.5'}>
                         {f.included ? '✓' : '✗'}
                       </span>
-                      <span className={f.included ? 'text-gray-700' : 'text-gray-400'}>
+                      <span className={f.included ? 'text-gray-700' : 'text-gray-500'}>
                         {f.text}
                       </span>
                     </li>
@@ -215,7 +215,7 @@ export default function SubscribePage() {
                   disabled={isLoading || isCurrent}
                   className={`w-full py-3 rounded-2xl font-semibold text-sm transition-colors ${
                     isCurrent
-                      ? 'bg-gray-100 text-gray-400 cursor-default'
+                      ? 'bg-gray-100 text-gray-500 cursor-default'
                       : tier.highlight
                       ? 'bg-green-600 hover:bg-green-700 text-white shadow-md'
                       : 'bg-gray-900 hover:bg-gray-800 text-white'
@@ -225,7 +225,7 @@ export default function SubscribePage() {
                 </button>
 
                 {(tier.id === 'standard' || tier.id === 'premium') && !isCurrent && (
-                  <p className="text-center text-xs text-gray-400 mt-2">7 days free, then {tier.price}/mo</p>
+                  <p className="text-center text-xs text-gray-500 mt-2">7 days free, then {tier.price}/mo</p>
                 )}
               </div>
             )
@@ -237,11 +237,11 @@ export default function SubscribePage() {
         )}
 
         {/* Footer note */}
-        <p className="text-center text-xs text-gray-400">
+        <p className="text-center text-xs text-gray-500">
           Cancel or change plans anytime from your account settings. Questions?{' '}
           <a href="mailto:worthfittraining@gmail.com" className="underline">worthfittraining@gmail.com</a>
         </p>
-        <p className="text-center text-xs text-gray-400 mt-2">
+        <p className="text-center text-xs text-gray-500 mt-2">
           By subscribing you agree to our{' '}
           <a href="/terms" className="underline hover:text-gray-600">Terms & Conditions</a>.
           Subscription fees are non-refundable. Nutrition by Nali LLC, Kentucky.

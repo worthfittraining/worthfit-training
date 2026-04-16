@@ -401,7 +401,7 @@ async function moveFoodLog(moveData: Record<string, unknown>, email: string) {
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">N</div>
           <span className="font-semibold text-gray-800">Nali</span>
-          <span className="text-xs text-gray-400">Your AI Nutrition Coach</span>
+          <span className="text-xs text-gray-500">Your AI Nutrition Coach</span>
         </div>
         <a href="/dashboard" className="text-sm text-gray-500 hover:text-gray-700">← Dashboard</a>
       </div>
@@ -487,9 +487,9 @@ async function moveFoodLog(moveData: Record<string, unknown>, email: string) {
         </div>
 
         <div className="flex items-center justify-between mt-1">
-          <p className="text-xs text-gray-400">Press Enter to send • Shift+Enter for new line</p>
+          <p className="text-xs text-gray-500">Press Enter to send • Shift+Enter for new line</p>
           {isFinite(PLAN_LIMITS[plan].naliMessagesPerDay) && (
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-500">
               {Math.max(0, PLAN_LIMITS[plan].naliMessagesPerDay - msgCount)} msg{Math.max(0, PLAN_LIMITS[plan].naliMessagesPerDay - msgCount) !== 1 ? 's' : ''} left today
             </p>
           )}

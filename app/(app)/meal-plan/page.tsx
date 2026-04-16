@@ -313,7 +313,7 @@ export default function MealPlanPage() {
             disabled={generating || weeklyLimitReached}
             className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
               weeklyLimitReached
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
                 : 'bg-green-500 text-white hover:bg-green-600 disabled:bg-gray-300'
             }`}
           >
@@ -346,18 +346,18 @@ export default function MealPlanPage() {
         {pageView === 'plan' && (
           <>
             {loading ? (
-              <div className="text-center text-gray-400 py-12">Loading...</div>
+              <div className="text-center text-gray-500 py-12">Loading...</div>
             ) : generating ? (
               <div className="text-center py-16">
                 <div className="text-5xl mb-4">✨</div>
                 <p className="text-gray-600 font-medium">Nali is creating your meal plan...</p>
-                <p className="text-gray-400 text-sm mt-2">This takes about 15–20 seconds</p>
+                <p className="text-gray-500 text-sm mt-2">This takes about 15–20 seconds</p>
               </div>
             ) : meals.length === 0 ? (
               <div className="text-center py-16">
                 <div className="text-5xl mb-4">📋</div>
                 <p className="text-gray-600 font-medium mb-2">No meal plan yet</p>
-                <p className="text-gray-400 text-sm mb-6">Click "✨ Generate" and Nali will create a personalized week of meals based on your goals.</p>
+                <p className="text-gray-500 text-sm mb-6">Click "✨ Generate" and Nali will create a personalized week of meals based on your goals.</p>
                 <button onClick={() => setShowQuestionnaire(true)} className="bg-green-500 text-white px-6 py-3 rounded-xl font-medium hover:bg-green-600 transition">
                   ✨ Generate My Meal Plan
                 </button>
@@ -376,7 +376,7 @@ export default function MealPlanPage() {
 
                 {/* Meal cards */}
                 {bySlot.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400 text-sm">No meals planned for {DAYS[selectedDay]}</div>
+                  <div className="text-center py-12 text-gray-500 text-sm">No meals planned for {DAYS[selectedDay]}</div>
                 ) : (
                   <div className="space-y-3">
                     {bySlot.map(({ slot, meal }) => meal && (
@@ -386,7 +386,7 @@ export default function MealPlanPage() {
                           <div className="p-4 space-y-3">
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs font-semibold text-green-600 uppercase tracking-wide capitalize">{slot}</span>
-                              <button onClick={() => { setEditingId(null); setEditDraft(null) }} className="text-gray-400 text-xs hover:text-gray-600">Cancel</button>
+                              <button onClick={() => { setEditingId(null); setEditDraft(null) }} className="text-gray-500 text-xs hover:text-gray-600">Cancel</button>
                             </div>
                             <input
                               value={editDraft.recipe_name}
@@ -397,7 +397,7 @@ export default function MealPlanPage() {
                             <div className="grid grid-cols-4 gap-2">
                               {(['calories', 'protein_g', 'carbs_g', 'fat_g'] as const).map((field) => (
                                 <div key={field}>
-                                  <label className="text-xs text-gray-400 block mb-1 capitalize">
+                                  <label className="text-xs text-gray-500 block mb-1 capitalize">
                                     {field === 'calories' ? 'Cal' : field === 'protein_g' ? 'Protein' : field === 'carbs_g' ? 'Carbs' : 'Fat'}
                                   </label>
                                   <input
@@ -431,12 +431,12 @@ export default function MealPlanPage() {
                               <div className="flex-1 min-w-0 pr-2">
                                 <div className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-1 capitalize">{slot}</div>
                                 <div className="font-medium text-gray-800 leading-snug">{meal.recipe_name}</div>
-                                {meal.notes && <div className="text-xs text-gray-400 mt-1">{meal.notes}</div>}
+                                {meal.notes && <div className="text-xs text-gray-500 mt-1">{meal.notes}</div>}
                               </div>
                               <div className="flex gap-1.5 shrink-0">
                                 <button
                                   onClick={() => startEdit(meal)}
-                                  className="text-xs text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 px-2.5 py-1.5 rounded-lg transition-colors"
+                                  className="text-xs text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 px-2.5 py-1.5 rounded-lg transition-colors"
                                 >
                                   ✏️ Edit
                                 </button>
@@ -472,7 +472,7 @@ export default function MealPlanPage() {
                       <MacroBar value={dayTotals.fat_g} target={profile?.Fat_g || 0} label="Fat" color="bg-green-400" />
                     </div>
                     {profile?.Calories && dayTotals.calories > 0 && (
-                      <p className="text-xs text-gray-400 mt-2 text-center">
+                      <p className="text-xs text-gray-500 mt-2 text-center">
                         {dayTotals.calories < (profile.Calories || 0) * 0.9
                           ? `${(profile.Calories || 0) - dayTotals.calories} cal remaining`
                           : dayTotals.calories > (profile.Calories || 0) * 1.1
@@ -499,10 +499,10 @@ export default function MealPlanPage() {
                 <a href="/subscribe" className="inline-block bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
                   Upgrade to Premium →
                 </a>
-                <p className="text-xs text-gray-400 mt-3">Already on Standard? Your meal plan, editing, and macro tracking are all included.</p>
+                <p className="text-xs text-gray-500 mt-3">Already on Standard? Your meal plan, editing, and macro tracking are all included.</p>
               </div>
             ) : meals.length === 0 ? (
-              <div className="text-center py-16 text-gray-400">
+              <div className="text-center py-16 text-gray-500">
                 <div className="text-4xl mb-3">📋</div>
                 <p className="text-sm">Generate a meal plan first, then come back here to build your grocery list.</p>
               </div>
@@ -510,14 +510,14 @@ export default function MealPlanPage() {
               <div className="text-center py-16">
                 <div className="text-5xl mb-4">🛒</div>
                 <p className="text-gray-600 font-medium">Building your grocery list...</p>
-                <p className="text-gray-400 text-sm mt-2">Combining all meals for the week</p>
+                <p className="text-gray-500 text-sm mt-2">Combining all meals for the week</p>
               </div>
             ) : groceryList ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-500">Tap items to check them off as you shop</p>
                   <div className="flex gap-3">
-                    <button onClick={() => setCheckedItems(new Set())} className="text-xs text-gray-400 hover:text-gray-600">Clear all</button>
+                    <button onClick={() => setCheckedItems(new Set())} className="text-xs text-gray-500 hover:text-gray-600">Clear all</button>
                     <button onClick={() => { setGroceryList(null); generateGroceryList() }} className="text-xs text-green-600 hover:text-green-700">↺ Refresh</button>
                   </div>
                 </div>
@@ -536,7 +536,7 @@ export default function MealPlanPage() {
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${checked ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
                               {checked && <span className="text-white text-xs">✓</span>}
                             </div>
-                            <span className={`text-sm ${checked ? 'line-through text-gray-300' : 'text-gray-700'}`}>{item}</span>
+                            <span className={`text-sm ${checked ? 'line-through text-gray-500' : 'text-gray-700'}`}>{item}</span>
                           </button>
                         )
                       })}
@@ -548,7 +548,7 @@ export default function MealPlanPage() {
               <div className="text-center py-12">
                 <div className="text-5xl mb-4">🛒</div>
                 <p className="text-gray-600 font-medium mb-2">Ready to shop?</p>
-                <p className="text-gray-400 text-sm mb-6">Generate a shopping list from your entire week of meals, organized by section.</p>
+                <p className="text-gray-500 text-sm mb-6">Generate a shopping list from your entire week of meals, organized by section.</p>
                 <button onClick={generateGroceryList} className="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
                   Build Grocery List
                 </button>
@@ -576,7 +576,7 @@ export default function MealPlanPage() {
                 <div key={key}>
                   <div className="flex justify-between items-baseline mb-2">
                     <label className="text-sm font-medium text-gray-700">{label}</label>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-500">
                       {questionnaire[key] === 1 ? 'Same every day' : questionnaire[key] === 7 ? 'Different each day' : `${questionnaire[key]} different options`}
                     </span>
                   </div>
@@ -591,7 +591,7 @@ export default function MealPlanPage() {
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-300 mt-1">1 = same all week · 7 = different every day</p>
+                  <p className="text-xs text-gray-500 mt-1">1 = same all week · 7 = different every day</p>
                 </div>
               ))}
 
@@ -599,7 +599,7 @@ export default function MealPlanPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-700">Include snacks?</p>
-                  <p className="text-xs text-gray-400">Add a snack option to each day</p>
+                  <p className="text-xs text-gray-500">Add a snack option to each day</p>
                 </div>
                 <button
                   onClick={() => setQuestionnaire(q => ({ ...q, includeSnacks: !q.includeSnacks }))}
@@ -611,13 +611,13 @@ export default function MealPlanPage() {
 
               {/* Free-text preferences */}
               <div>
-                <label className="text-sm font-medium text-gray-700 block mb-1.5">Anything specific this week? <span className="text-gray-400 font-normal">(optional)</span></label>
+                <label className="text-sm font-medium text-gray-700 block mb-1.5">Anything specific this week? <span className="text-gray-500 font-normal">(optional)</span></label>
                 <textarea
                   value={questionnaire.weekPreferences}
                   onChange={e => setQuestionnaire(q => ({ ...q, weekPreferences: e.target.value }))}
                   placeholder="e.g. more chicken this week, keep it simple, avoid pasta..."
                   rows={2}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none placeholder:text-gray-400"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none placeholder:text-gray-500"
                 />
               </div>
 
@@ -644,7 +644,7 @@ export default function MealPlanPage() {
                 <p className="text-xs font-semibold text-green-600 uppercase tracking-wide capitalize mb-0.5">{selectedMeal.meal_slot}</p>
                 <h2 className="text-lg font-bold text-gray-900 leading-tight">{selectedMeal.recipe_name}</h2>
               </div>
-              <button onClick={() => setSelectedMeal(null)} className="text-gray-400 hover:text-gray-600 text-xl font-light ml-4 mt-1">✕</button>
+              <button onClick={() => setSelectedMeal(null)} className="text-gray-500 hover:text-gray-600 text-xl font-light ml-4 mt-1">✕</button>
             </div>
             <div className="p-5">
               {recipeLoading ? (
@@ -660,7 +660,7 @@ export default function MealPlanPage() {
                     {[{ label: 'Calories', val: `${selectedMeal.calories}` }, { label: 'Protein', val: `${selectedMeal.protein_g}g` }, { label: 'Carbs', val: `${selectedMeal.carbs_g}g` }, { label: 'Fat', val: `${selectedMeal.fat_g}g` }].map(m => (
                       <div key={m.label} className="bg-green-50 rounded-xl p-2 text-center">
                         <p className="text-sm font-bold text-gray-800">{m.val}</p>
-                        <p className="text-xs text-gray-400">{m.label}</p>
+                        <p className="text-xs text-gray-500">{m.label}</p>
                       </div>
                     ))}
                   </div>

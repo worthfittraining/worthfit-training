@@ -205,7 +205,7 @@ export default function DashboardPage() {
             <p className="text-gray-500 text-sm mt-1">{getMotivation()}</p>
           </div>
           <div className="flex items-center gap-3 mt-1">
-            <div className="text-right text-xs text-gray-400">
+            <div className="text-right text-xs text-gray-500">
               <div className="font-medium text-gray-600">{todayName}</div>
             </div>
             <Link href="/account" className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center text-white text-sm font-bold shadow-sm hover:bg-green-600 transition-colors flex-shrink-0">
@@ -248,7 +248,7 @@ export default function DashboardPage() {
                 ) : (
                   <>
                     <span className="text-xl font-bold text-gray-800">{loading ? '—' : totals.calories}</span>
-                    <span className="text-xs text-gray-400">kcal</span>
+                    <span className="text-xs text-gray-500">kcal</span>
                   </>
                 )}
               </div>
@@ -281,7 +281,7 @@ export default function DashboardPage() {
         {/* Macros */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-semibold text-gray-400 tracking-wide">MACROS</h2>
+            <h2 className="text-xs font-semibold text-gray-500 tracking-wide">MACROS</h2>
             {(proteinHit || carbsHit || fatHit) && !allMacrosHit && (
               <span className="text-xs text-green-600 font-medium">
                 {[proteinHit && 'P', carbsHit && 'C', fatHit && 'F'].filter(Boolean).join(', ')} on target!
@@ -289,7 +289,7 @@ export default function DashboardPage() {
             )}
           </div>
           {loading ? (
-            <div className="text-center text-gray-400 py-4">Loading...</div>
+            <div className="text-center text-gray-500 py-4">Loading...</div>
           ) : (
             <div className="space-y-3">
               <MacroRow label="Protein" value={totals.protein} target={targets.protein} color="text-green-700" barColor="bg-green-500" hit={proteinHit} />
@@ -304,7 +304,7 @@ export default function DashboardPage() {
           {/* Fiber Ring */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col items-center">
             <div className="flex items-center gap-1.5 self-start mb-3">
-              <h2 className="text-xs font-semibold text-gray-400 tracking-wide">FIBER</h2>
+              <h2 className="text-xs font-semibold text-gray-500 tracking-wide">FIBER</h2>
               {fiberHit && <span className="inline-flex items-center justify-center w-4 h-4 bg-green-500 rounded-full text-white text-xs leading-none">✓</span>}
             </div>
             {(() => {
@@ -330,20 +330,20 @@ export default function DashboardPage() {
                     ) : (
                       <>
                         <span className="text-sm font-bold text-gray-800">{loading ? '—' : totals.fiber}g</span>
-                        <span className="text-xs text-gray-400">fiber</span>
+                        <span className="text-xs text-gray-500">fiber</span>
                       </>
                     )}
                   </div>
                 </div>
               )
             })()}
-            <p className="text-xs text-gray-400 mt-2">Goal: {targets.fiber}g</p>
+            <p className="text-xs text-gray-500 mt-2">Goal: {targets.fiber}g</p>
           </div>
 
           {/* Water Tracker */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col items-center">
             <div className="flex items-center gap-1.5 self-start mb-3">
-              <h2 className="text-xs font-semibold text-gray-400 tracking-wide">WATER</h2>
+              <h2 className="text-xs font-semibold text-gray-500 tracking-wide">WATER</h2>
               {waterHit && <span className="inline-flex items-center justify-center w-4 h-4 bg-green-500 rounded-full text-white text-xs leading-none">✓</span>}
             </div>
             {(() => {
@@ -369,7 +369,7 @@ export default function DashboardPage() {
                     ) : (
                       <>
                         <span className="text-sm font-bold text-gray-800">{waterOz}oz</span>
-                        <span className="text-xs text-gray-400">water</span>
+                        <span className="text-xs text-gray-500">water</span>
                       </>
                     )}
                   </div>
@@ -377,7 +377,7 @@ export default function DashboardPage() {
               )
             })()}
             <div className="flex gap-2 mt-2">
-              <button onClick={() => addWater(-8)} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded-lg border border-gray-200">-8oz</button>
+              <button onClick={() => addWater(-8)} className="text-xs text-gray-500 hover:text-gray-600 px-2 py-1 rounded-lg border border-gray-200">-8oz</button>
               <button onClick={() => addWater(8)} className={`text-xs font-medium px-3 py-1 rounded-lg transition-colors ${waterHit ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}>+8oz</button>
             </div>
             <div className="flex items-center gap-1 mt-2">
@@ -402,7 +402,7 @@ export default function DashboardPage() {
                 className="text-xs font-medium px-2 py-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
               >+custom</button>
             </div>
-            <p className="text-xs text-gray-400 mt-1">Goal: {waterGoal}oz</p>
+            <p className="text-xs text-gray-500 mt-1">Goal: {waterGoal}oz</p>
           </div>
         </div>
 
@@ -410,7 +410,7 @@ export default function DashboardPage() {
         {recentLogs.length > 0 && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-xs font-semibold text-gray-400 tracking-wide">RECENT MEALS</h2>
+              <h2 className="text-xs font-semibold text-gray-500 tracking-wide">RECENT MEALS</h2>
               <Link href="/log" className="text-xs text-green-600 font-medium">See all →</Link>
             </div>
             <div className="space-y-3">
@@ -418,7 +418,7 @@ export default function DashboardPage() {
                 <div key={log.id} className="flex justify-between items-center">
                   <div>
                     <p className="text-sm font-medium text-gray-800 capitalize">{log.food_name}</p>
-                    <p className="text-xs text-gray-400 capitalize">{log.meal_slot}</p>
+                    <p className="text-xs text-gray-500 capitalize">{log.meal_slot}</p>
                   </div>
                   <span className="text-sm font-medium text-gray-600">{log.calories} kcal</span>
                 </div>
@@ -429,7 +429,7 @@ export default function DashboardPage() {
 
         {/* Quick Actions */}
         <div>
-          <h2 className="text-xs font-semibold text-gray-400 mb-3 tracking-wide">QUICK ACTIONS</h2>
+          <h2 className="text-xs font-semibold text-gray-500 mb-3 tracking-wide">QUICK ACTIONS</h2>
           <div className="grid grid-cols-2 gap-3">
             <Link href="/log" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
               <div className="text-2xl mb-2">🍽️</div>

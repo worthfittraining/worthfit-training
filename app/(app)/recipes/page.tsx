@@ -188,7 +188,7 @@ export default function RecipesPage() {
 
         {/* Content */}
         {loading ? (
-          <div className="text-center py-16 text-gray-400 text-sm">Loading recipes...</div>
+          <div className="text-center py-16 text-gray-500 text-sm">Loading recipes...</div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">🍽️</p>
@@ -223,14 +223,14 @@ export default function RecipesPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0 pr-3">
                         <p className="text-sm font-semibold text-gray-800 truncate">{recipe.name}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">Saved {formatDate(recipe.saved_at)}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Saved {formatDate(recipe.saved_at)}</p>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         <div className="text-right">
                           <p className="text-sm font-bold text-gray-800">{recipe.calories} cal</p>
-                          <p className="text-xs text-gray-400">per serving</p>
+                          <p className="text-xs text-gray-500">per serving</p>
                         </div>
-                        <span className="text-gray-300 text-sm">{isExpanded ? '▲' : '▼'}</span>
+                        <span className="text-gray-500 text-sm">{isExpanded ? '▲' : '▼'}</span>
                       </div>
                     </div>
                     {/* Macro pills */}
@@ -297,7 +297,7 @@ export default function RecipesPage() {
                       {!isConfirmingDelete ? (
                         <button
                           onClick={() => setConfirmDelete(recipe.name)}
-                          className="w-full text-xs text-gray-400 hover:text-red-400 py-1 transition-colors"
+                          className="w-full text-xs text-gray-500 hover:text-red-400 py-1 transition-colors"
                         >
                           Remove recipe
                         </button>

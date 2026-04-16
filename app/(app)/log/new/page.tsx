@@ -252,12 +252,12 @@ export default function NewLogPage() {
                       <button key={i} type="button" onClick={() => selectFood(r)}
                         className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-green-50 border border-gray-100 transition-colors">
                         <div className="text-sm font-medium text-gray-800 truncate">{r.name}</div>
-                        <div className="text-xs text-gray-400 mt-0.5">
+                        <div className="text-xs text-gray-500 mt-0.5">
                           {isNamedServing(r.serving) ? (
                             <span className="text-green-600 font-medium mr-1.5">Serving: {r.serving} · {r.calories} cal</span>
                           ) : null}
                           {r.cal_per_100g} cal · {r.protein_per_100g}g pro · {r.carbs_per_100g}g carbs · {r.fat_per_100g}g fat
-                          <span className="text-gray-300 ml-1">per 100g</span>
+                          <span className="text-gray-500 ml-1">per 100g</span>
                         </div>
                       </button>
                     ))}
@@ -273,7 +273,7 @@ export default function NewLogPage() {
                       <p className="font-semibold text-gray-800 text-sm">{selectedFood.name}</p>
                       <p className="text-xs text-gray-500">Serving: {selectedFood.serving}</p>
                     </div>
-                    <button type="button" onClick={() => setSelectedFood(null)} className="text-gray-400 hover:text-gray-600 text-lg">×</button>
+                    <button type="button" onClick={() => setSelectedFood(null)} className="text-gray-500 hover:text-gray-600 text-lg">×</button>
                   </div>
 
                   <p className="text-sm font-medium text-gray-700 mb-2">How much did you have?</p>
@@ -313,11 +313,11 @@ export default function NewLogPage() {
 
                   {computed && Number(qty) > 0 && (
                     <div className="bg-white rounded-xl p-3 grid grid-cols-5 gap-2 text-center">
-                      <div><div className="font-bold text-gray-800">{computed.calories}</div><div className="text-xs text-gray-400">cal</div></div>
-                      <div><div className="font-bold text-green-600">{computed.protein_g}g</div><div className="text-xs text-gray-400">protein</div></div>
-                      <div><div className="font-bold text-blue-600">{computed.carbs_g}g</div><div className="text-xs text-gray-400">carbs</div></div>
-                      <div><div className="font-bold text-orange-500">{computed.fat_g}g</div><div className="text-xs text-gray-400">fat</div></div>
-                      <div><div className="font-bold text-teal-600">{computed.fiber_g}g</div><div className="text-xs text-gray-400">fiber</div></div>
+                      <div><div className="font-bold text-gray-800">{computed.calories}</div><div className="text-xs text-gray-500">cal</div></div>
+                      <div><div className="font-bold text-green-600">{computed.protein_g}g</div><div className="text-xs text-gray-500">protein</div></div>
+                      <div><div className="font-bold text-blue-600">{computed.carbs_g}g</div><div className="text-xs text-gray-500">carbs</div></div>
+                      <div><div className="font-bold text-orange-500">{computed.fat_g}g</div><div className="text-xs text-gray-500">fat</div></div>
+                      <div><div className="font-bold text-teal-600">{computed.fiber_g}g</div><div className="text-xs text-gray-500">fiber</div></div>
                     </div>
                   )}
                 </div>
@@ -394,7 +394,7 @@ export default function NewLogPage() {
             {saving ? 'Saving...' : savedFoods.length > 0 ? '+ Add Another Food' : 'Save to Log'}
           </button>
           {!canSave && !saving && (
-            <p className="text-center text-xs text-gray-400 mt-2">
+            <p className="text-center text-xs text-gray-500 mt-2">
               {manualMode ? 'Enter a food name above to save' : 'Search for a food above to save'}
             </p>
           )}
