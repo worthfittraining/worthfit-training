@@ -638,15 +638,15 @@ export default function MealPlanPage() {
       {/* ── RECIPE MODAL ── */}
       {selectedMeal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4" onClick={() => setSelectedMeal(null)}>
-          <div className="bg-white rounded-3xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="sticky top-0 bg-white rounded-t-3xl border-b border-gray-100 px-5 py-4 flex items-start justify-between">
+          <div className="bg-white rounded-3xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="shrink-0 bg-white rounded-t-3xl border-b border-gray-100 px-5 py-4 flex items-start justify-between">
               <div>
                 <p className="text-xs font-semibold text-green-600 uppercase tracking-wide capitalize mb-0.5">{selectedMeal.meal_slot}</p>
                 <h2 className="text-lg font-bold text-gray-900 leading-tight">{selectedMeal.recipe_name}</h2>
               </div>
               <button onClick={() => setSelectedMeal(null)} className="text-gray-500 hover:text-gray-600 text-xl font-light ml-4 mt-1">✕</button>
             </div>
-            <div className="p-5">
+            <div className="p-5 overflow-y-auto flex-1">
               {recipeLoading ? (
                 <div className="text-center py-12"><div className="text-4xl mb-3">👩‍🍳</div><p className="text-gray-500 text-sm">Getting your recipe...</p></div>
               ) : recipeError ? (

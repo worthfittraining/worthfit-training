@@ -50,7 +50,7 @@ const TIERS: Tier[] = [
     priceId: process.env.NEXT_PUBLIC_STRIPE_STANDARD_PRICE_ID ?? '',
     features: [
       { text: 'Everything in Free', included: true },
-      { text: '30 Nali messages per day', included: true },
+      { text: '10 Nali messages per day', included: true },
       { text: 'Barcode scanner', included: true },
       { text: 'Photo food logging', included: true },
       { text: 'AI meal plans', included: true },
