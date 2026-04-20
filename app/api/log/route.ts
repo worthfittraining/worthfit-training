@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { fetchWithRetry } from '@/lib/airtable'
 
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN!
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID!
@@ -17,7 +18,7 @@ async function getClientRecordIds(email: string): Promise<string[]> {
   const normalizedEmail = email.toLowerCase().trim()
   const formula = encodeURIComponent(`LOWER({Email})="${normalizedEmail}"`)
   const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(CLIENTS_TABLE)}?filterByFormula=${formula}`
-  const res = await fetch(url, {
+  const res = await fetchWithRetry(url, {
     headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
     cache: 'no-store',
   })

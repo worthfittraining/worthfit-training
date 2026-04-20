@@ -4,24 +4,37 @@ import { auth } from '@clerk/nextjs/server'
 
 const base = new Airtable({ apiKey: process.env.AIRTABLE_TOKEN }).base(process.env.AIRTABLE_BASE_ID!)
 
+/** Fetch all pages from an Airtable select query */
+async function fetchAllPages(query: Airtable.Query<Airtable.FieldSet>): Promise<Airtable.Record<Airtable.FieldSet>[]> {
+  return new Promise((resolve, reject) => {
+    const records: Airtable.Record<Airtable.FieldSet>[] = []
+    query.eachPage(
+      (page, fetchNext) => { records.push(...page); fetchNext() },
+      (err) => { if (err) reject(err); else resolve(records) }
+    )
+  })
+}
+
 export async function GET() {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
-    const today = new Date().toISOString().split('T')[0]
+    // Local date string to match what clients send when logging food
+    const now = new Date()
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
-    // Fetch all clients
-    const clientRecords = await base('Clients').select().all()
-
-    // Fetch all food logs
-    const logRecords = await base('Food Logs').select().all()
+    // Fetch all clients (paginated) + only TODAY's food logs (not the entire history)
+    const [clientRecords, logRecords] = await Promise.all([
+      fetchAllPages(base('Clients').select()),
+      fetchAllPages(base('Food Logs').select({
+        filterByFormula: `DATETIME_FORMAT({Date},'YYYY-MM-DD')='${today}'`,
+      })),
+    ])
 
     const clients = clientRecords.map(client => {
-      // Find today's logs for this client
       const todayLogs = logRecords.filter(log => {
         const clientIds = (log.fields.client_id as string[]) || []
-        const logDate = String(log.fields.Date || '').split('T')[0]
-        return clientIds.includes(client.id) && logDate === today
+        return clientIds.includes(client.id)
       })
 
       const todayCalories = todayLogs.reduce((s, l) => s + (Number(l.fields.calories) || 0), 0)

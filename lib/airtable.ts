@@ -8,6 +8,39 @@ function getBase() {
 
 type Fields = Airtable.FieldSet
 
+/** Fetch all pages from an Airtable select query (handles >100 records automatically) */
+export async function fetchAllPages(query: Airtable.Query<Fields>): Promise<Airtable.Record<Fields>[]> {
+  return new Promise((resolve, reject) => {
+    const records: Airtable.Record<Fields>[] = []
+    query.eachPage(
+      (page, fetchNext) => { records.push(...page); fetchNext() },
+      (err) => { if (err) reject(err); else resolve(records) }
+    )
+  })
+}
+
+/**
+ * Wrap a fetch call with exponential backoff retry on Airtable 429 rate limit errors.
+ * Airtable allows 5 requests/sec per base — under heavy load this kicks in.
+ */
+export async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries = 3
+): Promise<Response> {
+  let lastError: Error | null = null
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const res = await fetch(url, options)
+    if (res.status !== 429) return res
+    // Exponential backoff: 500ms, 1000ms, 2000ms
+    const delay = 500 * Math.pow(2, attempt)
+    console.warn(`Airtable rate limited (429), retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`)
+    await new Promise(r => setTimeout(r, delay))
+    lastError = new Error('Airtable rate limit exceeded after retries')
+  }
+  throw lastError
+}
+
 // ── CLIENTS ──────────────────────────────────────
 
 export async function getClientByEmail(email: string) {
@@ -98,11 +131,12 @@ export async function getRecentLogs(clientId: string, days = 1) {
   since.setDate(since.getDate() - days)
   const dateStr = since.toISOString().split('T')[0]
 
-  const records = await getBase()('Food Logs')
-    .select({
+  // Use eachPage (via fetchAllPages) instead of firstPage() to avoid the 100-record limit
+  // for active users who log frequently across multiple days
+  return fetchAllPages(
+    getBase()('Food Logs').select({
       filterByFormula: `AND({client_id} = "${clientId}", {date} >= "${dateStr}")`,
       sort: [{ field: 'date', direction: 'desc' }],
     })
-    .firstPage()
-  return records
+  )
 }
