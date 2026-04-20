@@ -364,6 +364,12 @@ async function moveFoodLog(moveData: Record<string, unknown>, email: string) {
       // Save food log if Nali logged something
       if (logData && email) {
         await saveFoodLog(logData, email)
+      } else if (!logData && /logged that|logged it|i've logged|i've added|added that to your log/i.test(cleaned)) {
+        // Nali said she logged something but the tag wasn't emitted — warn the user
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: "⚠️ I said I logged that but something went wrong on my end and it didn't save. Please log it manually using the Log tab — so sorry about that!"
+        }])
       }
 
       // Delete food log if Nali removed something
