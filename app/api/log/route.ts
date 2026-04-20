@@ -121,19 +121,27 @@ export async function GET(req: NextRequest) {
     // so we filter by client in JavaScript below after fetching the date-filtered set.
     const dateConditions = targetDates.map(d => `DATETIME_FORMAT({Date},'YYYY-MM-DD')='${d}'`).join(',')
     const filterFormula = encodeURIComponent(`OR(${dateConditions})`)
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?filterByFormula=${filterFormula}&sort[0][field]=Date&sort[0][direction]=desc`
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
-      cache: 'no-store',
-    })
+    const baseUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?filterByFormula=${filterFormula}&sort[0][field]=Date&sort[0][direction]=desc`
 
-    if (!res.ok) {
-      return NextResponse.json({ error: 'Failed to fetch logs' }, { status: 500 })
-    }
+    // Paginate through ALL Airtable records — default page size is 100, but busy days
+    // can exceed that across all clients. Fetch until no more offset token is returned.
+    const allRecords: any[] = []
+    let offset: string | undefined = undefined
+    do {
+      const pageUrl = offset ? `${baseUrl}&offset=${offset}` : baseUrl
+      const res = await fetch(pageUrl, {
+        headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
+        cache: 'no-store',
+      })
+      if (!res.ok) {
+        return NextResponse.json({ error: 'Failed to fetch logs' }, { status: 500 })
+      }
+      const data = await res.json()
+      allRecords.push(...(data.records || []))
+      offset = data.offset
+    } while (offset)
 
-    const data = await res.json()
-    const allRecords = data.records || []
-    console.log('[GET /api/log] Airtable returned', allRecords.length, 'records for dates:', targetDates, '| looking for clientIds:', clientIds)
+    console.log('[GET /api/log] Airtable returned', allRecords.length, 'total records for dates:', targetDates, '| looking for clientIds:', clientIds)
 
     // Filter client-side. Check against ALL client record IDs for this email
     // to handle users with duplicate Airtable records (e.g. Playbook pre-created + sign-up).
