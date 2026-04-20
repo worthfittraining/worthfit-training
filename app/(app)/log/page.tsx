@@ -158,6 +158,7 @@ export default function LogPage() {
   })
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null)
   const [editSaving, setEditSaving] = useState(false)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   useEffect(() => {
     if (user) { fetchLogs(selectedDate); fetchProfile() }
@@ -173,11 +174,17 @@ export default function LogPage() {
     function onPageShow(e: PageTransitionEvent) {
       if (e.persisted && user) fetchLogs(selectedDate)
     }
+    // focus fires when PWA/tab regains focus (belt-and-suspenders alongside visibilitychange)
+    function onFocus() {
+      if (user) fetchLogs(selectedDate)
+    }
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('pageshow', onPageShow)
+    window.addEventListener('focus', onFocus)
     return () => {
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('pageshow', onPageShow)
+      window.removeEventListener('focus', onFocus)
     }
   }, [user, selectedDate])
 
@@ -205,12 +212,21 @@ export default function LogPage() {
     const email = user?.primaryEmailAddress?.emailAddress
     if (!email) return
     setLoading(true)
+    setFetchError(null)
     try {
       const fetchDate = date ?? selectedDate
       const res = await fetch(`/api/log?email=${encodeURIComponent(email)}&date=${fetchDate}`, { cache: 'no-store' })
       const data = await res.json()
+      if (!res.ok || data.error) {
+        console.error('fetchLogs error:', data.error || res.status)
+        setFetchError(`Couldn't load your log (${data.error || res.status}). Pull to refresh or tap retry.`)
+        return
+      }
       setLogs(data.logs || [])
-    } catch (e) { console.error(e) }
+    } catch (e) {
+      console.error(e)
+      setFetchError('Network error loading your log. Check your connection and try again.')
+    }
     finally { setLoading(false) }
   }
 
@@ -405,7 +421,18 @@ export default function LogPage() {
             </div>
 
             {loading && <div className="text-center text-gray-500 py-12">Loading your log...</div>}
-            {!loading && logs.length === 0 && (
+            {!loading && fetchError && (
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-5 text-center mb-4">
+                <p className="text-red-600 text-sm mb-3">{fetchError}</p>
+                <button
+                  onClick={() => fetchLogs(selectedDate)}
+                  className="bg-red-500 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-red-600 transition"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+            {!loading && !fetchError && logs.length === 0 && (
               <div className="bg-white rounded-2xl shadow p-8 text-center">
                 <p className="text-4xl mb-3">🍽️</p>
                 <p className="text-gray-500">{isViewingToday ? 'Nothing logged yet today.' : `Nothing logged on ${getDateLabel(selectedDate)}.`}</p>

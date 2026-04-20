@@ -13,6 +13,7 @@ async function getClientRecordId(email: string): Promise<string | null> {
   const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(CLIENTS_TABLE)}?filterByFormula=${formula}&maxRecords=1`
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
+    cache: 'no-store',
   })
   const data = await res.json()
   return data.records?.[0]?.id ?? null
@@ -115,6 +116,7 @@ export async function GET(req: NextRequest) {
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?filterByFormula=${filterFormula}&sort[0][field]=Date&sort[0][direction]=desc`
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
+      cache: 'no-store',
     })
 
     if (!res.ok) {
@@ -236,6 +238,7 @@ export async function DELETE(req: NextRequest) {
     const listUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}?filterByFormula=${deleteFilterFormula}&sort[0][field]=Date&sort[0][direction]=desc`
     const listRes = await fetch(listUrl, {
       headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
+      cache: 'no-store',
     })
     if (!listRes.ok) return NextResponse.json({ error: 'Failed to fetch logs' }, { status: 500 })
 
