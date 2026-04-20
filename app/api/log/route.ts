@@ -82,7 +82,9 @@ export async function GET(req: NextRequest) {
     }
 
     const clientId = await getClientRecordId(email)
+    console.log('[GET /api/log] email:', email, '| clientId:', clientId)
     if (!clientId) {
+      console.log('[GET /api/log] No client record found for email:', email)
       return NextResponse.json({ logs: [] })
     }
 
@@ -125,6 +127,11 @@ export async function GET(req: NextRequest) {
 
     const data = await res.json()
     const allRecords = data.records || []
+    console.log('[GET /api/log] Airtable returned', allRecords.length, 'records for dates:', targetDates, '| looking for clientId:', clientId)
+    if (allRecords.length > 0) {
+      const sample = allRecords[0]
+      console.log('[GET /api/log] Sample record client_id field:', JSON.stringify(sample.fields.client_id), '| date field:', sample.fields.Date || sample.fields.date)
+    }
 
     // Filter client-side as a safety net.
     // Slice recordDate to 10 chars (YYYY-MM-DD) to handle Airtable Date type fields
@@ -149,6 +156,7 @@ export async function GET(req: NextRequest) {
       date: r.fields.Date || r.fields.date || '',
     }))
 
+    console.log('[GET /api/log] Filtered to', filtered.length, 'logs for this client')
     return NextResponse.json({ logs }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (error) {
     console.error('GET /api/log error:', error)
