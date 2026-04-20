@@ -7,16 +7,22 @@ const FOOD_LOGS_TABLE = 'Food Logs'
 const CLIENTS_TABLE = 'Clients'
 
 async function getClientRecordId(email: string): Promise<string | null> {
-  // Normalize email — Airtable formula is case-sensitive and Clerk may return different casing
+  const ids = await getClientRecordIds(email)
+  return ids[0] ?? null
+}
+
+// Returns ALL matching client record IDs for an email — handles duplicate records
+// (e.g. Playbook pre-created record + sign-up record for the same user)
+async function getClientRecordIds(email: string): Promise<string[]> {
   const normalizedEmail = email.toLowerCase().trim()
   const formula = encodeURIComponent(`LOWER({Email})="${normalizedEmail}"`)
-  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(CLIENTS_TABLE)}?filterByFormula=${formula}&maxRecords=1`
+  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(CLIENTS_TABLE)}?filterByFormula=${formula}`
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
     cache: 'no-store',
   })
   const data = await res.json()
-  return data.records?.[0]?.id ?? null
+  return (data.records || []).map((r: { id: string }) => r.id)
 }
 
 export async function POST(req: NextRequest) {
@@ -81,9 +87,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Missing email' }, { status: 400 })
     }
 
-    const clientId = await getClientRecordId(email)
-    console.log('[GET /api/log] email:', email, '| clientId:', clientId)
-    if (!clientId) {
+    const clientIds = await getClientRecordIds(email)
+    console.log('[GET /api/log] email:', email, '| clientIds:', clientIds)
+    if (clientIds.length === 0) {
       console.log('[GET /api/log] No client record found for email:', email)
       return NextResponse.json({ logs: [] })
     }
@@ -127,20 +133,15 @@ export async function GET(req: NextRequest) {
 
     const data = await res.json()
     const allRecords = data.records || []
-    console.log('[GET /api/log] Airtable returned', allRecords.length, 'records for dates:', targetDates, '| looking for clientId:', clientId)
-    if (allRecords.length > 0) {
-      const sample = allRecords[0]
-      console.log('[GET /api/log] Sample record client_id field:', JSON.stringify(sample.fields.client_id), '| date field:', sample.fields.Date || sample.fields.date)
-    }
+    console.log('[GET /api/log] Airtable returned', allRecords.length, 'records for dates:', targetDates, '| looking for clientIds:', clientIds)
 
-    // Filter client-side as a safety net.
-    // Slice recordDate to 10 chars (YYYY-MM-DD) to handle Airtable Date type fields
-    // that may return full ISO timestamps like "2026-04-07T00:00:00.000Z".
+    // Filter client-side. Check against ALL client record IDs for this email
+    // to handle users with duplicate Airtable records (e.g. Playbook pre-created + sign-up).
     const filtered = allRecords.filter((r: any) => {
       const fields = r.fields
       const recordDate = (fields.Date || fields.date || '').slice(0, 10)
-      const clientIds: string[] = Array.isArray(fields.client_id) ? fields.client_id : []
-      return targetDates.includes(recordDate) && clientIds.includes(clientId)
+      const linkedIds: string[] = Array.isArray(fields.client_id) ? fields.client_id : []
+      return targetDates.includes(recordDate) && linkedIds.some(id => clientIds.includes(id))
     })
 
     const logs = filtered.map((r: any) => ({
@@ -233,8 +234,8 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Missing id or email+food_name' }, { status: 400 })
     }
 
-    const clientId = await getClientRecordId(email)
-    if (!clientId) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+    const allClientIds = await getClientRecordIds(email)
+    if (allClientIds.length === 0) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
 
     // Target date is today if not provided
     const targetDate = date || new Date().toISOString().split('T')[0]
@@ -275,12 +276,12 @@ export async function DELETE(req: NextRequest) {
     let bestScore = 0
     for (const r of records) {
       const fields = r.fields
-      const clientIds: string[] = Array.isArray(fields.client_id) ? fields.client_id as string[] : []
+      const linkedIds: string[] = Array.isArray(fields.client_id) ? fields.client_id as string[] : []
       const recordDate = ((fields.Date || fields.date || '') as string).slice(0, 10)
       const recordName = ((fields.food_name || '') as string).toLowerCase()
       const recordSlot = (fields.meal_slot || '') as string
       if (recordDate !== targetDate) continue
-      if (!clientIds.includes(clientId)) continue
+      if (!linkedIds.some(id => allClientIds.includes(id))) continue
       if (meal_slot && recordSlot !== meal_slot) continue
       const score = nameScore(recordName, searchName)
       if (score > bestScore) { bestScore = score; bestMatch = r }
