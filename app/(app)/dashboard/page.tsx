@@ -65,7 +65,7 @@ export default function DashboardPage() {
 
       try {
         const [logRes, profileRes] = await Promise.all([
-          fetch(`/api/log?email=${encodeURIComponent(email)}&date=${localDateString()}`),
+          fetch(`/api/log?email=${encodeURIComponent(email)}&date=${localDateString()}`, { cache: 'no-store' }),
           fetch(`/api/profile?email=${encodeURIComponent(email)}`),
         ])
 
@@ -125,7 +125,23 @@ export default function DashboardPage() {
     fetchData()
     // Poll every 30 seconds so food logged via Nali chat appears without a refresh
     const interval = setInterval(fetchData, 30000)
-    return () => clearInterval(interval)
+
+    // Re-fetch when page becomes visible — handles native back button (bfcache),
+    // app switching, and returning from chat after Nali logs food
+    function onVisible() {
+      if (document.visibilityState === 'visible') fetchData()
+    }
+    function onPageShow(e: PageTransitionEvent) {
+      if (e.persisted) fetchData()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('pageshow', onPageShow)
+
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('pageshow', onPageShow)
+    }
   }, [user, todayName])
 
   const firstName = user?.firstName || 'there'
