@@ -128,7 +128,7 @@ export async function GET(req: NextRequest) {
     const allRecords: any[] = []
     let offset: string | undefined = undefined
     do {
-      const pageUrl = offset ? `${baseUrl}&offset=${offset}` : baseUrl
+      const pageUrl: string = offset ? `${baseUrl}&offset=${offset}` : baseUrl
       const res = await fetch(pageUrl, {
         headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
         cache: 'no-store',
