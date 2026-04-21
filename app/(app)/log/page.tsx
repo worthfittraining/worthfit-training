@@ -383,8 +383,9 @@ export default function LogPage() {
                 <Link href="/chat" className="bg-white border-2 border-purple-400 text-purple-600 py-4 rounded-xl font-semibold text-center hover:bg-purple-50 transition text-sm col-span-2">💬 Ask Nali</Link>
               </div>
             ) : (
-              <div className="text-center mb-4">
-                <button onClick={() => setSelectedDate(today)} className="text-sm text-green-600 hover:underline">← Back to today to add new entries</button>
+              <div className="mb-6">
+                <p className="text-xs text-gray-500 text-center mb-3">📋 Logging for a past date — only manual entry is available</p>
+                <Link href={`/log/new?date=${selectedDate}`} className="block bg-white border-2 border-blue-400 text-blue-600 py-4 rounded-xl font-semibold text-center hover:bg-blue-50 transition text-sm">✏️ Add food for {getDateLabel(selectedDate)}</Link>
               </div>
             )}
 
