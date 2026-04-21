@@ -388,7 +388,7 @@ export default function BarcodePage() {
                   placeholder="e.g. Greek Yogurt Vanilla"
                   value={contrib.name}
                   onChange={e => setContrib(p => ({ ...p, name: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                 />
               </div>
               <div>
@@ -398,7 +398,7 @@ export default function BarcodePage() {
                   placeholder="e.g. Chobani"
                   value={contrib.brand}
                   onChange={e => setContrib(p => ({ ...p, brand: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                 />
               </div>
 
@@ -409,7 +409,7 @@ export default function BarcodePage() {
                   placeholder="e.g. 170"
                   value={contrib.serving_size}
                   onChange={e => setContrib(p => ({ ...p, serving_size: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                   min={1}
                 />
               </div>
@@ -424,7 +424,7 @@ export default function BarcodePage() {
                     placeholder="e.g. 100"
                     value={contrib.calories}
                     onChange={e => setContrib(p => ({ ...p, calories: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                     min={0}
                   />
                 </div>
@@ -435,7 +435,7 @@ export default function BarcodePage() {
                     placeholder="e.g. 17"
                     value={contrib.protein}
                     onChange={e => setContrib(p => ({ ...p, protein: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                     min={0}
                   />
                 </div>
@@ -446,7 +446,7 @@ export default function BarcodePage() {
                     placeholder="e.g. 6"
                     value={contrib.carbs}
                     onChange={e => setContrib(p => ({ ...p, carbs: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                     min={0}
                   />
                 </div>
@@ -457,7 +457,7 @@ export default function BarcodePage() {
                     placeholder="e.g. 0"
                     value={contrib.fat}
                     onChange={e => setContrib(p => ({ ...p, fat: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                     min={0}
                   />
                 </div>
@@ -513,7 +513,7 @@ export default function BarcodePage() {
                 type="number"
                 value={qty}
                 onChange={(e) => setQty(parseFloat(e.target.value) || 0)}
-                className="w-24 border border-gray-200 rounded-xl px-3 py-2 text-center text-lg font-bold focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="w-24 border border-gray-200 rounded-xl px-3 py-2 text-center text-lg font-bold focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                 min={0}
               />
               <select
@@ -522,7 +522,7 @@ export default function BarcodePage() {
                   setUnit(e.target.value)
                   setQty(e.target.value === 'serving' ? 1 : 100)
                 }}
-                className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
               >
                 {UNITS.map((u) => (
                   <option key={u} value={u} disabled={u === 'serving' && !food.serving_size_g}>

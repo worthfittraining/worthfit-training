@@ -392,7 +392,7 @@ export default function MealPlanPage() {
                               value={editDraft.recipe_name}
                               onChange={e => setEditDraft(d => d ? { ...d, recipe_name: e.target.value } : d)}
                               placeholder="Meal name"
-                              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-green-400"
+                              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                             />
                             <div className="grid grid-cols-4 gap-2">
                               {(['calories', 'protein_g', 'carbs_g', 'fat_g'] as const).map((field) => (
@@ -405,7 +405,7 @@ export default function MealPlanPage() {
                                     min="0"
                                     value={editDraft[field]}
                                     onChange={e => setEditDraft(d => d ? { ...d, [field]: e.target.value } : d)}
-                                    className="w-full border border-gray-200 rounded-xl px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                                    className="w-full border border-gray-200 rounded-xl px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                                   />
                                 </div>
                               ))}
@@ -414,7 +414,7 @@ export default function MealPlanPage() {
                               value={editDraft.notes}
                               onChange={e => setEditDraft(d => d ? { ...d, notes: e.target.value } : d)}
                               placeholder="Notes (optional)"
-                              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-green-400"
+                              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                             />
                             <button
                               onClick={() => saveEdit(meal.id)}
@@ -617,7 +617,7 @@ export default function MealPlanPage() {
                   onChange={e => setQuestionnaire(q => ({ ...q, weekPreferences: e.target.value }))}
                   placeholder="e.g. more chicken this week, keep it simple, avoid pasta..."
                   rows={2}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none placeholder:text-gray-500"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800 resize-none placeholder:text-gray-500"
                 />
               </div>
 

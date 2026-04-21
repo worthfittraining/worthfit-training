@@ -276,7 +276,7 @@ export default function PhotoLogPage() {
                   type="text"
                   value={editedEstimate.food_name}
                   onChange={(e) => setEditedEstimate({ ...editedEstimate, food_name: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                 />
               </div>
 
@@ -285,7 +285,7 @@ export default function PhotoLogPage() {
                 <select
                   value={editedEstimate.meal_slot}
                   onChange={(e) => setEditedEstimate({ ...editedEstimate, meal_slot: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                 >
                   <option value="breakfast">Breakfast</option>
                   <option value="lunch">Lunch</option>

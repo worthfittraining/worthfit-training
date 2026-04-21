@@ -481,7 +481,7 @@ async function moveFoodLog(moveData: Record<string, unknown>, email: string) {
             onKeyDown={handleKeyDown}
             placeholder="Ask Nali anything..."
             rows={1}
-            className="flex-1 resize-none border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 max-h-32"
+            className="flex-1 resize-none border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800 max-h-32"
           />
           <button
             onClick={sendMessage}

@@ -234,7 +234,7 @@ export default function NewLogPage() {
                     onChange={e => setSearchQuery(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleSearch())}
                     placeholder="e.g. sourdough bread, chicken breast..."
-                    className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 placeholder:text-gray-600"
+                    className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800 placeholder:text-gray-600"
                   />
                   <button type="button" onClick={handleSearch} disabled={searching}
                     className="bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium disabled:bg-gray-300">
@@ -284,7 +284,7 @@ export default function NewLogPage() {
                       step="0.1"
                       value={qty}
                       onChange={e => setQty(e.target.value)}
-                      className="w-28 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                      className="w-28 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                     />
                     <select
                       value={unit}
@@ -296,7 +296,7 @@ export default function NewLogPage() {
                         if (newUnit === 'serving') setQty('1')
                         else if (unit === 'serving') setQty('1')
                       }}
-                      className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                      className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                     >
                       <option value="g">grams (g)</option>
                       <option value="oz">ounces (oz)</option>
@@ -330,7 +330,7 @@ export default function NewLogPage() {
                 <label className="text-sm font-medium text-gray-700 block mb-1">Food name *</label>
                 <input value={manualForm.food_name} onChange={e => setManualForm(p => ({ ...p, food_name: e.target.value }))}
                   required placeholder="e.g. Chicken breast 6oz"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 placeholder:text-gray-600" />
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800 placeholder:text-gray-600" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[['calories','Calories'],['protein_g','Protein (g)'],['carbs_g','Carbs (g)'],['fat_g','Fat (g)'],['fiber_g','Fiber (g)']].map(([k,l]) => (
@@ -338,7 +338,7 @@ export default function NewLogPage() {
                     <label className="text-xs font-medium text-gray-500 block mb-1">{l}</label>
                     <input type="number" min="0" value={manualForm[k as keyof typeof manualForm]}
                       onChange={e => setManualForm(p => ({ ...p, [k]: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800" />
                   </div>
                 ))}
               </div>
@@ -373,7 +373,7 @@ export default function NewLogPage() {
                   type="date"
                   value={logDate}
                   onChange={e => setLogDate(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                 />
               </div>
             </div>
@@ -385,7 +385,7 @@ export default function NewLogPage() {
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">Notes (optional)</label>
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Any extra details..."
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none placeholder:text-gray-600" />
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800 resize-none placeholder:text-gray-600" />
             </div>
           </div>
 

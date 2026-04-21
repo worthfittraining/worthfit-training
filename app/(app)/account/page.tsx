@@ -378,7 +378,7 @@ export default function AccountPage() {
                 value={firstName}
                 onChange={e => setFirstName(e.target.value)}
                 placeholder="First"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
               />
             </div>
             <div>
@@ -388,7 +388,7 @@ export default function AccountPage() {
                 value={lastName}
                 onChange={e => setLastName(e.target.value)}
                 placeholder="Last"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
               />
             </div>
           </div>
@@ -409,7 +409,7 @@ export default function AccountPage() {
               type="date"
               value={dob}
               onChange={e => setDob(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
             />
           </div>
 
@@ -501,19 +501,19 @@ export default function AccountPage() {
                       <label className="text-xs font-medium text-gray-500 block mb-1">Height (inches)</label>
                       <input type="number" placeholder="e.g. 65" value={recalcForm.height_in}
                         onChange={e => setRecalcForm(p => ({ ...p, height_in: e.target.value }))}
-                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400" />
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800" />
                     </div>
                     <div>
                       <label className="text-xs font-medium text-gray-500 block mb-1">Weight (lbs)</label>
                       <input type="number" placeholder="e.g. 150" value={recalcForm.weight_lbs}
                         onChange={e => setRecalcForm(p => ({ ...p, weight_lbs: e.target.value }))}
-                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400" />
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800" />
                     </div>
                     <div>
                       <label className="text-xs font-medium text-gray-500 block mb-1">Age</label>
                       <input type="number" placeholder="e.g. 30" value={recalcForm.age}
                         onChange={e => setRecalcForm(p => ({ ...p, age: e.target.value }))}
-                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400" />
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800" />
                     </div>
                     <div>
                       <label className="text-xs font-medium text-gray-500 block mb-1">Sex</label>
@@ -613,7 +613,7 @@ export default function AccountPage() {
                       placeholder="—"
                       value={restForm[key]}
                       onChange={e => setRestForm(p => ({ ...p, [key]: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800"
                     />
                   </div>
                 ))}
@@ -641,7 +641,7 @@ export default function AccountPage() {
                 value={preferences}
                 onChange={e => setPreferences(e.target.value)}
                 placeholder="e.g. chicken, rice, eggs..."
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
               />
             </div>
             <div>
@@ -651,7 +651,7 @@ export default function AccountPage() {
                 value={dislikes}
                 onChange={e => setDislikes(e.target.value)}
                 placeholder="e.g. tuna, Brussels sprouts..."
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
               />
             </div>
             <button

@@ -344,7 +344,7 @@ export default function RecipePage() {
             value={recipeName}
             onChange={e => setRecipeName(e.target.value)}
             placeholder="e.g. High Protein Pasta, Breakfast Bowl..."
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-800"
           />
         </div>
 
@@ -383,7 +383,7 @@ export default function RecipePage() {
                   onChange={e => setSearchQuery(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleSearch())}
                   placeholder="Search ingredient..."
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-800"
                 />
                 <button
                   onClick={handleSearch}
@@ -437,14 +437,14 @@ export default function RecipePage() {
             <div className="mb-4 p-3 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
               <p className="text-xs font-medium text-gray-500 mb-2">Enter macros for your serving size (e.g. 1 cup, 150g, 1 egg)</p>
               <input value={manualIngredient.name} onChange={e => setManualIngredient(p => ({ ...p, name: e.target.value }))}
-                placeholder="Ingredient name *" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                placeholder="Ingredient name *" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-800" />
               <div className="grid grid-cols-2 gap-2">
                 {[['calories','Calories'],['protein_g','Protein (g)'],['carbs_g','Carbs (g)'],['fat_g','Fat (g)']].map(([k,l]) => (
                   <div key={k}>
                     <label className="text-xs text-gray-500 block mb-0.5">{l}</label>
                     <input type="number" min="0" value={manualIngredient[k as keyof typeof manualIngredient]}
                       onChange={e => setManualIngredient(p => ({ ...p, [k]: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                      className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-800" />
                   </div>
                 ))}
               </div>
@@ -476,7 +476,7 @@ export default function RecipePage() {
                         type="number" min="0.1" step="0.1"
                         value={ing.qty}
                         onChange={e => updateIngredient(ing.id, 'qty', parseFloat(e.target.value) || 0)}
-                        className="w-24 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        className="w-24 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-800"
                       />
                       {ing.isManual ? (
                         // Manual ingredients only know their per-serving macros — lock to 'serving'
@@ -485,7 +485,7 @@ export default function RecipePage() {
                         </div>
                       ) : (
                         <select value={ing.unit} onChange={e => updateIngredient(ing.id, 'unit', e.target.value)}
-                          className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+                          className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-800">
                           {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                         </select>
                       )}
@@ -512,13 +512,13 @@ export default function RecipePage() {
                 <label className="text-xs text-gray-500 block mb-1">Total servings this recipe makes</label>
                 <input type="number" min="0.5" step="0.5" value={totalServings}
                   onChange={e => setTotalServings(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-800" />
               </div>
               <div>
                 <label className="text-xs text-gray-500 block mb-1">Servings you&apos;re eating now</label>
                 <input type="number" min="0.5" step="0.5" value={servingsEaten}
                   onChange={e => setServingsEaten(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-800" />
               </div>
             </div>
 
@@ -561,7 +561,7 @@ export default function RecipePage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6">
           <label className="text-sm font-medium text-gray-700 block mb-2">Meal</label>
           <select value={mealSlot} onChange={e => setMealSlot(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-800">
             {MEAL_SLOTS.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
           </select>
         </div>

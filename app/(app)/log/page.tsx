@@ -89,7 +89,7 @@ function EditModal({ draft, onSave, onClose, saving }: {
             type="text"
             value={local.food_name}
             onChange={e => setLocal(p => ({ ...p, food_name: e.target.value }))}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
           />
         </div>
 
@@ -98,7 +98,7 @@ function EditModal({ draft, onSave, onClose, saving }: {
           <select
             value={local.meal_slot}
             onChange={e => setLocal(p => ({ ...p, meal_slot: e.target.value }))}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
           >
             {MEAL_SLOTS.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
           </select>
@@ -118,7 +118,7 @@ function EditModal({ draft, onSave, onClose, saving }: {
                 min="0"
                 value={local[key]}
                 onChange={e => setLocal(p => ({ ...p, [key]: parseFloat(e.target.value) || 0 }))}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
               />
             </div>
           ))}

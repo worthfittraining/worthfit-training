@@ -333,7 +333,7 @@ export default function MacrosPage() {
                         min="0"
                         value={recalcStats[key as keyof typeof recalcStats]}
                         onChange={e => { setRecalcStats(p => ({ ...p, [key]: e.target.value })); setRecalcPreview(null) }}
-                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                       />
                     </div>
                   ))}
@@ -342,7 +342,7 @@ export default function MacrosPage() {
                     <select
                       value={recalcStats.sex}
                       onChange={e => { setRecalcStats(p => ({ ...p, sex: e.target.value })); setRecalcPreview(null) }}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                     >
                       <option value="">Select...</option>
                       <option value="female">Female</option>
@@ -409,7 +409,7 @@ export default function MacrosPage() {
                   min="0"
                   value={defaultMacros[key as keyof DayMacros]}
                   onChange={e => updateDefault(key as keyof DayMacros, e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                 />
               </div>
             ))}
@@ -468,7 +468,7 @@ export default function MacrosPage() {
                           value={weekly[day]?.[key as keyof DayMacros] || ''}
                           onChange={e => updateDay(day, key as keyof DayMacros, e.target.value)}
                           placeholder={placeholder}
-                          className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                          className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
                         />
                       </div>
                     ))}
