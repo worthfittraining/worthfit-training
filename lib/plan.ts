@@ -2,7 +2,7 @@
  * Plan tiers and feature flags for Nutrition by Nali
  *
  * Free     — $0    Food logging (manual + search), 5 Nali messages/day, no memory
- * Standard — $9.99 + barcode scanner, photo log (5/day), meal plans (1/week), 10 Nali messages/day, 24hr memory
+ * Standard — $9.99 + barcode scanner, photo log (5/day), meal plans (1/week), 10 Nali messages/day, 7-day memory
  * Premium  — $29.99 + grocery list, AI check-ins, measurements + charts, unlimited meal plans,
  *             photo log (15/day), unlimited Nali, unlimited memory
  */
@@ -24,7 +24,7 @@ export const PLAN_LIMITS = {
   },
   standard: {
     naliMessagesPerDay: 10,
-    memoryHours: 24,
+    memoryHours: 168, // 7 days
     mealPlansPerWeek: 1,
     photoLogsPerDay: 5,
     barcode: true,

@@ -134,9 +134,9 @@ function localDateString(): string {
 const CHAT_HISTORY_KEY = 'nali_chat_history'
 const MAX_STORED_MESSAGES = 60
 const HISTORY_TTL_MS: Record<Plan, number> = {
-  free: 0,                           // no history
-  standard: 24 * 60 * 60 * 1000,   // 24 hours
-  premium: Infinity,                 // unlimited
+  free: 0,                                    // no history
+  standard: 7 * 24 * 60 * 60 * 1000,        // 7 days
+  premium: Infinity,                          // unlimited
 }
 
 export default function ChatPage() {
