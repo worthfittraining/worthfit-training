@@ -14,12 +14,17 @@ export async function POST(req: NextRequest) {
 
   const stripe = getStripe()
 
-  // Get or create Stripe customer
+  // Get or create Stripe customer — also check if they've ever had a subscription
+  // so we can skip the free trial on upgrades (trial is for new subscribers only)
   let customerId: string | undefined
+  let hasHadSubscription = false
   try {
     const client = await getClientByEmail(email)
     if (client?.fields?.Stripe_Customer_Id) {
       customerId = client.fields.Stripe_Customer_Id as string
+    }
+    if (client?.fields?.Stripe_Subscription_Id) {
+      hasHadSubscription = true
     }
   } catch { /* continue without existing customer */ }
 
@@ -52,7 +57,8 @@ export async function POST(req: NextRequest) {
     payment_method_types: ['card'],
     line_items: [{ price: priceId, quantity: 1 }],
     subscription_data: {
-      trial_period_days: 7,
+      // Only give a free trial to brand new subscribers — skip it for upgrades/plan changes
+      ...(!hasHadSubscription ? { trial_period_days: 7 } : {}),
       metadata: { email },
     },
     // Use pre-validated promo code if provided, otherwise allow entry at checkout
