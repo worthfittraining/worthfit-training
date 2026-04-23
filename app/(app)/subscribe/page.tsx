@@ -54,7 +54,7 @@ const TIERS: Tier[] = [
       { text: 'Barcode scanner', included: true },
       { text: 'Photo food logging', included: true },
       { text: 'AI meal plans', included: true },
-      { text: '24-hour Nali memory', included: true },
+      { text: '7-day Nali memory', included: true },
       { text: 'Grocery list', included: false },
       { text: 'AI check-ins with Nali', included: false },
     ],
@@ -72,7 +72,7 @@ const TIERS: Tier[] = [
     features: [
       { text: 'Everything in Standard', included: true },
       { text: 'Unlimited Nali messages', included: true },
-      { text: '7-day Nali memory', included: true },
+      { text: 'Unlimited Nali memory', included: true },
       { text: 'Grocery list', included: true },
       { text: 'Weekly AI check-ins', included: true },
       { text: 'Priority support', included: true },
