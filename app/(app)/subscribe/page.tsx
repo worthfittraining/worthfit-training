@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react'
 
 type PlanId = 'free' | 'standard' | 'premium'
 
+const PLAN_RANK: Record<PlanId, number> = { free: 0, standard: 1, premium: 2 }
+
 type Tier = {
   id: PlanId
   label: string
@@ -210,23 +212,41 @@ export default function SubscribePage() {
                 </ul>
 
                 {/* CTA */}
-                <button
-                  onClick={() => handleSelect(tier)}
-                  disabled={isLoading || isCurrent}
-                  className={`w-full py-3 rounded-2xl font-semibold text-sm transition-colors ${
-                    isCurrent
-                      ? 'bg-gray-100 text-gray-500 cursor-default'
-                      : tier.highlight
-                      ? 'bg-green-600 hover:bg-green-700 text-white shadow-md'
-                      : 'bg-gray-900 hover:bg-gray-800 text-white'
-                  } disabled:opacity-50`}
-                >
-                  {isLoading ? 'Loading...' : isCurrent ? 'Current Plan' : tier.cta}
-                </button>
-
-                {(tier.id === 'standard' || tier.id === 'premium') && !isCurrent && (
-                  <p className="text-center text-xs text-gray-500 mt-2">7 days free, then {tier.price}/mo</p>
-                )}
+                {(() => {
+                  const isUpgrade = !isCurrent && currentPlan && tier.id !== 'free' &&
+                    PLAN_RANK[tier.id] > PLAN_RANK[currentPlan as PlanId]
+                  const isDowngrade = !isCurrent && currentPlan && tier.id !== 'free' &&
+                    PLAN_RANK[tier.id] < PLAN_RANK[currentPlan as PlanId]
+                  const ctaLabel = isLoading ? 'Loading...'
+                    : isCurrent ? 'Current Plan'
+                    : isUpgrade ? `Upgrade to ${tier.label}`
+                    : isDowngrade ? `Switch to ${tier.label}`
+                    : tier.cta
+                  return (
+                    <>
+                      <button
+                        onClick={() => handleSelect(tier)}
+                        disabled={isLoading || isCurrent}
+                        className={`w-full py-3 rounded-2xl font-semibold text-sm transition-colors ${
+                          isCurrent
+                            ? 'bg-gray-100 text-gray-500 cursor-default'
+                            : tier.highlight
+                            ? 'bg-green-600 hover:bg-green-700 text-white shadow-md'
+                            : 'bg-gray-900 hover:bg-gray-800 text-white'
+                        } disabled:opacity-50`}
+                      >
+                        {ctaLabel}
+                      </button>
+                      {tier.id !== 'free' && !isCurrent && (
+                        <p className="text-center text-xs text-gray-500 mt-2">
+                          {isUpgrade || isDowngrade
+                            ? `Billed immediately at ${tier.price}/mo`
+                            : `7 days free, then ${tier.price}/mo`}
+                        </p>
+                      )}
+                    </>
+                  )
+                })()}
               </div>
             )
           })}
