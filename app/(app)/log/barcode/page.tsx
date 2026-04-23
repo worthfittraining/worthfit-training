@@ -63,6 +63,8 @@ export default function BarcodePage() {
   const [scannedCode, setScannedCode] = useState<string>('')
   const [contrib, setContrib] = useState({ name: '', brand: '', calories: '', protein: '', carbs: '', fat: '', serving_size: '' })
   const [contributing, setContributing] = useState(false)
+  const [manualCode, setManualCode] = useState('')
+  const [showManual, setShowManual] = useState(false)
 
   // Detect platform for error messages
   const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent)
@@ -202,29 +204,38 @@ export default function BarcodePage() {
 
       setCameraReady(true)
 
-      // ── Strategy 1: Native BarcodeDetector (Chrome Android) ──
+      // ── Strategy 1: Native BarcodeDetector (Chrome Android, Safari 17+) ──
       if ('BarcodeDetector' in window) {
-        // @ts-ignore
-        const detector = new window.BarcodeDetector()
-        let active = true
-        let rafId: number
-        async function scan() {
-          if (!active) return
-          try {
-            // @ts-ignore
-            const barcodes = await detector.detect(video)
-            if (barcodes.length > 0 && active) {
-              active = false
-              stream.getTracks().forEach(t => t.stop())
-              lookupBarcode(barcodes[0].rawValue)
-              return
-            }
-          } catch { /* no barcode this frame */ }
+        try {
+          // @ts-ignore
+          const supportedFormats: string[] = await window.BarcodeDetector.getSupportedFormats?.() ?? []
+          // Use all supported formats, or fall back to common grocery barcode types
+          const formats = supportedFormats.length > 0 ? supportedFormats :
+            ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code', 'data_matrix']
+          // @ts-ignore
+          const detector = new window.BarcodeDetector({ formats })
+          let active = true
+          let rafId: number
+          async function scan() {
+            if (!active) return
+            try {
+              // @ts-ignore
+              const barcodes = await detector.detect(video)
+              if (barcodes.length > 0 && active) {
+                active = false
+                stream.getTracks().forEach(t => t.stop())
+                lookupBarcode(barcodes[0].rawValue)
+                return
+              }
+            } catch { /* no barcode this frame */ }
+            rafId = requestAnimationFrame(scan)
+          }
           rafId = requestAnimationFrame(scan)
+          controlsRef.current = { stop: () => { active = false; cancelAnimationFrame(rafId); stream.getTracks().forEach(t => t.stop()) } }
+          return
+        } catch {
+          // BarcodeDetector failed to initialize — fall through to ZXing
         }
-        rafId = requestAnimationFrame(scan)
-        controlsRef.current = { stop: () => { active = false; cancelAnimationFrame(rafId); stream.getTracks().forEach(t => t.stop()) } }
-        return
       }
 
       // ── Strategy 2: ZXing fallback (iOS Safari) ──
@@ -314,14 +325,44 @@ export default function BarcodePage() {
 
         {/* Tap to start — iOS Safari requires getUserMedia to be called from a user gesture */}
         {!cameraStarted && !error && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black px-6">
             <p className="text-6xl mb-6">📷</p>
             <button
               onClick={startCamera}
-              className="bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-4 rounded-2xl text-lg"
+              className="bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-4 rounded-2xl text-lg mb-4"
             >
               Tap to Start Scanner
             </button>
+            {/* Manual barcode entry fallback */}
+            {!showManual ? (
+              <button
+                onClick={() => setShowManual(true)}
+                className="text-white/50 text-sm underline"
+              >
+                Type barcode number instead
+              </button>
+            ) : (
+              <div className="w-full max-w-xs mt-2">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="e.g. 0014100085676"
+                    value={manualCode}
+                    onChange={e => setManualCode(e.target.value.replace(/\D/g, ''))}
+                    className="flex-1 bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => { if (manualCode.trim()) lookupBarcode(manualCode.trim()) }}
+                    disabled={!manualCode.trim()}
+                    className="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-xl text-sm disabled:opacity-40"
+                  >
+                    Look up
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -343,9 +384,40 @@ export default function BarcodePage() {
                 <div className="absolute -bottom-0.5 -right-0.5 w-7 h-7 border-b-4 border-r-4 border-green-400 rounded-br-lg" />
               </div>
             </div>
-            <p className="absolute bottom-8 text-white text-sm bg-black/50 px-4 py-2 rounded-full">
-              Point camera at a barcode
-            </p>
+            {!showManual ? (
+              <div className="absolute bottom-6 flex flex-col items-center gap-2 w-full px-6">
+                <p className="text-white text-sm bg-black/50 px-4 py-2 rounded-full">
+                  Point camera at a barcode
+                </p>
+                <button
+                  onClick={() => setShowManual(true)}
+                  className="text-white/50 text-xs underline"
+                >
+                  Type barcode number instead
+                </button>
+              </div>
+            ) : (
+              <div className="absolute bottom-6 w-full px-6">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="e.g. 0014100085676"
+                    value={manualCode}
+                    onChange={e => setManualCode(e.target.value.replace(/\D/g, ''))}
+                    className="flex-1 bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => { if (manualCode.trim()) { if (controlsRef.current) { try { controlsRef.current.stop() } catch {} } lookupBarcode(manualCode.trim()) } }}
+                    disabled={!manualCode.trim()}
+                    className="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-xl text-sm disabled:opacity-40"
+                  >
+                    Look up
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
 
