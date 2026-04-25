@@ -27,6 +27,7 @@ async function lookupCommunity(code: string) {
       protein_per_100g: Number(record.Protein_per_100g || 0),
       carbs_per_100g: Number(record.Carbs_per_100g || 0),
       fat_per_100g: Number(record.Fat_per_100g || 0),
+      fiber_per_100g: Number(record.Fiber_per_100g || 0),
       serving_size_g: record.Serving_size_g ? Number(record.Serving_size_g) : null,
       image_url: null,
       source: 'community',
@@ -62,6 +63,7 @@ async function lookupOFF(code: string) {
       protein_per_100g: Math.round((n.proteins_100g ?? 0) * 10) / 10,
       carbs_per_100g: Math.round((n.carbohydrates_100g ?? 0) * 10) / 10,
       fat_per_100g: Math.round((n.fat_100g ?? 0) * 10) / 10,
+      fiber_per_100g: Math.round((n['fiber_100g'] ?? n['dietary-fiber_100g'] ?? 0) * 10) / 10,
       serving_size_g: parseFloat(product.serving_quantity) || null,
       image_url: product.image_front_small_url || null,
       source: 'openfoodfacts',
@@ -103,6 +105,7 @@ async function lookupUSDA(code: string) {
       protein_per_100g: Math.round(getNutrient('protein') * 10) / 10,
       carbs_per_100g: Math.round(getNutrient('carbohydrate') * 10) / 10,
       fat_per_100g: Math.round(getNutrient('total lipid') * 10) / 10,
+      fiber_per_100g: Math.round(getNutrient('fiber') * 10) / 10,
       serving_size_g: food.servingSize && food.servingSizeUnit?.toLowerCase() === 'g'
         ? Number(food.servingSize)
         : null,
@@ -137,7 +140,7 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const body = await req.json()
-    const { barcode, name, brand, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, serving_size_g, added_by } = body
+    const { barcode, name, brand, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g, serving_size_g, added_by } = body
 
     if (!barcode || !name || !calories_per_100g) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -167,6 +170,7 @@ export async function POST(req: NextRequest) {
           Protein_per_100g: Number(protein_per_100g || 0),
           Carbs_per_100g: Number(carbs_per_100g || 0),
           Fat_per_100g: Number(fat_per_100g || 0),
+          Fiber_per_100g: Number(fiber_per_100g || 0),
           ...(serving_size_g ? { Serving_size_g: Number(serving_size_g) } : {}),
           Added_by: String(added_by || ''),
         },

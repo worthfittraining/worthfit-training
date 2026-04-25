@@ -13,6 +13,7 @@ type FoodData = {
   protein_per_100g: number
   carbs_per_100g: number
   fat_per_100g: number
+  fiber_per_100g: number
   serving_size_g: number | null
   image_url: string | null
 }
@@ -41,6 +42,7 @@ function calcMacros(food: FoodData, qty: number, unit: string) {
     protein_g: Math.round(food.protein_per_100g * factor * 10) / 10,
     carbs_g: Math.round(food.carbs_per_100g * factor * 10) / 10,
     fat_g: Math.round(food.fat_per_100g * factor * 10) / 10,
+    fiber_g: Math.round(food.fiber_per_100g * factor * 10) / 10,
   }
 }
 
@@ -61,7 +63,7 @@ export default function BarcodePage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [scannedCode, setScannedCode] = useState<string>('')
-  const [contrib, setContrib] = useState({ name: '', brand: '', calories: '', protein: '', carbs: '', fat: '', serving_size: '' })
+  const [contrib, setContrib] = useState({ name: '', brand: '', calories: '', protein: '', carbs: '', fat: '', fiber: '', serving_size: '' })
   const [contributing, setContributing] = useState(false)
   const [manualCode, setManualCode] = useState('')
   const [showManual, setShowManual] = useState(false)
@@ -117,6 +119,7 @@ export default function BarcodePage() {
     const pro100 = Math.round((Number(contrib.protein) || 0) * factor * 10) / 10
     const carb100 = Math.round((Number(contrib.carbs) || 0) * factor * 10) / 10
     const fat100 = Math.round((Number(contrib.fat) || 0) * factor * 10) / 10
+    const fib100 = Math.round((Number(contrib.fiber) || 0) * factor * 10) / 10
     try {
       await fetch('/api/barcode', {
         method: 'POST',
@@ -129,6 +132,7 @@ export default function BarcodePage() {
           protein_per_100g: pro100,
           carbs_per_100g: carb100,
           fat_per_100g: fat100,
+          fiber_per_100g: fib100,
           serving_size_g: servingG,
           added_by: user?.primaryEmailAddress?.emailAddress || '',
         }),
@@ -141,6 +145,7 @@ export default function BarcodePage() {
         protein_per_100g: pro100,
         carbs_per_100g: carb100,
         fat_per_100g: fat100,
+        fiber_per_100g: fib100,
         serving_size_g: servingG,
         image_url: null,
       }
@@ -533,6 +538,17 @@ export default function BarcodePage() {
                     min={0}
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">🌿 Fiber (g)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 3"
+                    value={contrib.fiber}
+                    onChange={e => setContrib(p => ({ ...p, fiber: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800"
+                    min={0}
+                  />
+                </div>
               </div>
             </div>
 
@@ -610,6 +626,7 @@ export default function BarcodePage() {
                 { label: '💪 Protein', value: macros.protein_g, unit: 'g', color: 'bg-blue-50 border-blue-200' },
                 { label: '🌾 Carbs', value: macros.carbs_g, unit: 'g', color: 'bg-yellow-50 border-yellow-200' },
                 { label: '🥑 Fat', value: macros.fat_g, unit: 'g', color: 'bg-green-50 border-green-200' },
+                { label: '🌿 Fiber', value: macros.fiber_g, unit: 'g', color: 'bg-teal-50 border-teal-200' },
               ].map(({ label, value, unit, color }) => (
                 <div key={label} className={`border rounded-xl p-3 ${color}`}>
                   <p className="text-xs font-medium text-gray-500 mb-1">{label}</p>
