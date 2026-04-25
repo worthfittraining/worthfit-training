@@ -3,6 +3,7 @@
 import { useUser } from '@clerk/nextjs'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 type Client = {
   id: string
@@ -138,7 +139,7 @@ export default function CoachDashboard() {
         ) : (
           <div className="space-y-3">
             {clients.map(client => (
-              <div key={client.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+              <Link key={client.id} href={`/coach/client/${client.id}`} className="block bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:border-gray-200 transition-colors">
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <div className="flex items-center gap-2">
@@ -189,7 +190,7 @@ export default function CoachDashboard() {
                     <span className="text-blue-500">Coach: {client.Coach_Email}</span>
                   )}
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
