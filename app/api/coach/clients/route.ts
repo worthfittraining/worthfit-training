@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import Airtable from 'airtable'
-import { auth } from '@clerk/nextjs/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 
 const base = new Airtable({ apiKey: process.env.AIRTABLE_TOKEN }).base(process.env.AIRTABLE_BASE_ID!)
 
@@ -15,17 +15,47 @@ async function fetchAllPages(query: Airtable.Query<Airtable.FieldSet>): Promise<
   })
 }
 
+// Coach email config — set these in your Vercel environment variables:
+//   HEAD_COACH_EMAIL   = your email (sees ALL clients)
+//   COACH_EMAILS       = comma-separated list of ALL coach emails (including yours)
+function getCoachConfig() {
+  const headCoach = (process.env.HEAD_COACH_EMAIL || '').toLowerCase().trim()
+  const allCoaches = (process.env.COACH_EMAILS || headCoach)
+    .split(',')
+    .map(e => e.toLowerCase().trim())
+    .filter(Boolean)
+  return { headCoach, allCoaches }
+}
+
 export async function GET() {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Get the logged-in user's email
+  const user = await currentUser()
+  const email = user?.emailAddresses[0]?.emailAddress?.toLowerCase().trim() || ''
+
+  // Gate: only designated coaches can access this endpoint
+  const { headCoach, allCoaches } = getCoachConfig()
+  if (!allCoaches.includes(email)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const isHeadCoach = email === headCoach
+
   try {
-    // Local date string to match what clients send when logging food
     const now = new Date()
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
-    // Fetch all clients (paginated) + only TODAY's food logs (not the entire history)
+    // Head coach sees ALL clients; assistant coaches see only their assigned clients
+    const clientQuery = isHeadCoach
+      ? base('Clients').select()
+      : base('Clients').select({
+          filterByFormula: `LOWER({Coach_Email})="${email}"`,
+        })
+
     const [clientRecords, logRecords] = await Promise.all([
-      fetchAllPages(base('Clients').select()),
+      fetchAllPages(clientQuery),
       fetchAllPages(base('Food Logs').select({
         filterByFormula: `DATETIME_FORMAT({Date},'YYYY-MM-DD')='${today}'`,
       })),
@@ -52,7 +82,7 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json({ clients })
+    return NextResponse.json({ clients, isHeadCoach })
   } catch (error) {
     console.error('Coach clients error:', error)
     return NextResponse.json({ error: String(error) }, { status: 500 })

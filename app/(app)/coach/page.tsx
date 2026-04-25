@@ -2,6 +2,7 @@
 
 import { useUser } from '@clerk/nextjs'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 type Client = {
   id: string
@@ -15,6 +16,7 @@ type Client = {
   Program_week: number
   Onboarding_complete: boolean
   Last_session: string
+  Coach_Email?: string
 }
 
 type ClientWithLogs = Client & {
@@ -26,8 +28,11 @@ type ClientWithLogs = Client & {
 
 export default function CoachDashboard() {
   const { user } = useUser()
+  const router = useRouter()
   const [clients, setClients] = useState<ClientWithLogs[]>([])
   const [loading, setLoading] = useState(true)
+  const [forbidden, setForbidden] = useState(false)
+  const [isHeadCoach, setIsHeadCoach] = useState(false)
 
   useEffect(() => {
     fetchClients()
@@ -36,8 +41,13 @@ export default function CoachDashboard() {
   async function fetchClients() {
     try {
       const res = await fetch('/api/coach/clients')
+      if (res.status === 403) {
+        setForbidden(true)
+        return
+      }
       const data = await res.json()
       setClients(data.clients || [])
+      setIsHeadCoach(data.isHeadCoach ?? false)
     } catch (err) {
       console.error('Failed to fetch clients:', err)
     } finally {
@@ -52,6 +62,23 @@ export default function CoachDashboard() {
     return <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">Crushing it!</span>
   }
 
+  // Not a coach — redirect to dashboard
+  if (forbidden) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 text-center">
+        <div className="text-5xl mb-4">🔒</div>
+        <h1 className="text-xl font-bold text-gray-800 mb-2">Coach Access Only</h1>
+        <p className="text-gray-500 text-sm mb-6">This page is only available to Nutrition by Nali coaches.</p>
+        <button
+          onClick={() => router.push('/dashboard')}
+          className="bg-green-500 text-white font-semibold px-6 py-3 rounded-2xl text-sm"
+        >
+          Go to Dashboard
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-6">
@@ -62,6 +89,7 @@ export default function CoachDashboard() {
             <h1 className="text-2xl font-bold text-gray-800">Coach Dashboard</h1>
             <p className="text-gray-500 text-sm mt-1">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              {isHeadCoach && <span className="ml-2 text-green-600 font-medium">· All Coaches</span>}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -76,7 +104,7 @@ export default function CoachDashboard() {
         <div className="grid grid-cols-3 gap-4 mb-8">
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
             <div className="text-3xl font-bold text-gray-800">{clients.length}</div>
-            <div className="text-xs text-gray-500 mt-1">Total Clients</div>
+            <div className="text-xs text-gray-500 mt-1">{isHeadCoach ? 'Total Clients' : 'My Clients'}</div>
           </div>
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
             <div className="text-3xl font-bold text-green-600">
@@ -93,15 +121,19 @@ export default function CoachDashboard() {
         </div>
 
         {/* Client list */}
-        <h2 className="text-sm font-semibold text-gray-500 mb-3">YOUR CLIENTS</h2>
+        <h2 className="text-sm font-semibold text-gray-500 mb-3">
+          {isHeadCoach ? 'ALL CLIENTS' : 'MY CLIENTS'}
+        </h2>
 
         {loading ? (
           <div className="text-center text-gray-500 py-12">Loading clients...</div>
         ) : clients.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
             <div className="text-4xl mb-3">👥</div>
-            <p className="text-gray-500">No clients yet.</p>
-            <p className="text-gray-500 text-sm mt-1">Clients will appear here after they complete onboarding.</p>
+            <p className="text-gray-500">No clients assigned yet.</p>
+            <p className="text-gray-500 text-sm mt-1">
+              Clients will appear here once they&apos;re tagged to you in Airtable.
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -149,10 +181,13 @@ export default function CoachDashboard() {
                   </div>
                 </div>
 
-                <div className="flex gap-4 text-xs text-gray-500">
+                <div className="flex flex-wrap gap-4 text-xs text-gray-500">
                   <span>Goal: <span className="text-gray-600 capitalize">{String(client.Goal || 'Not set').replace(/_/g, ' ')}</span></span>
                   <span>Week <span className="text-gray-600">{client.Program_week || 1}</span></span>
                   {client.Onboarding_complete && <span className="text-green-500">✓ Onboarded</span>}
+                  {isHeadCoach && client.Coach_Email && (
+                    <span className="text-blue-500">Coach: {client.Coach_Email}</span>
+                  )}
                 </div>
               </div>
             ))}
