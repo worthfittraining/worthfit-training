@@ -27,7 +27,7 @@ function lastNDays(n: number): string[] {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -40,7 +40,7 @@ export async function GET(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const clientAirtableId = params.id
+  const { id: clientAirtableId } = await params
 
   try {
     // Fetch the client record
