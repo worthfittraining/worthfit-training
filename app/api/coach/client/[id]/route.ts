@@ -33,7 +33,7 @@ export async function GET(
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const user = await currentUser()
-  const coachEmail = user?.emailAddresses[0]?.emailAddress?.toLowerCase().trim() || ''
+  const coachEmail = (user?.primaryEmailAddress?.emailAddress || user?.emailAddresses[0]?.emailAddress || '').toLowerCase().trim()
   const { headCoach, allCoaches } = getCoachConfig()
 
   if (!allCoaches.includes(coachEmail)) {

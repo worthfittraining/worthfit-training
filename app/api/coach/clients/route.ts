@@ -33,7 +33,7 @@ export async function GET() {
 
   // Get the logged-in user's email
   const user = await currentUser()
-  const email = user?.emailAddresses[0]?.emailAddress?.toLowerCase().trim() || ''
+  const email = (user?.primaryEmailAddress?.emailAddress || user?.emailAddresses[0]?.emailAddress || '').toLowerCase().trim()
 
   // Gate: only designated coaches can access this endpoint
   const { headCoach, allCoaches } = getCoachConfig()
