@@ -47,9 +47,12 @@ export async function GET() {
     const now = new Date()
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
-    // Head coach sees ALL clients; assistant coaches see only their assigned clients
+    // Head coach sees all ASSIGNED clients; assistant coaches see only their assigned clients
+    // Both views filter to only clients who have a Coach_Email set (actual coaching clients)
     const clientQuery = isHeadCoach
-      ? base('Clients').select()
+      ? base('Clients').select({
+          filterByFormula: `{Coach_Email} != ""`,
+        })
       : base('Clients').select({
           filterByFormula: `LOWER({Coach_Email})="${email}"`,
         })
