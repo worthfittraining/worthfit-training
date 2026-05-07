@@ -157,6 +157,7 @@ export default function LogPage() {
   const [profile, setProfile] = useState<{
     Calories?: number; Protein_g?: number; Carbs_g?: number; Fat_g?: number
     Rest_Calories?: number; Rest_Protein_g?: number; Rest_Carbs_g?: number; Rest_Fat_g?: number
+    Weekly_Macros?: string
   } | null>(null)
   const REST_DAY_KEY = `rest_day_${localDateString()}`
   const [isRestDay, setIsRestDay] = useState(() => {
@@ -325,12 +326,29 @@ export default function LogPage() {
     return acc
   }, {})
 
+  // Resolve day-specific macro targets from Weekly_Macros if set
+  const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  function getDayMacros() {
+    if (!profile?.Weekly_Macros) return null
+    try {
+      const weekly = JSON.parse(profile.Weekly_Macros)
+      const [year, month, day] = selectedDate.split('-').map(Number)
+      const dayName = DAYS_OF_WEEK[new Date(year, month - 1, day).getDay()]
+      return weekly[dayName] || null
+    } catch { return null }
+  }
+  const dayMacros = getDayMacros()
+  const defaultCal = dayMacros ? (Number(dayMacros.calories) || profile?.Calories || 0) : (profile?.Calories || 0)
+  const defaultProt = dayMacros ? (Number(dayMacros.protein_g) || profile?.Protein_g || 0) : (profile?.Protein_g || 0)
+  const defaultCarb = dayMacros ? (Number(dayMacros.carbs_g) || profile?.Carbs_g || 0) : (profile?.Carbs_g || 0)
+  const defaultFat = dayMacros ? (Number(dayMacros.fat_g) || profile?.Fat_g || 0) : (profile?.Fat_g || 0)
+
   // Use rest-day targets when toggled (fall back to training targets if rest-day not set)
   const hasRestTargets = !!(profile?.Rest_Calories || profile?.Rest_Protein_g)
-  const calTarget = (isRestDay && profile?.Rest_Calories) ? profile.Rest_Calories : (profile?.Calories || 0)
-  const protTarget = (isRestDay && profile?.Rest_Protein_g) ? profile.Rest_Protein_g : (profile?.Protein_g || 0)
-  const carbTarget = (isRestDay && profile?.Rest_Carbs_g) ? profile.Rest_Carbs_g : (profile?.Carbs_g || 0)
-  const fatTarget = (isRestDay && profile?.Rest_Fat_g) ? profile.Rest_Fat_g : (profile?.Fat_g || 0)
+  const calTarget = (isRestDay && profile?.Rest_Calories) ? profile.Rest_Calories : defaultCal
+  const protTarget = (isRestDay && profile?.Rest_Protein_g) ? profile.Rest_Protein_g : defaultProt
+  const carbTarget = (isRestDay && profile?.Rest_Carbs_g) ? profile.Rest_Carbs_g : defaultCarb
+  const fatTarget = (isRestDay && profile?.Rest_Fat_g) ? profile.Rest_Fat_g : defaultFat
 
   const weekDays: DaySummary[] = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() - i)
