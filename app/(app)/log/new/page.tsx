@@ -337,7 +337,21 @@ export default function NewLogPage() {
                   <div key={k}>
                     <label className="text-xs font-medium text-gray-500 block mb-1">{l}</label>
                     <input type="number" min="0" value={manualForm[k as keyof typeof manualForm]}
-                      onChange={e => setManualForm(p => ({ ...p, [k]: e.target.value }))}
+                      onChange={e => {
+                        const val = e.target.value
+                        if (k === 'calories' || k === 'fiber_g') {
+                          setManualForm(p => ({ ...p, [k]: val }))
+                        } else {
+                          setManualForm(p => {
+                            const updated = { ...p, [k]: val }
+                            const protein = Number(k === 'protein_g' ? val : updated.protein_g) || 0
+                            const carbs = Number(k === 'carbs_g' ? val : updated.carbs_g) || 0
+                            const fat = Number(k === 'fat_g' ? val : updated.fat_g) || 0
+                            const auto = Math.round(protein * 4 + carbs * 4 + fat * 9)
+                            return { ...updated, calories: auto > 0 ? String(auto) : '' }
+                          })
+                        }
+                      }}
                       className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-800" />
                   </div>
                 ))}
