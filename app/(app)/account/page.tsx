@@ -290,6 +290,14 @@ export default function AccountPage() {
         }),
       })
       if (!res.ok) throw new Error('Save failed')
+      // Update local profile state so the summary shows immediately without a reload
+      setProfile(prev => ({
+        ...prev,
+        Rest_Calories: restForm.calories ? Number(restForm.calories) : undefined,
+        Rest_Protein_g: restForm.protein_g ? Number(restForm.protein_g) : undefined,
+        Rest_Carbs_g: restForm.carbs_g ? Number(restForm.carbs_g) : undefined,
+        Rest_Fat_g: restForm.fat_g ? Number(restForm.fat_g) : undefined,
+      }))
       setRestMsg('✅ Rest day targets saved!')
       setTimeout(() => { setRestMsg(''); setShowRestDay(false) }, 2000)
     } catch {
@@ -575,7 +583,7 @@ export default function AccountPage() {
             </button>
           </div>
 
-          {!showRestDay && profile.Rest_Calories && (
+          {!showRestDay && (profile.Rest_Calories || profile.Rest_Protein_g || profile.Rest_Carbs_g || profile.Rest_Fat_g) && (
             <div className="grid grid-cols-4 gap-2 text-center mt-3">
               {[
                 { label: 'Calories', value: profile.Rest_Calories, unit: '' },
@@ -591,7 +599,7 @@ export default function AccountPage() {
             </div>
           )}
 
-          {!showRestDay && !profile.Rest_Calories && (
+          {!showRestDay && !(profile.Rest_Calories || profile.Rest_Protein_g || profile.Rest_Carbs_g || profile.Rest_Fat_g) && (
             <p className="text-sm text-gray-500 mt-2">No rest day targets set — toggle above to add them.</p>
           )}
 
@@ -612,7 +620,21 @@ export default function AccountPage() {
                       min="0"
                       placeholder="—"
                       value={restForm[key]}
-                      onChange={e => setRestForm(p => ({ ...p, [key]: e.target.value }))}
+                      onChange={e => {
+                        const val = e.target.value
+                        if (key === 'calories') {
+                          setRestForm(p => ({ ...p, calories: val }))
+                        } else {
+                          setRestForm(p => {
+                            const updated = { ...p, [key]: val }
+                            const protein = key === 'protein_g' ? Number(val) : Number(updated.protein_g) || 0
+                            const carbs = key === 'carbs_g' ? Number(val) : Number(updated.carbs_g) || 0
+                            const fat = key === 'fat_g' ? Number(val) : Number(updated.fat_g) || 0
+                            const autoCalories = Math.round(protein * 4 + carbs * 4 + fat * 9)
+                            return { ...updated, calories: autoCalories > 0 ? String(autoCalories) : '' }
+                          })
+                        }
+                      }}
                       className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800"
                     />
                   </div>
