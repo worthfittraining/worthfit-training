@@ -128,13 +128,20 @@ export default function NewLogPage() {
     if (!user?.primaryEmailAddress?.emailAddress) return
     setSaving(true)
     try {
+      const manualProtein = Number(manualForm.protein_g) || 0
+      const manualCarbs = Number(manualForm.carbs_g) || 0
+      const manualFat = Number(manualForm.fat_g) || 0
+      // Always compute calories from macros as a fallback — covers cases where auto-calc didn't run
+      const manualCalories = Number(manualForm.calories) || Math.round(manualProtein * 4 + manualCarbs * 4 + manualFat * 9)
+
       const payload = manualMode
         ? {
             food_name: manualForm.food_name,
-            calories: Number(manualForm.calories) || 0,
-            protein_g: Number(manualForm.protein_g) || 0,
-            carbs_g: Number(manualForm.carbs_g) || 0,
-            fat_g: Number(manualForm.fat_g) || 0,
+            calories: manualCalories,
+            protein_g: manualProtein,
+            carbs_g: manualCarbs,
+            fat_g: manualFat,
+            fiber_g: Number(manualForm.fiber_g) || 0,
             meal_slot: mealSlot,
             notes,
           }
