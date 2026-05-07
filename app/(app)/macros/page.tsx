@@ -83,8 +83,13 @@ export default function MacrosPage() {
                 const merged = { ...prev }
                 for (const day of DAYS) {
                   if (parsed[day]) {
+                    const p = Number(parsed[day].protein_g) || 0
+                    const c = Number(parsed[day].carbs_g) || 0
+                    const f = Number(parsed[day].fat_g) || 0
+                    // Always recalculate calories from macros to fix any stale stored values
+                    const recalcCal = (p || c || f) ? String(Math.round(p * 4 + c * 4 + f * 9)) : String(parsed[day].calories || '')
                     merged[day] = {
-                      calories: String(parsed[day].calories || ''),
+                      calories: recalcCal,
                       protein_g: String(parsed[day].protein_g || ''),
                       carbs_g: String(parsed[day].carbs_g || ''),
                       fat_g: String(parsed[day].fat_g || ''),
