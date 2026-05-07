@@ -74,7 +74,7 @@ type GroceryCategory = { name: string; items: string[] }
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const DAY_ABBREV = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack']
+const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert']
 
 function normalizeMeals(raw: Record<string, unknown>[]): Meal[] {
   return raw.map(m => ({

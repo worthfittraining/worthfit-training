@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
     const goal = profile.Goal || 'general health'
 
     const slots = includeSnacks
-      ? ['breakfast', 'lunch', 'dinner', 'snack']
+      ? ['breakfast', 'lunch', 'dinner', 'snack', 'dessert']
       : ['breakfast', 'lunch', 'dinner']
 
     const totalMeals = 7 * slots.length

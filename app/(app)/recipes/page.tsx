@@ -14,7 +14,7 @@ type SavedRecipe = {
   saved_at: string
 }
 
-const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack']
+const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert']
 
 function localDateString() {
   const now = new Date()

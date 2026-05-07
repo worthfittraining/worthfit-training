@@ -27,8 +27,8 @@ type DaySummary = {
   logged: boolean
 }
 
-const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack']
-const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack']
+const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert']
+const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert']
 
 /** Returns local date string YYYY-MM-DD (not UTC — avoids off-by-one for US users at night) */
 function localDateString(d: Date = new Date()): string {

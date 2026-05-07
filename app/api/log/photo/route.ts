@@ -45,7 +45,7 @@ Respond ONLY with valid JSON in this exact format, no other text:
   "confidence": "low|medium|high"
 }
 
-For meal_slot, infer from the food type: breakfast, lunch, dinner, or snack.
+For meal_slot, infer from the food type: breakfast, lunch, dinner, snack, or dessert.
 Round all numbers to the nearest whole number.
 Be conservative with estimates — it is better to slightly underestimate than overestimate.`,
             },

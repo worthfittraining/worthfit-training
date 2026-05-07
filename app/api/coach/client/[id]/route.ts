@@ -115,7 +115,7 @@ export async function GET(
     }
 
     // Sort items within each day by meal slot order
-    const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack']
+    const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert']
     for (const date of days) {
       byDate[date].items.sort((a, b) => {
         const ai = MEAL_ORDER.indexOf(a.meal_slot)
