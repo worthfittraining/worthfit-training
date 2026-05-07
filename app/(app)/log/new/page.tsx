@@ -194,7 +194,7 @@ export default function NewLogPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-lg mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-4">
-          <button onClick={() => { router.push('/log'); router.refresh() }} className="text-sm text-gray-500 hover:text-gray-700">← Back to Log</button>
+          <button onClick={() => { router.push(`/log?date=${logDate}`) }} className="text-sm text-gray-500 hover:text-gray-700">← Back to Log</button>
           <h1 className="text-lg font-bold text-gray-800">Add Food</h1>
           <button onClick={() => { setManualMode(m => !m); setSelectedFood(null) }} className="text-sm text-green-600 hover:underline">
             {manualMode ? 'Search instead' : 'Enter manually'}
@@ -207,7 +207,7 @@ export default function NewLogPage() {
             <div className="flex items-center justify-between mb-1.5">
               <p className="text-sm font-semibold text-green-800">✅ Added to your log</p>
               <button
-                onClick={() => { router.push('/log'); router.refresh() }}
+                onClick={() => { router.push(`/log?date=${logDate}`) }}
                 className="text-xs font-semibold text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded-full transition-colors"
               >
                 Done → View Log

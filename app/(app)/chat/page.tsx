@@ -84,47 +84,6 @@ const MODES = [
   { id: 'check_in', label: '✅ Check In' },
 ]
 
-/** Parse a bracketed JSON tag like [TAG_NAME:{...}] from content */
-function extractTag(content: string, tagName: string): { cleaned: string; data: Record<string, unknown> | null } {
-  const prefix = `[${tagName}:`
-  const idx = content.indexOf(prefix)
-  if (idx === -1) return { cleaned: content, data: null }
-
-  let depth = 0
-  let end = -1
-  for (let i = idx; i < content.length; i++) {
-    if (content[i] === '{') depth++
-    if (content[i] === '}') depth--
-    if (content[i] === ']' && depth === 0) { end = i; break }
-  }
-  if (end === -1) return { cleaned: content, data: null }
-
-  try {
-    const json = content.slice(idx + prefix.length, end)
-    const data = JSON.parse(json)
-    const cleaned = (content.slice(0, idx) + content.slice(end + 1)).trim()
-    return { cleaned, data }
-  } catch {
-    const cleaned = (content.slice(0, idx) + content.slice(end + 1)).trim()
-    return { cleaned, data: null }
-  }
-}
-
-function extractFoodLog(content: string): { cleaned: string; logData: Record<string, unknown> | null } {
-  const { cleaned, data } = extractTag(content, 'FOOD_LOG')
-  return { cleaned, logData: data }
-}
-
-function extractDeleteFood(content: string): { cleaned: string; deleteData: Record<string, unknown> | null } {
-  const { cleaned, data } = extractTag(content, 'DELETE_FOOD')
-  return { cleaned, deleteData: data }
-}
-
-function extractMoveFood(content: string): { cleaned: string; moveData: Record<string, unknown> | null } {
-  const { cleaned, data } = extractTag(content, 'MOVE_FOOD')
-  return { cleaned, moveData: data }
-}
-
 /** Returns local date string YYYY-MM-DD (not UTC) */
 function localDateString(): string {
   const d = new Date()
@@ -215,100 +174,6 @@ export default function ChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-async function saveFoodLog(logData: Record<string, unknown>, email: string) {
-  try {
-    // Use local date — avoids UTC off-by-one for US users after ~7 PM
-    const today = localDateString()
-    const res = await fetch('/api/log', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...logData, email, date: today }),
-    })
-    if (res.ok) {
-      setLogSaved((logData.food_name as string) || 'Food')
-      setTimeout(() => setLogSaved(null), 4000)
-    } else {
-      // API returned an error (4xx/5xx) — tell the user so they know to log manually
-      const errData = await res.json().catch(() => ({}))
-      console.error('saveFoodLog API error:', res.status, errData)
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `⚠️ I said I logged that but it didn't save (error ${res.status}). Please log it manually using the Log tab — I'm sorry about that!`
-      }])
-    }
-  } catch (err) {
-    console.error('Failed to save food log:', err)
-    setMessages(prev => [...prev, {
-      role: 'assistant',
-      content: "⚠️ I wasn't able to save that to your log — please log it manually using the Log tab."
-    }])
-  }
-}
-
-async function deleteFoodLog(deleteData: Record<string, unknown>, email: string) {
-  try {
-    // Use local date — avoids UTC off-by-one for US users after ~7 PM
-    const today = localDateString()
-    const food_name = encodeURIComponent((deleteData.food_name as string) || '')
-    const meal_slot = encodeURIComponent((deleteData.meal_slot as string) || '')
-    const res = await fetch(
-      `/api/log?email=${encodeURIComponent(email)}&food_name=${food_name}&meal_slot=${meal_slot}&date=${today}`,
-      { method: 'DELETE' }
-    )
-    const data = await res.json()
-    if (res.ok && data.ok) {
-      setLogDeleted((data.deleted as string) || (deleteData.food_name as string) || 'Food')
-      setTimeout(() => setLogDeleted(null), 4000)
-    } else {
-      // Food not found — let the user know so they can remove it manually if needed
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `⚠️ I tried to remove "${deleteData.food_name}" but couldn't find it in today's log. It may have already been removed — check your log to confirm.`
-      }])
-    }
-  } catch (err) {
-    console.error('Failed to delete food log:', err)
-    setMessages(prev => [...prev, {
-      role: 'assistant',
-      content: `⚠️ Something went wrong trying to remove "${deleteData.food_name}" — please delete it manually from your Log tab.`
-    }])
-  }
-}
-
-async function moveFoodLog(moveData: Record<string, unknown>, email: string) {
-  const { food_name, calories, protein_g, carbs_g, fat_g, from_slot, to_slot } = moveData
-  try {
-    const today = localDateString()
-    // Step 1: delete from the original slot
-    const food_name_enc = encodeURIComponent((food_name as string) || '')
-    const from_enc = encodeURIComponent((from_slot as string) || '')
-    await fetch(
-      `/api/log?email=${encodeURIComponent(email)}&food_name=${food_name_enc}&meal_slot=${from_enc}&date=${today}`,
-      { method: 'DELETE' }
-    )
-    // Step 2: re-log in the new slot
-    const res = await fetch('/api/log', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, food_name, calories, protein_g, carbs_g, fat_g, meal_slot: to_slot, date: today }),
-    })
-    if (res.ok) {
-      setLogSaved(`${food_name as string} → ${to_slot as string}`)
-      setTimeout(() => setLogSaved(null), 4000)
-    } else {
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `⚠️ I tried to move "${food_name}" to ${to_slot} but something went wrong. Please move it manually in your Log tab.`
-      }])
-    }
-  } catch (err) {
-    console.error('Failed to move food log:', err)
-    setMessages(prev => [...prev, {
-      role: 'assistant',
-      content: `⚠️ I wasn't able to move "${food_name}" — please adjust it manually in your Log tab.`
-    }])
-  }
-}
 
   async function sendMessage() {
     if (!input.trim() || loading) return
@@ -353,33 +218,22 @@ async function moveFoodLog(moveData: Record<string, unknown>, email: string) {
         throw new Error('Empty response from Nali')
       }
 
-      // Strip action tags — all invisible to the user
-      const { cleaned: step1, logData } = extractFoodLog(fullContent)
-      const { cleaned: step2, deleteData } = extractDeleteFood(step1)
-      const { cleaned, moveData } = extractMoveFood(step2)
-      // Replace the placeholder empty assistant message with the real response
-      setMessages(prev => [...prev.slice(0, -1), { role: 'assistant', content: cleaned || fullContent }])
+      // Replace the placeholder with Nali's reply
+      setMessages(prev => [...prev.slice(0, -1), { role: 'assistant', content: fullContent }])
 
-      const email = user?.primaryEmailAddress?.emailAddress
-      // Save food log if Nali logged something
-      if (logData && email) {
-        await saveFoodLog(logData, email)
-      } else if (!logData && /logged that|logged it|i've logged|i've added|added that to your log/i.test(cleaned)) {
-        // Nali said she logged something but the tag wasn't emitted — warn the user
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: "⚠️ I said I logged that but something went wrong on my end and it didn't save. Please log it manually using the Log tab — so sorry about that!"
-        }])
-      }
-
-      // Delete food log if Nali removed something
-      if (deleteData && email) {
-        await deleteFoodLog(deleteData, email)
-      }
-
-      // Move food log if Nali moved something between meal slots
-      if (moveData && email) {
-        await moveFoodLog(moveData, email)
+      // Handle any actions the server executed (log/delete/move) — show banners
+      const actions: { type: string; food_name: string }[] = data.actions || []
+      for (const action of actions) {
+        if (action.type === 'logged') {
+          setLogSaved(action.food_name)
+          setTimeout(() => setLogSaved(null), 4000)
+        } else if (action.type === 'deleted') {
+          setLogDeleted(action.food_name)
+          setTimeout(() => setLogDeleted(null), 4000)
+        } else if (action.type === 'moved') {
+          setLogSaved(action.food_name)
+          setTimeout(() => setLogSaved(null), 4000)
+        }
       }
     } catch (err) {
       console.error('Chat error:', err)

@@ -140,7 +140,13 @@ function EditModal({ draft, onSave, onClose, saving }: {
 export default function LogPage() {
   const { user } = useUser()
   const [view, setView] = useState<'today' | 'week'>('today')
-  const [selectedDate, setSelectedDate] = useState(localDateString())
+  const [selectedDate, setSelectedDate] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search).get('date')
+      if (p && /^\d{4}-\d{2}-\d{2}$/.test(p)) return p
+    }
+    return localDateString()
+  })
   const [logs, setLogs] = useState<FoodLog[]>([])
   const [weekLogs, setWeekLogs] = useState<FoodLog[]>([])
   const [loading, setLoading] = useState(true)
