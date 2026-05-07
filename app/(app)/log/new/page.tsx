@@ -405,7 +405,7 @@ export default function NewLogPage() {
 
           <button type="submit" disabled={saving || !canSave}
             className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-medium py-3 rounded-xl transition-colors">
-            {saving ? 'Saving...' : savedFoods.length > 0 ? '+ Add Another Food' : 'Save to Log'}
+            {saving ? 'Saving...' : 'Save to Food Log'}
           </button>
           {!canSave && !saving && (
             <p className="text-center text-xs text-gray-500 mt-2">
