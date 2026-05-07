@@ -184,7 +184,7 @@ export default function DashboardPage() {
   }) {
     const pct = Math.min(Math.round((value / target) * 100), 100)
     return (
-      <div>
+      <Link href="/account" className="block group">
         <div className="flex justify-between items-center text-sm">
           <div className="flex items-center gap-1.5">
             <span className={`font-medium ${color}`}>{label}</span>
@@ -200,7 +200,7 @@ export default function DashboardPage() {
             style={{ width: `${pct}%` }}
           />
         </div>
-      </div>
+      </Link>
     )
   }
 
@@ -298,11 +298,14 @@ export default function DashboardPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xs font-semibold text-gray-500 tracking-wide">MACROS</h2>
-            {(proteinHit || carbsHit || fatHit) && !allMacrosHit && (
-              <span className="text-xs text-green-600 font-medium">
-                {[proteinHit && 'P', carbsHit && 'C', fatHit && 'F'].filter(Boolean).join(', ')} on target!
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {(proteinHit || carbsHit || fatHit) && !allMacrosHit && (
+                <span className="text-xs text-green-600 font-medium">
+                  {[proteinHit && 'P', carbsHit && 'C', fatHit && 'F'].filter(Boolean).join(', ')} on target!
+                </span>
+              )}
+              <Link href="/account" className="text-xs text-green-600 font-medium hover:text-green-700 transition-colors">Edit →</Link>
+            </div>
           </div>
           {loading ? (
             <div className="text-center text-gray-500 py-4">Loading...</div>
