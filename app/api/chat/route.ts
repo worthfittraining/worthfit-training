@@ -119,18 +119,28 @@ export async function POST(req: NextRequest) {
         let resultContent: string
 
         if (toolUse.name === 'log_food') {
-          const result = await saveLog(email, {
-            food_name: input.food_name as string,
-            calories:  input.calories  as number,
-            protein_g: input.protein_g as number,
-            carbs_g:   input.carbs_g   as number,
-            fat_g:     input.fat_g     as number,
-            fiber_g:   (input.fiber_g  as number) || 0,
-            meal_slot: input.meal_slot as string,
-            notes:     (input.notes    as string) || '',
-          }, today)
-          if (result.ok) actions.push({ type: 'logged', food_name: input.food_name as string })
-          resultContent = result.ok ? 'Saved successfully.' : `Error: ${result.error}`
+          const cal  = Number(input.calories)  || 0
+          const prot = Number(input.protein_g) || 0
+          const carb = Number(input.carbs_g)   || 0
+          const fat  = Number(input.fat_g)     || 0
+          // Safety net: if all macros are 0 but calories > 0, the model forgot to estimate them.
+          // Send an error back so the model retries with proper macro estimates.
+          if (cal > 0 && prot === 0 && carb === 0 && fat === 0) {
+            resultContent = 'Error: protein_g, carbs_g, and fat_g are all 0 but calories > 0. You MUST estimate real macro values — re-call log_food with actual protein, carbs, and fat estimates for this food.'
+          } else {
+            const result = await saveLog(email, {
+              food_name: input.food_name as string,
+              calories:  cal,
+              protein_g: prot,
+              carbs_g:   carb,
+              fat_g:     fat,
+              fiber_g:   (input.fiber_g  as number) || 0,
+              meal_slot: input.meal_slot as string,
+              notes:     (input.notes    as string) || '',
+            }, today)
+            if (result.ok) actions.push({ type: 'logged', food_name: input.food_name as string })
+            resultContent = result.ok ? 'Saved successfully.' : `Error: ${result.error}`
+          }
 
         } else if (toolUse.name === 'delete_food') {
           const result = await deleteLog(
