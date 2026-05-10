@@ -102,7 +102,8 @@ export default function RecipePage() {
   async function startBarcodeScanner() {
     setBarcodeError(null)
     setShowBarcode(true)
-    if (!barcodeVideoRef.current) return
+    // Video element is always mounted (just hidden), so ref is always valid
+    if (!barcodeVideoRef.current) { setBarcodeError('Camera failed to initialize. Please try again.'); return }
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
         setBarcodeError('Camera not supported in this browser.')
@@ -407,30 +408,28 @@ export default function RecipePage() {
             </div>
           )}
 
-          {/* Barcode scanner panel */}
-          {showBarcode && (
-            <div className="mb-4 rounded-xl overflow-hidden border border-indigo-100 bg-indigo-50">
-              <div className="relative bg-black" style={{ height: 200 }}>
-                <video ref={barcodeVideoRef} className="w-full h-full object-cover" />
-                {barcodeLoading && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
-                    <p className="text-white text-sm animate-pulse">Looking up product...</p>
-                  </div>
-                )}
-                {!barcodeLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-52 h-20 border-2 border-indigo-400 rounded-lg opacity-70" />
-                  </div>
-                )}
-              </div>
-              <div className="p-3">
-                {barcodeError
-                  ? <p className="text-xs text-red-600 text-center">{barcodeError}</p>
-                  : <p className="text-xs text-indigo-600 text-center">Point camera at a barcode to add ingredient</p>
-                }
-              </div>
+          {/* Barcode scanner panel — video always mounted so ref is valid on first click */}
+          <div className={`mb-4 rounded-xl overflow-hidden border border-indigo-100 bg-indigo-50 ${showBarcode ? '' : 'hidden'}`}>
+            <div className="relative bg-black" style={{ height: 200 }}>
+              <video ref={barcodeVideoRef} className="w-full h-full object-cover" playsInline muted />
+              {barcodeLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
+                  <p className="text-white text-sm animate-pulse">Looking up product...</p>
+                </div>
+              )}
+              {!barcodeLoading && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-52 h-20 border-2 border-indigo-400 rounded-lg opacity-70" />
+                </div>
+              )}
             </div>
-          )}
+            <div className="p-3">
+              {barcodeError
+                ? <p className="text-xs text-red-600 text-center">{barcodeError}</p>
+                : <p className="text-xs text-indigo-600 text-center">Point camera at a barcode to add ingredient</p>
+              }
+            </div>
+          </div>
 
           {/* Manual ingredient panel */}
           {manualMode && (

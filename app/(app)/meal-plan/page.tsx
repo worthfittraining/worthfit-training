@@ -637,7 +637,7 @@ export default function MealPlanPage() {
 
       {/* ── RECIPE MODAL ── */}
       {selectedMeal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4" onClick={() => setSelectedMeal(null)}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 pb-8" onClick={() => setSelectedMeal(null)}>
           <div className="bg-white rounded-3xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="shrink-0 bg-white rounded-t-3xl border-b border-gray-100 px-5 py-4 flex items-start justify-between">
               <div>
@@ -693,12 +693,17 @@ export default function MealPlanPage() {
                     </ol>
                   </div>
                   {recipe.tips && <div className="bg-yellow-50 rounded-xl p-3 text-sm text-yellow-800">💡 <strong>Tip:</strong> {recipe.tips}</div>}
-                  <a href="/chat" className="block w-full text-center bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition text-sm">
-                    Log this meal with Nali →
-                  </a>
                 </div>
               ) : null}
             </div>
+            {/* Log button pinned outside scrollable area — always visible */}
+            {recipe && !recipeLoading && !recipeError && (
+              <div className="shrink-0 border-t border-gray-100 px-5 py-4">
+                <a href="/chat" className="block w-full text-center bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition text-sm">
+                  Log this meal with Nali →
+                </a>
+              </div>
+            )}
           </div>
         </div>
       )}
