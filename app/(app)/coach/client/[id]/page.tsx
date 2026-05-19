@@ -94,6 +94,7 @@ export default function CoachClientDetailPage() {
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null)
+  const [activeTab, setActiveTab] = useState<'log' | 'weekly'>('log')
 
   useEffect(() => {
     fetch(`/api/coach/client/${clientId}`)
@@ -232,6 +233,18 @@ export default function CoachClientDetailPage() {
   // ── Week Overview ──
   const initials = client.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
 
+  // Build a 7-day window for the weekly tab (last 7 calendar days)
+  const weekDays = days.slice(0, 7)
+  const daysLogged = weekDays.filter(d => d.cal > 0).length
+
+  function calColor(cal: number, target: number) {
+    if (cal === 0) return 'bg-gray-200'
+    const pct = target > 0 ? (cal / target) * 100 : 0
+    if (pct >= 80) return 'bg-green-500'
+    if (pct >= 50) return 'bg-yellow-400'
+    return 'bg-red-400'
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -244,62 +257,160 @@ export default function CoachClientDetailPage() {
         </div>
       </div>
 
-      {/* 7-day averages */}
-      {avg && (
+      {/* Tab switcher */}
+      <div className="flex bg-white border-b border-gray-100 px-4">
+        <button
+          onClick={() => setActiveTab('log')}
+          className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'log' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-400'}`}
+        >
+          📋 Log
+        </button>
+        <button
+          onClick={() => setActiveTab('weekly')}
+          className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'weekly' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-400'}`}
+        >
+          📊 Weekly
+        </button>
+      </div>
+
+      {/* ── Log Tab ── */}
+      {activeTab === 'log' && (
         <>
-          <div className="px-4 pt-3 pb-1">
-            <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">7-day averages</p>
+          {/* 7-day averages */}
+          {avg && (
+            <>
+              <div className="px-4 pt-3 pb-1">
+                <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">7-day averages</p>
+              </div>
+              <div className="grid grid-cols-5 gap-1.5 px-4 pb-3">
+                <MacroCard actual={avg.cal} target={t.calories} label="cal" type="cal" />
+                <MacroCard actual={avg.pro} target={t.protein_g} label="protein" type="pro" />
+                <MacroCard actual={avg.carb} target={t.carbs_g} label="carbs" type="carb" />
+                <MacroCard actual={avg.fat} target={t.fat_g} label="fat" type="fat" />
+                <MacroCard actual={avg.fib} target={t.fiber_g} label="fiber" type="fib" />
+              </div>
+            </>
+          )}
+
+          {/* Daily log table */}
+          <div className="px-4 pb-1">
+            <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Daily log — tap a row for full breakdown</p>
           </div>
-          <div className="grid grid-cols-5 gap-1.5 px-4 pb-3">
-            <MacroCard actual={avg.cal} target={t.calories} label="cal" type="cal" />
-            <MacroCard actual={avg.pro} target={t.protein_g} label="protein" type="pro" />
-            <MacroCard actual={avg.carb} target={t.carbs_g} label="carbs" type="carb" />
-            <MacroCard actual={avg.fat} target={t.fat_g} label="fat" type="fat" />
-            <MacroCard actual={avg.fib} target={t.fiber_g} label="fiber" type="fib" />
+
+          <div className="mx-4 bg-white border border-gray-100 rounded-2xl overflow-hidden mb-6">
+            {/* Column headers */}
+            <div className="grid grid-cols-[72px_1fr_1fr_1fr_1fr_1fr] text-[10px] font-medium text-gray-400 uppercase tracking-wide px-3 py-2 border-b border-gray-100 bg-gray-50">
+              <span>Date</span>
+              <span className="text-center">Cal</span>
+              <span className="text-center">Pro</span>
+              <span className="text-center">Carb</span>
+              <span className="text-center">Fat</span>
+              <span className="text-center">Fiber</span>
+            </div>
+            {/* Goal row */}
+            <div className="grid grid-cols-[72px_1fr_1fr_1fr_1fr_1fr] px-3 py-1.5 border-b border-gray-200 bg-gray-50 text-[11px] text-gray-400">
+              <span className="font-medium">Goal</span>
+              <span className="text-center">{t.calories.toLocaleString()}</span>
+              <span className="text-center">{t.protein_g}g</span>
+              <span className="text-center">{t.carbs_g}g</span>
+              <span className="text-center">{t.fat_g}g</span>
+              <span className="text-center">{t.fiber_g > 0 ? `${t.fiber_g}g` : '—'}</span>
+            </div>
+            {/* Day rows */}
+            {days.slice(0, 14).map((day, i) => (
+              <div
+                key={day.date}
+                onClick={() => setSelectedDay(day)}
+                className={`grid grid-cols-[72px_1fr_1fr_1fr_1fr_1fr] px-3 py-2.5 items-center cursor-pointer hover:bg-gray-50 transition-colors ${i < days.slice(0, 14).length - 1 ? 'border-b border-gray-100' : ''}`}
+              >
+                <span className="text-xs font-medium text-gray-700">{formatDate(day.date).replace(',', '')}</span>
+                <span className="text-center"><MacroPill value={day.cal} target={t.calories} type="cal" unit="kcal" /></span>
+                <span className="text-center"><MacroPill value={day.pro} target={t.protein_g} type="pro" /></span>
+                <span className="text-center"><MacroPill value={day.carb} target={t.carbs_g} type="carb" /></span>
+                <span className="text-center"><MacroPill value={day.fat} target={t.fat_g} type="fat" /></span>
+                <span className="text-center"><MacroPill value={day.fib} target={t.fiber_g} type="fib" /></span>
+              </div>
+            ))}
           </div>
         </>
       )}
 
-      {/* Weekly table */}
-      <div className="px-4 pb-1">
-        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Daily log — tap a row for full breakdown</p>
-      </div>
+      {/* ── Weekly Tab ── */}
+      {activeTab === 'weekly' && (
+        <div className="px-4 pt-4 pb-6 space-y-4">
 
-      <div className="mx-4 bg-white border border-gray-100 rounded-2xl overflow-hidden mb-6">
-        {/* Column headers */}
-        <div className="grid grid-cols-[72px_1fr_1fr_1fr_1fr_1fr] text-[10px] font-medium text-gray-400 uppercase tracking-wide px-3 py-2 border-b border-gray-100 bg-gray-50">
-          <span>Date</span>
-          <span className="text-center">Cal</span>
-          <span className="text-center">Pro</span>
-          <span className="text-center">Carb</span>
-          <span className="text-center">Fat</span>
-          <span className="text-center">Fiber</span>
-        </div>
-        {/* Goal row */}
-        <div className="grid grid-cols-[72px_1fr_1fr_1fr_1fr_1fr] px-3 py-1.5 border-b border-gray-200 bg-gray-50 text-[11px] text-gray-400">
-          <span className="font-medium">Goal</span>
-          <span className="text-center">{t.calories.toLocaleString()}</span>
-          <span className="text-center">{t.protein_g}g</span>
-          <span className="text-center">{t.carbs_g}g</span>
-          <span className="text-center">{t.fat_g}g</span>
-          <span className="text-center">{t.fiber_g > 0 ? `${t.fiber_g}g` : '—'}</span>
-        </div>
-        {/* Day rows */}
-        {days.slice(0, 14).map((day, i) => (
-          <div
-            key={day.date}
-            onClick={() => setSelectedDay(day)}
-            className={`grid grid-cols-[72px_1fr_1fr_1fr_1fr_1fr] px-3 py-2.5 items-center cursor-pointer hover:bg-gray-50 transition-colors ${i < days.slice(0, 14).length - 1 ? 'border-b border-gray-100' : ''}`}
-          >
-            <span className="text-xs font-medium text-gray-700">{formatDate(day.date).replace(',', '')}</span>
-            <span className="text-center"><MacroPill value={day.cal} target={t.calories} type="cal" unit="kcal" /></span>
-            <span className="text-center"><MacroPill value={day.pro} target={t.protein_g} type="pro" /></span>
-            <span className="text-center"><MacroPill value={day.carb} target={t.carbs_g} type="carb" /></span>
-            <span className="text-center"><MacroPill value={day.fat} target={t.fat_g} type="fat" /></span>
-            <span className="text-center"><MacroPill value={day.fib} target={t.fiber_g} type="fib" /></span>
+          {/* Summary stats */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+            <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-3">This Week</p>
+            <div className="flex items-center gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-800">{daysLogged}<span className="text-base font-medium text-gray-400"> / 7</span></div>
+                <div className="text-xs text-gray-500 mt-0.5">Days Logged</div>
+              </div>
+              <div className="flex-1 h-px bg-gray-100" />
+              <div className="text-xs text-gray-500 text-right">
+                {daysLogged === 0 ? 'No data this week' : `${Math.round((daysLogged / 7) * 100)}% consistency`}
+              </div>
+            </div>
           </div>
-        ))}
-      </div>
+
+          {/* Average macros vs targets */}
+          {avg ? (
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+              <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-3">Avg Daily Macros vs Target</p>
+              <div className="grid grid-cols-5 gap-1.5">
+                <MacroCard actual={avg.cal} target={t.calories} label="cal" type="cal" />
+                <MacroCard actual={avg.pro} target={t.protein_g} label="protein" type="pro" />
+                <MacroCard actual={avg.carb} target={t.carbs_g} label="carbs" type="carb" />
+                <MacroCard actual={avg.fat} target={t.fat_g} label="fat" type="fat" />
+                <MacroCard actual={avg.fib} target={t.fiber_g} label="fiber" type="fib" />
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm text-center text-gray-400 text-sm">
+              No logs this week to average.
+            </div>
+          )}
+
+          {/* Day-by-day calorie progress bars */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+            <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-3">Daily Calorie Progress</p>
+            <div className="space-y-3">
+              {weekDays.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">No data available.</p>
+              ) : (
+                weekDays.map(day => {
+                  const pct = t.calories > 0 ? Math.min((day.cal / t.calories) * 100, 100) : 0
+                  const barColor = calColor(day.cal, t.calories)
+                  return (
+                    <div key={day.date}>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-gray-600 font-medium">{formatDate(day.date)}</span>
+                        <span className="text-gray-500">
+                          {day.cal > 0 ? `${day.cal.toLocaleString()} / ${t.calories.toLocaleString()} cal` : 'Not logged'}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full transition-all ${barColor}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+            {/* Legend */}
+            <div className="flex gap-3 mt-4 text-[10px] text-gray-400">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> ≥80%</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" /> 50–79%</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> &lt;50%</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-200 inline-block" /> No log</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -94,6 +94,11 @@ export default function CoachDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {isHeadCoach && (
+              <Link href="/coach/manage" className="text-xs font-semibold text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl hover:bg-green-100 transition-colors">
+                ⚙️ Manage
+              </Link>
+            )}
             <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
               {user?.firstName?.[0] || 'C'}
             </div>
