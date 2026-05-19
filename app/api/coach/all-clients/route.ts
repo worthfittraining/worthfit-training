@@ -29,7 +29,7 @@ export async function GET() {
 
   try {
     const records = await fetchAllPages(base('Clients').select({
-      fields: ['Name', 'Email', 'Coach_Email', 'Goal', 'Calories', 'Protein_g'],
+      fields: ['Name', 'Email', 'Coach_Email', 'Goal', 'Calories', 'Protein_g', 'Premium_Until'],
       sort: [{ field: 'Name', direction: 'asc' }],
     }))
 
@@ -41,6 +41,7 @@ export async function GET() {
       Goal: (r.fields.Goal as string) || '',
       Calories: Number(r.fields.Calories) || 0,
       Protein_g: Number(r.fields.Protein_g) || 0,
+      Premium_Until: (r.fields.Premium_Until as string) || '',
     }))
 
     return NextResponse.json({ clients })

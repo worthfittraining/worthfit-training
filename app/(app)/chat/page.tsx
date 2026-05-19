@@ -118,7 +118,7 @@ export default function ChatPage() {
     if (!email) return
     fetch(`/api/profile?email=${encodeURIComponent(email)}`)
       .then(r => r.json())
-      .then(d => setPlan(resolvePlan(d.Plan)))
+      .then(d => setPlan(d.resolved_plan || resolvePlan(d.Plan, d.Premium_Until)))
       .catch(() => {})
   }, [user])
 

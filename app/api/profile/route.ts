@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getClientByEmail, createClient, updateClient } from '@/lib/airtable'
 import { calculateMacros, calculateWaterGoal } from '@/lib/macros'
+import { resolvePlan } from '@/lib/plan'
 import type Airtable from 'airtable'
 
 export async function POST(req: NextRequest) {
@@ -9,7 +10,7 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { email, name, goal, restrictions, food_preferences, food_dislikes, height_in, weight_lbs, age, sex, activity_level, breastfeeding } = body
+  const { email, name, goal, restrictions, food_preferences, food_dislikes, height_in, weight_lbs, age, sex, activity_level, breastfeeding, Coach_Email } = body
 
   const macros = calculateMacros(
     Number(weight_lbs),
@@ -47,6 +48,8 @@ export async function POST(req: NextRequest) {
     // Never overwrite Playbook_Active — that's managed exclusively by the Playbook sync webhook
     ...(!existing ? { Plan: 'free' } : {}),
     // Note: Playbook_Active is intentionally omitted here so it's never accidentally cleared
+    // Set Coach_Email if provided (e.g. from ?coach= signup link)
+    ...(Coach_Email && typeof Coach_Email === 'string' && Coach_Email.includes('@') ? { Coach_Email } : {}),
   }
 
   const isNewUser = !existing
@@ -122,9 +125,10 @@ export async function GET(req: NextRequest) {
     const fields = client.fields
     const rawPlan = String(fields.Plan || 'free')
     const playbookActive = !!fields.Playbook_Active
+    const premiumUntil = fields.Premium_Until ? String(fields.Premium_Until) : null
 
     // Resolve effective plan:
-    // Premium (paid) > Standard (paid) > Playbook active (comped Standard) > Free
+    // Premium_Until date override > Premium (paid) > Standard (paid) > Playbook active (comped Standard) > Free
     // This means every consumer of the profile API automatically gets the right
     // plan without needing to know about Playbook_Active separately.
     let effectivePlan = rawPlan
@@ -132,7 +136,16 @@ export async function GET(req: NextRequest) {
       effectivePlan = 'standard'
     }
 
-    return NextResponse.json({ ...fields, Plan: effectivePlan, Playbook_Active: playbookActive })
+    // Compute resolved_plan with Premium_Until date-based override
+    const resolved_plan = resolvePlan(effectivePlan, premiumUntil)
+
+    return NextResponse.json({
+      ...fields,
+      Plan: effectivePlan,
+      Playbook_Active: playbookActive,
+      Premium_Until: premiumUntil,
+      resolved_plan,
+    })
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })
   }

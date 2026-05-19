@@ -65,8 +65,24 @@ export function planFromPriceId(priceId: string): Plan {
   return 'standard'
 }
 
-/** Resolve a plan string from Airtable to a typed Plan */
-export function resolvePlan(raw: string | undefined | null): Plan {
+/** Resolve a plan string from Airtable to a typed Plan.
+ *  If `premiumUntil` is provided and today's date is on or before that date,
+ *  the user gets premium access regardless of their stored Plan field.
+ */
+export function resolvePlan(raw: string | undefined | null, premiumUntil?: string | null): Plan {
+  // Check date-based premium override first
+  if (premiumUntil) {
+    try {
+      const untilDate = new Date(premiumUntil)
+      // Compare date-only (strip time) so expiry happens at end of the day
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      untilDate.setHours(0, 0, 0, 0)
+      if (!isNaN(untilDate.getTime()) && today <= untilDate) {
+        return 'premium'
+      }
+    } catch { /* ignore invalid dates */ }
+  }
   if (raw === 'premium') return 'premium'
   if (raw === 'standard') return 'standard'
   if (raw === 'free') return 'free'

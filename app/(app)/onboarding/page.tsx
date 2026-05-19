@@ -82,18 +82,35 @@ export default function OnboardingPage() {
       ...chipFoods,
       ...extraPreferences.split(',').map(s => s.trim()).filter(Boolean),
     ].join(', ')
+
+    // Read pending coach email set during sign-up (from ?coach= URL param)
+    const pendingCoachEmail = typeof window !== 'undefined'
+      ? localStorage.getItem('pending_coach_email')
+      : null
+    const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
+
+    const bodyPayload: Record<string, unknown> = {
+      ...form,
+      food_preferences: allPreferences,
+      email: user?.primaryEmailAddress?.emailAddress,
+      name: user?.fullName || user?.firstName || 'Friend',
+    }
+
+    if (pendingCoachEmail && isValidEmail(pendingCoachEmail)) {
+      bodyPayload.Coach_Email = pendingCoachEmail
+    }
+
     try {
       const res = await fetch('/api/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          food_preferences: allPreferences,
-          email: user?.primaryEmailAddress?.emailAddress,
-          name: user?.fullName || user?.firstName || 'Friend',
-        }),
+        body: JSON.stringify(bodyPayload),
       })
       if (res.ok) {
+        // Clear the pending coach email after successful save
+        if (pendingCoachEmail) {
+          localStorage.removeItem('pending_coach_email')
+        }
         router.push('/dashboard')
       } else {
         alert('Something went wrong saving your profile. Please try again.')

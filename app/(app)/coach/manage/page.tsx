@@ -12,6 +12,7 @@ type Client = {
   Goal: string
   Calories: number
   Protein_g: number
+  Premium_Until?: string
 }
 
 type GroupedClients = {
@@ -30,6 +31,12 @@ export default function ManagePage() {
   const [saving, setSaving] = useState<Record<string, boolean>>({})
   // Track save errors
   const [errors, setErrors] = useState<Record<string, string>>({})
+  // Track pending Premium_Until values: clientId -> YYYY-MM-DD string (or '' to clear)
+  const [pendingPremium, setPendingPremium] = useState<Record<string, string>>({})
+  // Track which clients are having their Premium_Until saved
+  const [savingPremium, setSavingPremium] = useState<Record<string, boolean>>({})
+  // Track Premium_Until save errors
+  const [premiumErrors, setPremiumErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     async function load() {
@@ -95,6 +102,38 @@ export default function ManagePage() {
       setErrors(e => ({ ...e, [clientId]: String(err) }))
     } finally {
       setSaving(s => ({ ...s, [clientId]: false }))
+    }
+  }
+
+  async function handleSavePremium(clientId: string) {
+    const premiumUntil = pendingPremium[clientId] ?? ''
+    setSavingPremium(s => ({ ...s, [clientId]: true }))
+    setPremiumErrors(e => ({ ...e, [clientId]: '' }))
+    try {
+      const res = await fetch('/api/coach/set-premium', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId, premiumUntil }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setPremiumErrors(e => ({ ...e, [clientId]: data.error || 'Save failed' }))
+        return
+      }
+      // Update local state
+      setClients(prev =>
+        prev.map(c => c.id === clientId ? { ...c, Premium_Until: premiumUntil || undefined } : c)
+      )
+      // Clear pending
+      setPendingPremium(p => {
+        const next = { ...p }
+        delete next[clientId]
+        return next
+      })
+    } catch (err) {
+      setPremiumErrors(e => ({ ...e, [clientId]: String(err) }))
+    } finally {
+      setSavingPremium(s => ({ ...s, [clientId]: false }))
     }
   }
 
@@ -172,6 +211,43 @@ export default function ManagePage() {
     )
   }
 
+  function PremiumUntilInput({ client }: { client: Client }) {
+    const currentValue = pendingPremium[client.id] !== undefined
+      ? pendingPremium[client.id]
+      : (client.Premium_Until || '')
+    const isDirty = pendingPremium[client.id] !== undefined &&
+      pendingPremium[client.id] !== (client.Premium_Until || '')
+
+    return (
+      <div className="mt-2">
+        <label className="block text-xs text-gray-500 mb-1">Premium Until</label>
+        <div className="flex items-center gap-2">
+          <input
+            type="date"
+            value={currentValue}
+            onChange={e => setPendingPremium(p => ({ ...p, [client.id]: e.target.value }))}
+            className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-400"
+          />
+          {isDirty && (
+            <button
+              onClick={() => handleSavePremium(client.id)}
+              disabled={savingPremium[client.id]}
+              className="bg-green-500 text-white text-xs font-semibold px-3 py-2 rounded-xl disabled:opacity-50 whitespace-nowrap"
+            >
+              {savingPremium[client.id] ? 'Saving...' : 'Save'}
+            </button>
+          )}
+        </div>
+        {premiumErrors[client.id] && (
+          <p className="text-xs text-red-500 mt-1">{premiumErrors[client.id]}</p>
+        )}
+        {client.Premium_Until && !isDirty && (
+          <p className="text-xs text-green-600 mt-1">Premium active until {client.Premium_Until}</p>
+        )}
+      </div>
+    )
+  }
+
   function ClientCard({ client }: { client: Client }) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
@@ -193,6 +269,7 @@ export default function ManagePage() {
           <p className="text-xs text-red-500 mt-1">{errors[client.id]}</p>
         )}
         <CoachSelect client={client} />
+        <PremiumUntilInput client={client} />
       </div>
     )
   }
