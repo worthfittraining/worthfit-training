@@ -50,6 +50,14 @@ export async function GET() {
       }))
 
       if (myClientRecords.length === 0) {
+        // Check if email is in the additional coach emails list (allows new coaches with no clients yet)
+        const additionalCoachEmails = (process.env.ADDITIONAL_COACH_EMAILS || '')
+          .split(',')
+          .map(e => e.toLowerCase().trim())
+          .filter(Boolean)
+        if (additionalCoachEmails.includes(email)) {
+          return NextResponse.json({ clients: [], isHeadCoach: false })
+        }
         // Not a coach — no clients assigned to them
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }

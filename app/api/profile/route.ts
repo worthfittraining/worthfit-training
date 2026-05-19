@@ -85,6 +85,27 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Send email notification when a client signs up through a coach link
+  if (Coach_Email && typeof Coach_Email === 'string' && Coach_Email.includes('@') && process.env.RESEND_API_KEY) {
+    const clientName = name || email
+    const subject = `New client signed up: ${clientName}`
+    const html = `${clientName} just signed up through ${Coach_Email}'s link.<br><br><a href='https://nutritionbynali.com/coach/manage'>Set their premium access →</a>`
+    // Non-blocking — don't let email failure block the response
+    fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Nali Nutrition <noreply@nutritionbynali.com>',
+        to: 'worthfittraining@gmail.com',
+        subject,
+        html,
+      }),
+    }).catch(err => console.error('Resend notification error (non-fatal):', err))
+  }
+
   return NextResponse.json({ success: true, macros })
 }
 export async function PATCH(req: NextRequest) {

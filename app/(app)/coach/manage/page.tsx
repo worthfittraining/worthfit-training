@@ -249,6 +249,7 @@ export default function ManagePage() {
   }
 
   function ClientCard({ client }: { client: Client }) {
+    const missingExpiry = !client.Premium_Until
     return (
       <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
         <div className="flex items-start justify-between">
@@ -257,7 +258,12 @@ export default function ManagePage() {
               {(client.Name || '?')[0].toUpperCase()}
             </div>
             <div>
-              <div className="font-semibold text-gray-800 text-sm">{client.Name || 'Unknown'}</div>
+              <div className="flex items-center gap-2">
+                <div className="font-semibold text-gray-800 text-sm">{client.Name || 'Unknown'}</div>
+                {missingExpiry && (
+                  <span className="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full whitespace-nowrap">⚠️ Set expiry</span>
+                )}
+              </div>
               <div className="text-xs text-gray-400">{client.Email}</div>
             </div>
           </div>
@@ -274,6 +280,8 @@ export default function ManagePage() {
     )
   }
 
+  const noExpiryCount = clients.filter(c => !c.Premium_Until).length
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 py-6">
@@ -288,6 +296,27 @@ export default function ManagePage() {
             <p className="text-xs text-gray-400 mt-0.5">{clients.length} total clients · {unassigned.length} unassigned</p>
           </div>
         </div>
+
+        {/* Missing expiry banner */}
+        {noExpiryCount > 0 && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3 mb-6">
+            ⚠️ {noExpiryCount} client{noExpiryCount !== 1 ? 's' : ''} have no expiry date set
+          </div>
+        )}
+
+        {/* Unassigned section — shown first for visibility */}
+        {unassigned.length > 0 && (
+          <div className="mb-6 border-l-4 border-amber-400 pl-4">
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="text-sm font-semibold text-gray-700">UNASSIGNED ({unassigned.length})</h2>
+            </div>
+            <div className="space-y-3">
+              {unassigned.map(client => (
+                <ClientCard key={client.id} client={client} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Coach sections */}
         {groups.map(group => (
@@ -304,22 +333,6 @@ export default function ManagePage() {
             </div>
           </div>
         ))}
-
-        {/* Unassigned section */}
-        {unassigned.length > 0 && (
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full bg-gray-300" />
-              <h2 className="text-sm font-semibold text-gray-500">Unassigned</h2>
-              <span className="text-xs text-gray-400 ml-auto">{unassigned.length} client{unassigned.length !== 1 ? 's' : ''}</span>
-            </div>
-            <div className="space-y-3">
-              {unassigned.map(client => (
-                <ClientCard key={client.id} client={client} />
-              ))}
-            </div>
-          </div>
-        )}
 
         {clients.length === 0 && (
           <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
