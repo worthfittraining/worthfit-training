@@ -317,10 +317,10 @@ export default function LogPage() {
     setSelectedDate(localDateString(d))
   }
 
-  const totalCalories = logs.reduce((s, l) => s + (l.calories || 0), 0)
-  const totalProtein = logs.reduce((s, l) => s + (l.protein_g || 0), 0)
-  const totalCarbs = logs.reduce((s, l) => s + (l.carbs_g || 0), 0)
-  const totalFat = logs.reduce((s, l) => s + (l.fat_g || 0), 0)
+  const totalCalories = Math.round(logs.reduce((s, l) => s + (l.calories || 0), 0))
+  const totalProtein = Math.round(logs.reduce((s, l) => s + (l.protein_g || 0), 0))
+  const totalCarbs = Math.round(logs.reduce((s, l) => s + (l.carbs_g || 0), 0))
+  const totalFat = Math.round(logs.reduce((s, l) => s + (l.fat_g || 0), 0))
   const bySlot = MEAL_ORDER.reduce<Record<string, FoodLog[]>>((acc, slot) => {
     acc[slot] = logs.filter((l) => l.meal_slot === slot)
     return acc
@@ -483,7 +483,7 @@ export default function LogPage() {
                             <p className="text-sm font-bold text-orange-500 shrink-0">{log.calories} kcal</p>
                           </div>
                           <div className="flex gap-3 mt-1 text-xs text-gray-500">
-                            <span>P: {log.protein_g}g</span><span>C: {log.carbs_g}g</span><span>F: {log.fat_g}g</span>
+                            <span>P: {Math.round(log.protein_g)}g</span><span>C: {Math.round(log.carbs_g)}g</span><span>F: {Math.round(log.fat_g)}g</span>
                           </div>
                           {log.notes && <p className="text-xs text-gray-500 mt-1 italic">{log.notes}</p>}
                         </div>
