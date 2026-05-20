@@ -34,6 +34,7 @@ export default function CoachDashboard() {
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
   const [isHeadCoach, setIsHeadCoach] = useState(false)
+  const [selectedCoach, setSelectedCoach] = useState<string | null>(null)
 
   useEffect(() => {
     fetchClients()
@@ -106,44 +107,73 @@ export default function CoachDashboard() {
           </div>
         </div>
 
+        {/* Coach filter pills — head coach only */}
+        {isHeadCoach && (() => {
+          const coaches = Array.from(new Set(clients.map(c => c.Coach_Email).filter(Boolean))) as string[]
+          if (coaches.length < 2) return null
+          return (
+            <div className="flex flex-wrap gap-2 mb-6">
+              <button
+                onClick={() => setSelectedCoach(null)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${selectedCoach === null ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}
+              >
+                All ({clients.length})
+              </button>
+              {coaches.map(email => (
+                <button
+                  key={email}
+                  onClick={() => setSelectedCoach(email === selectedCoach ? null : email)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${selectedCoach === email ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}
+                >
+                  {email.split('@')[0].replace('.', ' ')} ({clients.filter(c => c.Coach_Email === email).length})
+                </button>
+              ))}
+            </div>
+          )
+        })()}
+
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-            <div className="text-3xl font-bold text-gray-800">{clients.length}</div>
-            <div className="text-xs text-gray-500 mt-1">{isHeadCoach ? 'Total Clients' : 'My Clients'}</div>
-          </div>
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-            <div className="text-3xl font-bold text-green-600">
-              {clients.filter(c => c.caloriePercent >= 50).length}
-            </div>
-            <div className="text-xs text-gray-500 mt-1">Active Today</div>
-          </div>
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-            <div className="text-3xl font-bold text-red-500">
-              {clients.filter(c => c.caloriePercent === 0).length}
-            </div>
-            <div className="text-xs text-gray-500 mt-1">Not Logged Today</div>
-          </div>
-        </div>
+        {(() => {
+          const filtered = selectedCoach ? clients.filter(c => c.Coach_Email === selectedCoach) : clients
+          return (
+            <>
+              <div className="grid grid-cols-3 gap-4 mb-8">
+                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+                  <div className="text-3xl font-bold text-gray-800">{filtered.length}</div>
+                  <div className="text-xs text-gray-500 mt-1">{isHeadCoach ? 'Total Clients' : 'My Clients'}</div>
+                </div>
+                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+                  <div className="text-3xl font-bold text-green-600">
+                    {filtered.filter(c => c.caloriePercent >= 50).length}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">Active Today</div>
+                </div>
+                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+                  <div className="text-3xl font-bold text-red-500">
+                    {filtered.filter(c => c.caloriePercent === 0).length}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">Not Logged Today</div>
+                </div>
+              </div>
 
-        {/* Client list */}
-        <h2 className="text-sm font-semibold text-gray-500 mb-3">
-          {isHeadCoach ? 'ALL CLIENTS' : 'MY CLIENTS'}
-        </h2>
+              {/* Client list */}
+              <h2 className="text-sm font-semibold text-gray-500 mb-3">
+                {selectedCoach ? `${selectedCoach.split('@')[0].toUpperCase().replace('.', ' ')}'S CLIENTS` : isHeadCoach ? 'ALL CLIENTS' : 'MY CLIENTS'}
+              </h2>
 
-        {loading ? (
-          <div className="text-center text-gray-500 py-12">Loading clients...</div>
-        ) : clients.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
-            <div className="text-4xl mb-3">👥</div>
-            <p className="text-gray-500">No clients assigned yet.</p>
-            <p className="text-gray-500 text-sm mt-1">
-              Clients will appear here once they&apos;re tagged to you in Airtable.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {clients.map(client => (
+              {loading ? (
+                <div className="text-center text-gray-500 py-12">Loading clients...</div>
+              ) : filtered.length === 0 ? (
+                <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+                  <div className="text-4xl mb-3">👥</div>
+                  <p className="text-gray-500">No clients assigned yet.</p>
+                  <p className="text-gray-500 text-sm mt-1">
+                    Clients will appear here once they&apos;re tagged to you in Airtable.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filtered.map(client => (
               <Link key={client.id} href={`/coach/client/${client.id}`} className="block bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:border-gray-200 transition-colors">
                 <div className="flex items-start justify-between mb-3">
                   <div>
@@ -196,9 +226,12 @@ export default function CoachDashboard() {
                   )}
                 </div>
               </Link>
-            ))}
-          </div>
-        )}
+                  ))}
+                </div>
+              )}
+            </>
+          )
+        })()}
       </div>
     </div>
   )
