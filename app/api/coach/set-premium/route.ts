@@ -36,8 +36,8 @@ export async function PATCH(request: Request) {
 
   try {
     await base('Clients').update(clientId, {
-      // Pass null to clear, or the date string to set
-      Premium_Until: premiumUntil || null,
+      // Pass empty string to clear, or the date string to set
+      Premium_Until: premiumUntil || '',
     })
     return NextResponse.json({ ok: true })
   } catch (error) {
