@@ -32,6 +32,13 @@ type ClientData = {
   goal: string
   program_week: number
   targets: { calories: number; protein_g: number; carbs_g: number; fat_g: number; fiber_g: number }
+  stats: {
+    height_in: number | null
+    weight_lbs: number | null
+    age: number | null
+    sex: string
+    activity_level: string
+  }
 }
 
 // Within-target check — colored pill logic
@@ -272,6 +279,42 @@ export default function CoachClientDetailPage() {
           📊 Weekly
         </button>
       </div>
+
+      {/* Client Stats Strip */}
+      {client.stats && (() => {
+        const s = client.stats
+        const heightStr = s.height_in
+          ? `${Math.floor(s.height_in / 12)}'${s.height_in % 12}"`
+          : null
+        const activityLabels: Record<string, string> = {
+          sedentary: 'Sedentary',
+          lightly_active: 'Lightly Active',
+          moderately_active: 'Moderately Active',
+          very_active: 'Very Active',
+          extra_active: 'Extra Active',
+        }
+        const stats = [
+          heightStr && { label: 'Height', value: heightStr },
+          s.weight_lbs && { label: 'Weight', value: `${s.weight_lbs} lbs` },
+          s.age && { label: 'Age', value: String(s.age) },
+          s.sex && { label: 'Sex', value: s.sex.charAt(0).toUpperCase() + s.sex.slice(1) },
+          s.activity_level && { label: 'Activity', value: activityLabels[s.activity_level] || s.activity_level },
+        ].filter(Boolean) as { label: string; value: string }[]
+        if (stats.length === 0) return null
+        return (
+          <div className="bg-white border-b border-gray-100 px-4 py-3">
+            <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-2">Client Stats</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+              {stats.map(({ label, value }) => (
+                <div key={label} className="text-xs">
+                  <span className="text-gray-400">{label}: </span>
+                  <span className="text-gray-700 font-medium">{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── Log Tab ── */}
       {activeTab === 'log' && (

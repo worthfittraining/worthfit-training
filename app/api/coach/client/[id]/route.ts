@@ -7,8 +7,9 @@ const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID!
 
 function getCoachConfig() {
   const headCoach = (process.env.HEAD_COACH_EMAIL || '').toLowerCase().trim()
-  const allCoaches = (process.env.COACH_EMAILS || headCoach)
+  const additional = (process.env.ADDITIONAL_COACH_EMAILS || '')
     .split(',').map(e => e.toLowerCase().trim()).filter(Boolean)
+  const allCoaches = Array.from(new Set([headCoach, ...additional].filter(Boolean)))
   return { headCoach, allCoaches }
 }
 
@@ -137,6 +138,13 @@ export async function GET(
           carbs_g: Number(client.Carbs_g) || 0,
           fat_g: Number(client.Fat_g) || 0,
           fiber_g: Number(client.Fiber_g) || 0,
+        },
+        stats: {
+          height_in: Number(client.height_in) || null,
+          weight_lbs: Number(client.Weight_lbs) || null,
+          age: Number(client.Age) || null,
+          sex: String(client.Sex || ''),
+          activity_level: String(client.Activity_Level || ''),
         },
       },
       days: days.map(date => ({ date, ...byDate[date] })),
