@@ -26,6 +26,89 @@ function lastNDays(n: number): string[] {
   return days
 }
 
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const user = await currentUser()
+  const coachEmail = (user?.primaryEmailAddress?.emailAddress || user?.emailAddresses[0]?.emailAddress || '').toLowerCase().trim()
+  const { headCoach, allCoaches } = getCoachConfig()
+
+  if (!allCoaches.includes(coachEmail)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { id: clientAirtableId } = await params
+
+  // Fetch the client to verify coach ownership
+  const clientUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Clients/${clientAirtableId}`
+  const clientRes = await fetchWithRetry(clientUrl, {
+    headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
+    cache: 'no-store',
+  })
+  if (!clientRes.ok) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+  const clientRecord = await clientRes.json()
+  const client = clientRecord.fields
+
+  if (coachEmail !== headCoach) {
+    const assignedCoach = (client.Coach_Email as string || '').toLowerCase().trim()
+    if (assignedCoach !== coachEmail) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
+
+  let body: { calories?: number; protein_g?: number; carbs_g?: number; fat_g?: number; fiber_g?: number }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  const fields: Record<string, number> = {}
+  if (body.calories !== undefined) fields['Calories'] = Number(body.calories)
+  if (body.protein_g !== undefined) fields['Protein_g'] = Number(body.protein_g)
+  if (body.carbs_g !== undefined) fields['Carbs_g'] = Number(body.carbs_g)
+  if (body.fat_g !== undefined) fields['Fat_g'] = Number(body.fat_g)
+  if (body.fiber_g !== undefined) fields['Fiber_g'] = Number(body.fiber_g)
+
+  if (Object.keys(fields).length === 0) {
+    return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
+  }
+
+  try {
+    const patchRes = await fetchWithRetry(clientUrl, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${AIRTABLE_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ fields }),
+    })
+    if (!patchRes.ok) {
+      const err = await patchRes.text()
+      return NextResponse.json({ error: err }, { status: patchRes.status })
+    }
+    const updated = await patchRes.json()
+    const f = updated.fields
+    return NextResponse.json({
+      ok: true,
+      targets: {
+        calories: Number(f.Calories) || 0,
+        protein_g: Number(f.Protein_g) || 0,
+        carbs_g: Number(f.Carbs_g) || 0,
+        fat_g: Number(f.Fat_g) || 0,
+        fiber_g: Number(f.Fiber_g) || 0,
+      },
+    })
+  } catch (err) {
+    console.error('Update macros error:', err)
+    return NextResponse.json({ error: String(err) }, { status: 500 })
+  }
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

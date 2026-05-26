@@ -102,6 +102,10 @@ export default function CoachClientDetailPage() {
   const [forbidden, setForbidden] = useState(false)
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null)
   const [activeTab, setActiveTab] = useState<'log' | 'weekly'>('log')
+  const [editingMacros, setEditingMacros] = useState(false)
+  const [macroForm, setMacroForm] = useState({ calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 })
+  const [savingMacros, setSavingMacros] = useState(false)
+  const [macroSaveError, setMacroSaveError] = useState('')
 
   useEffect(() => {
     fetch(`/api/coach/client/${clientId}`)
@@ -148,6 +152,30 @@ export default function CoachClientDetailPage() {
     carb: Math.round(loggedDays.reduce((s, d) => s + d.carb, 0) / loggedDays.length),
     fat: Math.round(loggedDays.reduce((s, d) => s + d.fat, 0) / loggedDays.length),
     fib: Math.round(loggedDays.reduce((s, d) => s + d.fib, 0) / loggedDays.length),
+  }
+
+  async function saveMacros() {
+    if (!client) return
+    setSavingMacros(true)
+    setMacroSaveError('')
+    try {
+      const res = await fetch(`/api/coach/client/${clientId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(macroForm),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setMacroSaveError(data.error || 'Failed to save')
+        return
+      }
+      setClient(prev => prev ? { ...prev, targets: data.targets } : prev)
+      setEditingMacros(false)
+    } catch (err) {
+      setMacroSaveError('Network error')
+    } finally {
+      setSavingMacros(false)
+    }
   }
 
   // ── Day Detail View ──
@@ -254,6 +282,49 @@ export default function CoachClientDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Edit Macros Modal */}
+      {editingMacros && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={() => setEditingMacros(false)}>
+          <div className="bg-white w-full max-w-lg rounded-t-3xl px-5 py-6 shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-base font-bold text-gray-800">Edit Macros</h2>
+              <button onClick={() => setEditingMacros(false)} className="text-gray-400 text-xl leading-none">×</button>
+            </div>
+            <div className="space-y-3">
+              {([
+                { key: 'calories', label: 'Calories', unit: 'kcal', color: 'text-[#0e7490]' },
+                { key: 'protein_g', label: 'Protein', unit: 'g', color: 'text-[#15803d]' },
+                { key: 'carbs_g', label: 'Carbs', unit: 'g', color: 'text-[#c2410c]' },
+                { key: 'fat_g', label: 'Fat', unit: 'g', color: 'text-[#7c3aed]' },
+                { key: 'fiber_g', label: 'Fiber', unit: 'g', color: 'text-[#0369a1]' },
+              ] as const).map(({ key, label, unit, color }) => (
+                <div key={key} className="flex items-center gap-3">
+                  <label className={`text-sm font-medium w-16 ${color}`}>{label}</label>
+                  <div className="flex-1 relative">
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={macroForm[key]}
+                      onChange={e => setMacroForm(prev => ({ ...prev, [key]: Number(e.target.value) }))}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-green-400 pr-12"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{unit}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {macroSaveError && <p className="text-red-500 text-xs mt-3">{macroSaveError}</p>}
+            <button
+              onClick={saveMacros}
+              disabled={savingMacros}
+              className="mt-5 w-full bg-green-500 text-white font-semibold py-3 rounded-2xl text-sm disabled:opacity-60"
+            >
+              {savingMacros ? 'Saving...' : 'Save Macros'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
         <button onClick={() => router.push('/coach')} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-700">←</button>
@@ -262,6 +333,16 @@ export default function CoachClientDetailPage() {
           <div className="text-base font-medium text-gray-800">{client.name}</div>
           <div className="text-xs text-gray-400">Week {client.program_week} · {String(client.goal).replace(/_/g, ' ')}</div>
         </div>
+        <button
+          onClick={() => {
+            setMacroForm({ ...client.targets })
+            setMacroSaveError('')
+            setEditingMacros(true)
+          }}
+          className="text-xs font-semibold text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl"
+        >
+          Edit Macros
+        </button>
       </div>
 
       {/* Tab switcher */}
