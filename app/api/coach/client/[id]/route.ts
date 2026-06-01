@@ -146,11 +146,13 @@ export async function GET(
     }
 
     // Fetch food logs for the last 14 days
+    // NOTE: client_id is a linked record field in Airtable — formulas cannot filter
+    // linked record fields by record ID. Instead we filter by date range only in
+    // Airtable, then filter by client_id in JavaScript after fetching.
     const days = lastNDays(14)
     const oldest = days[days.length - 1]
-    const formula = encodeURIComponent(
-      `AND({client_id}="${clientAirtableId}", {Date}>="${oldest}")`
-    )
+    const dateConditions = days.map(d => `DATETIME_FORMAT({Date},'YYYY-MM-DD')='${d}'`).join(',')
+    const formula = encodeURIComponent(`OR(${dateConditions})`)
     const logsUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Food%20Logs?filterByFormula=${formula}&sort[0][field]=Date&sort[0][direction]=desc`
 
     const allLogs: any[] = []
@@ -163,7 +165,12 @@ export async function GET(
       })
       if (!logsRes.ok) break
       const logsData = await logsRes.json()
-      allLogs.push(...(logsData.records || []))
+      // Filter client-side: only keep logs belonging to this client
+      const clientLogs = (logsData.records || []).filter((r: any) => {
+        const linkedIds: string[] = Array.isArray(r.fields.client_id) ? r.fields.client_id : []
+        return linkedIds.includes(clientAirtableId)
+      })
+      allLogs.push(...clientLogs)
       offset = logsData.offset
     } while (offset)
 
