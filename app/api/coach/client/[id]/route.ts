@@ -237,7 +237,15 @@ export async function GET(
           activity_level: String(client.Activity_Level || ''),
         },
       },
-      days: days.map(date => ({ date, ...byDate[date] })),
+      days: days.map(date => ({
+        date,
+        cal: Math.round(byDate[date].cal),
+        pro: Math.round(byDate[date].pro),
+        carb: Math.round(byDate[date].carb),
+        fat: Math.round(byDate[date].fat),
+        fib: Math.round(byDate[date].fib),
+        items: byDate[date].items,
+      })),
     })
   } catch (err) {
     console.error('Coach client detail error:', err)
