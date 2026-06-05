@@ -32,6 +32,8 @@ type Profile = {
   Rest_Protein_g?: number
   Rest_Carbs_g?: number
   Rest_Fat_g?: number
+  // Per-day macro overrides (JSON string)
+  Weekly_Macros?: string
 }
 
 const GOAL_LABELS: Record<string, string> = {
@@ -476,31 +478,86 @@ export default function AccountPage() {
             <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-5 bg-gray-100 rounded animate-pulse" />)}</div>
           ) : (
             <>
-              <div className="space-y-2.5 mb-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">Goal</span>
-                  <span className="text-sm font-medium text-gray-800">{GOAL_LABELS[profile.Goal || ''] || profile.Goal || '—'}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">Activity</span>
-                  <span className="text-sm font-medium text-gray-800">{ACTIVITY_LABELS[profile.Activity_Level || ''] || profile.Activity_Level || '—'}</span>
-                </div>
-                <div className="h-px bg-gray-100" />
-                <div className="grid grid-cols-4 gap-2 text-center">
-                  {[
-                    { label: 'Calories', value: profile.Calories, unit: '' },
-                    { label: 'Protein', value: profile.Protein_g, unit: 'g' },
-                    { label: 'Carbs', value: profile.Carbs_g, unit: 'g' },
-                    { label: 'Fat', value: profile.Fat_g, unit: 'g' },
-                  ].map(m => (
-                    <div key={m.label} className="bg-gray-50 rounded-xl py-2">
-                      <div className="text-sm font-bold text-gray-900">{m.value ?? '—'}{m.unit}</div>
-                      <div className="text-xs text-gray-500">{m.label}</div>
+              {(() => {
+                // Resolve active macros — use today's weekly override if set, else base targets
+                const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+                const todayName = DAYS[new Date().getDay()]
+                let weeklyMacros: Record<string, { calories: number; protein_g: number; carbs_g: number; fat_g: number }> | null = null
+                try { weeklyMacros = profile.Weekly_Macros ? JSON.parse(profile.Weekly_Macros) : null } catch { /* ignore */ }
+                const todayMacros = weeklyMacros?.[todayName]
+                const active = todayMacros
+                  ? { Calories: todayMacros.calories, Protein_g: todayMacros.protein_g, Carbs_g: todayMacros.carbs_g, Fat_g: todayMacros.fat_g }
+                  : { Calories: profile.Calories, Protein_g: profile.Protein_g, Carbs_g: profile.Carbs_g, Fat_g: profile.Fat_g }
+                const hasDailyTargets = weeklyMacros && Object.keys(weeklyMacros).length > 0
+                return (
+                  <>
+                    <div className="space-y-2.5 mb-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-500">Goal</span>
+                        <span className="text-sm font-medium text-gray-800">{GOAL_LABELS[profile.Goal || ''] || profile.Goal || '—'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-500">Activity</span>
+                        <span className="text-sm font-medium text-gray-800">{ACTIVITY_LABELS[profile.Activity_Level || ''] || profile.Activity_Level || '—'}</span>
+                      </div>
+                      <div className="h-px bg-gray-100" />
+                      {/* Active today label */}
+                      {hasDailyTargets && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full">{todayName} targets</span>
+                          <span className="text-xs text-gray-400">active today</span>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-4 gap-2 text-center">
+                        {[
+                          { label: 'Calories', value: active.Calories, unit: '' },
+                          { label: 'Protein', value: active.Protein_g, unit: 'g' },
+                          { label: 'Carbs', value: active.Carbs_g, unit: 'g' },
+                          { label: 'Fat', value: active.Fat_g, unit: 'g' },
+                        ].map(m => (
+                          <div key={m.label} className="bg-gray-50 rounded-xl py-2">
+                            <div className="text-sm font-bold text-gray-900">{m.value ?? '—'}{m.unit}</div>
+                            <div className="text-xs text-gray-500">{m.label}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {/* Different targets per day */}
+                      {hasDailyTargets && (
+                        <div className="flex items-center justify-between pt-1 border-t border-gray-100 mt-1">
+                          <span className="text-xs text-gray-400">Different targets per day</span>
+                          <a href="/macros" className="text-xs text-green-600 font-medium hover:text-green-700 transition-colors">Edit daily targets →</a>
+                        </div>
+                      )}
+                      {/* All-days breakdown table */}
+                      {hasDailyTargets && weeklyMacros && (
+                        <div className="mt-1 rounded-xl overflow-hidden border border-gray-100">
+                          <div className="grid grid-cols-5 text-[10px] font-medium text-gray-400 uppercase tracking-wide bg-gray-50 px-3 py-1.5">
+                            <span>Day</span>
+                            <span className="text-right">Cal</span>
+                            <span className="text-right">Pro</span>
+                            <span className="text-right">Carb</span>
+                            <span className="text-right">Fat</span>
+                          </div>
+                          {DAYS.map((day, i) => {
+                            const m = weeklyMacros![day]
+                            if (!m) return null
+                            const isToday = day === todayName
+                            return (
+                              <div key={day} className={`grid grid-cols-5 px-3 py-2 text-xs ${isToday ? 'bg-green-50' : i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} ${i < DAYS.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                <span className={`font-medium ${isToday ? 'text-green-700' : 'text-gray-600'}`}>{day.slice(0, 3)}</span>
+                                <span className={`text-right ${isToday ? 'text-green-700' : 'text-gray-700'}`}>{m.calories}</span>
+                                <span className={`text-right ${isToday ? 'text-green-700' : 'text-gray-700'}`}>{m.protein_g}g</span>
+                                <span className={`text-right ${isToday ? 'text-green-700' : 'text-gray-700'}`}>{m.carbs_g}g</span>
+                                <span className={`text-right ${isToday ? 'text-green-700' : 'text-gray-700'}`}>{m.fat_g}g</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </div>
-
+                  </>
+                )
+              })()}
               {showRecalc && (
                 <div className="border-t border-gray-100 pt-4 space-y-3">
                   <p className="text-xs text-gray-500">Update your stats to recalculate targets</p>

@@ -41,6 +41,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [waterOz, setWaterOz] = useState(0)
   const [waterGoal, setWaterGoal] = useState(64)
+  const [activeDayLabel, setActiveDayLabel] = useState<string | null>(null)
 
   const todayName = DAYS[new Date().getDay()]
 
@@ -102,9 +103,11 @@ export default function DashboardPage() {
                   fiber: Number(todayMacros.fiber_g) || profileFiber,
                 })
                 usedDayMacros = true
+                setActiveDayLabel(todayName)
               }
             } catch { /* fall through to default */ }
           }
+          if (!usedDayMacros) setActiveDayLabel(null)
           if (!usedDayMacros && profile.Calories) {
             setTargets({
               calories: Number(profile.Calories) || 2000,
@@ -297,7 +300,14 @@ export default function DashboardPage() {
         {/* Macros */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-semibold text-gray-500 tracking-wide">MACROS</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xs font-semibold text-gray-500 tracking-wide">MACROS</h2>
+              {activeDayLabel && (
+                <span className="text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full">
+                  {activeDayLabel} targets
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               {(proteinHit || carbsHit || fatHit) && !allMacrosHit && (
                 <span className="text-xs text-green-600 font-medium">
