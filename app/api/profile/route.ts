@@ -44,9 +44,13 @@ export async function POST(req: NextRequest) {
     Program_week: 1,
     Onboarding_complete: false,
     Meals_Per_Day: 3,
-    // Set Plan to 'free' only on first-time signup (don't overwrite an existing paid plan)
+    // Set Plan on first-time signup only (don't overwrite an existing paid plan).
+    // Clients signing up via a coach link get standard + Comp_Access automatically.
     // Never overwrite Playbook_Active — that's managed exclusively by the Playbook sync webhook
-    ...(!existing ? { Plan: 'free' } : {}),
+    ...(!existing ? {
+      Plan: (Coach_Email && typeof Coach_Email === 'string' && Coach_Email.includes('@')) ? 'standard' : 'free',
+      ...(Coach_Email && typeof Coach_Email === 'string' && Coach_Email.includes('@') ? { Comp_Access: true } : {}),
+    } : {}),
     // Note: Playbook_Active is intentionally omitted here so it's never accidentally cleared
     // Set Coach_Email if provided (e.g. from ?coach= signup link)
     ...(Coach_Email && typeof Coach_Email === 'string' && Coach_Email.includes('@') ? { Coach_Email } : {}),
