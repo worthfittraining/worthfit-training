@@ -179,7 +179,7 @@ export async function PATCH(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const body = await req.json()
-    const { id, food_name, calories, protein_g, carbs_g, fat_g, meal_slot, notes } = body
+    const { id, food_name, calories, protein_g, carbs_g, fat_g, fiber_g, meal_slot, notes } = body
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
     const updateFields: Record<string, unknown> = {}
@@ -188,6 +188,7 @@ export async function PATCH(req: NextRequest) {
     if (protein_g !== undefined) updateFields.protein_g = Number(protein_g)
     if (carbs_g !== undefined) updateFields.carbs_g = Number(carbs_g)
     if (fat_g !== undefined) updateFields.fat_g = Number(fat_g)
+    if (fiber_g !== undefined) updateFields.fiber_g = Number(fiber_g)
     if (meal_slot !== undefined) updateFields.meal_slot = meal_slot
     if (notes !== undefined) updateFields.notes = notes
 

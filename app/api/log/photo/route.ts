@@ -41,6 +41,7 @@ Respond ONLY with valid JSON in this exact format, no other text:
   "protein_g": 0,
   "carbs_g": 0,
   "fat_g": 0,
+  "fiber_g": 0,
   "notes": "brief description of what you see and any assumptions made about portion sizes",
   "confidence": "low|medium|high"
 }
