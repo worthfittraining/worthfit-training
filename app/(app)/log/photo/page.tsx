@@ -14,6 +14,7 @@ type NutritionEstimate = {
   protein_g: number
   carbs_g: number
   fat_g: number
+  fiber_g: number
   notes: string
   confidence: 'low' | 'medium' | 'high'
 }
@@ -139,6 +140,7 @@ export default function PhotoLogPage() {
           protein_g: editedEstimate.protein_g,
           carbs_g: editedEstimate.carbs_g,
           fat_g: editedEstimate.fat_g,
+          fiber_g: editedEstimate.fiber_g || 0,
           meal_slot: editedEstimate.meal_slot,
           notes: `[Photo log] ${editedEstimate.notes}`,
           date: localDateString(),
@@ -300,6 +302,7 @@ export default function PhotoLogPage() {
                   { key: 'protein_g', label: '💪 Protein', unit: 'g', color: 'bg-blue-50 border-blue-200' },
                   { key: 'carbs_g', label: '🌾 Carbs', unit: 'g', color: 'bg-yellow-50 border-yellow-200' },
                   { key: 'fat_g', label: '🥑 Fat', unit: 'g', color: 'bg-green-50 border-green-200' },
+                  { key: 'fiber_g', label: '🌿 Fiber', unit: 'g', color: 'bg-emerald-50 border-emerald-200' },
                 ].map(({ key, label, unit, color }) => (
                   <div key={key} className={`border rounded-xl p-3 ${color}`}>
                     <p className="text-xs font-medium text-gray-500 mb-1">{label}</p>

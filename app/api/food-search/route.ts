@@ -260,19 +260,19 @@ async function fetchSavedRecipes(email: string, query: string) {
     const recipes = JSON.parse(String(client.fields.Saved_Recipes))
     return recipes
       .filter((r: { name: string }) => r.name.toLowerCase().includes(query.toLowerCase()))
-      .map((r: { name: string; calories: number; protein_g: number; carbs_g: number; fat_g: number }) => ({
+      .map((r: { name: string; calories: number; protein_g: number; carbs_g: number; fat_g: number; fiber_g?: number }) => ({
         name: `⭐ ${r.name}`,
         serving: '1 serving',
         calories: r.calories,
         protein_g: r.protein_g,
         carbs_g: r.carbs_g,
         fat_g: r.fat_g,
-        fiber_g: 0,
+        fiber_g: r.fiber_g || 0,
         cal_per_100g: r.calories,
         protein_per_100g: r.protein_g,
         carbs_per_100g: r.carbs_g,
         fat_per_100g: r.fat_g,
-        fiber_per_100g: 0,
+        fiber_per_100g: r.fiber_g || 0,
         is_recipe: true,
       }))
   } catch {

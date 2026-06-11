@@ -21,10 +21,12 @@ type SearchResult = {
   protein_g: number
   carbs_g: number
   fat_g: number
+  fiber_g: number
   cal_per_100g: number
   protein_per_100g: number
   carbs_per_100g: number
   fat_per_100g: number
+  fiber_per_100g: number
 }
 
 type Ingredient = {
@@ -36,7 +38,7 @@ type Ingredient = {
 }
 
 function calcIngredientMacros(food: SearchResult, qty: number, unit: string) {
-  if (!qty || qty <= 0) return { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
+  if (!qty || qty <= 0) return { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 }
   let grams = qty
   if (unit === 'oz') grams = qty * 28.35
   else if (unit === 'lbs') grams = qty * 453.6
@@ -50,6 +52,7 @@ function calcIngredientMacros(food: SearchResult, qty: number, unit: string) {
       protein_g: Math.round(food.protein_g * qty * 10) / 10,
       carbs_g: Math.round(food.carbs_g * qty * 10) / 10,
       fat_g: Math.round(food.fat_g * qty * 10) / 10,
+      fiber_g: Math.round(food.fiber_g * qty * 10) / 10,
     }
   }
   const factor = grams / 100
@@ -58,6 +61,7 @@ function calcIngredientMacros(food: SearchResult, qty: number, unit: string) {
     protein_g: Math.round(food.protein_per_100g * factor * 10) / 10,
     carbs_g: Math.round(food.carbs_per_100g * factor * 10) / 10,
     fat_g: Math.round(food.fat_per_100g * factor * 10) / 10,
+    fiber_g: Math.round(food.fiber_per_100g * factor * 10) / 10,
   }
 }
 
@@ -80,7 +84,7 @@ export default function RecipePage() {
 
   // Manual ingredient state
   const [manualMode, setManualMode] = useState(false)
-  const [manualIngredient, setManualIngredient] = useState({ name: '', calories: '', protein_g: '', carbs_g: '', fat_g: '' })
+  const [manualIngredient, setManualIngredient] = useState({ name: '', calories: '', protein_g: '', carbs_g: '', fat_g: '', fiber_g: '' })
 
   // Barcode scanner state
   const [showBarcode, setShowBarcode] = useState(false)
@@ -140,17 +144,20 @@ export default function RecipePage() {
           const res = await fetch(`/api/barcode?code=${result.getText()}`)
           if (res.status === 404) { setBarcodeError('Product not found — try searching manually'); setBarcodeLoading(false); return }
           const food = await res.json()
+          const servingG = food.serving_size_g || 100
           const sr: SearchResult = {
             name: food.name,
             serving: food.serving_size_g ? `${food.serving_size_g}g` : '100g',
-            calories: Math.round(food.calories_per_100g * (food.serving_size_g || 100) / 100),
-            protein_g: Math.round(food.protein_per_100g * (food.serving_size_g || 100) / 100 * 10) / 10,
-            carbs_g: Math.round(food.carbs_per_100g * (food.serving_size_g || 100) / 100 * 10) / 10,
-            fat_g: Math.round(food.fat_per_100g * (food.serving_size_g || 100) / 100 * 10) / 10,
+            calories: Math.round(food.calories_per_100g * servingG / 100),
+            protein_g: Math.round(food.protein_per_100g * servingG / 100 * 10) / 10,
+            carbs_g: Math.round(food.carbs_per_100g * servingG / 100 * 10) / 10,
+            fat_g: Math.round(food.fat_per_100g * servingG / 100 * 10) / 10,
+            fiber_g: Math.round((food.fiber_per_100g || 0) * servingG / 100 * 10) / 10,
             cal_per_100g: food.calories_per_100g,
             protein_per_100g: food.protein_per_100g,
             carbs_per_100g: food.carbs_per_100g,
             fat_per_100g: food.fat_per_100g,
+            fiber_per_100g: food.fiber_per_100g || 0,
           }
           addIngredient(sr)
           setShowBarcode(false)
@@ -204,6 +211,7 @@ export default function RecipePage() {
     const protein = Number(manualIngredient.protein_g) || 0
     const carbs = Number(manualIngredient.carbs_g) || 0
     const fat = Number(manualIngredient.fat_g) || 0
+    const fiber = Number(manualIngredient.fiber_g) || 0
     const fakeFood: SearchResult = {
       name: manualIngredient.name,
       serving: '1 serving',
@@ -211,12 +219,14 @@ export default function RecipePage() {
       protein_g: protein,
       carbs_g: carbs,
       fat_g: fat,
+      fiber_g: fiber,
       // Per-100g fields are meaningless for manual entries (no weight info) —
       // set to 0 so any weight-unit calculation returns 0 rather than wrong values
       cal_per_100g: 0,
       protein_per_100g: 0,
       carbs_per_100g: 0,
       fat_per_100g: 0,
+      fiber_per_100g: 0,
     }
     // Mark as manual so the ingredient row locks unit to 'serving'
     setIngredients(prev => [...prev, {
@@ -229,7 +239,7 @@ export default function RecipePage() {
     setSearchQuery('')
     setSearchResults([])
     setShowSearch(false)
-    setManualIngredient({ name: '', calories: '', protein_g: '', carbs_g: '', fat_g: '' })
+    setManualIngredient({ name: '', calories: '', protein_g: '', carbs_g: '', fat_g: '', fiber_g: '' })
     setManualMode(false)
   }
 
@@ -249,8 +259,9 @@ export default function RecipePage() {
       protein_g: acc.protein_g + m.protein_g,
       carbs_g: acc.carbs_g + m.carbs_g,
       fat_g: acc.fat_g + m.fat_g,
+      fiber_g: acc.fiber_g + m.fiber_g,
     }
-  }, { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 })
+  }, { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 })
 
   const servings = Math.max(Number(totalServings) || 1, 0.1)
   const eaten = Math.max(Number(servingsEaten) || 1, 0.1)
@@ -262,6 +273,7 @@ export default function RecipePage() {
     protein_g: Math.round(recipeTotals.protein_g * ratio * 10) / 10,
     carbs_g: Math.round(recipeTotals.carbs_g * ratio * 10) / 10,
     fat_g: Math.round(recipeTotals.fat_g * ratio * 10) / 10,
+    fiber_g: Math.round(recipeTotals.fiber_g * ratio * 10) / 10,
   }
 
   // Per-single-serving for display
@@ -270,6 +282,7 @@ export default function RecipePage() {
     protein_g: Math.round(recipeTotals.protein_g / servings * 10) / 10,
     carbs_g: Math.round(recipeTotals.carbs_g / servings * 10) / 10,
     fat_g: Math.round(recipeTotals.fat_g / servings * 10) / 10,
+    fiber_g: Math.round(recipeTotals.fiber_g / servings * 10) / 10,
   }
 
   async function handleSave() {
@@ -294,6 +307,7 @@ export default function RecipePage() {
             protein_g: perServing.protein_g,
             carbs_g: perServing.carbs_g,
             fat_g: perServing.fat_g,
+            fiber_g: perServing.fiber_g,
             servings: Number(totalServings),
             saved_at: new Date().toISOString(),
           },
@@ -310,6 +324,7 @@ export default function RecipePage() {
           protein_g: loggedMacros.protein_g,
           carbs_g: loggedMacros.carbs_g,
           fat_g: loggedMacros.fat_g,
+          fiber_g: loggedMacros.fiber_g,
           meal_slot: mealSlot,
           notes: `Recipe: ${ingredients.length} ingredients, ${totalServings} servings total`,
           date: localDateString(),
@@ -438,7 +453,7 @@ export default function RecipePage() {
               <input value={manualIngredient.name} onChange={e => setManualIngredient(p => ({ ...p, name: e.target.value }))}
                 placeholder="Ingredient name *" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-800" />
               <div className="grid grid-cols-2 gap-2">
-                {[['calories','Calories'],['protein_g','Protein (g)'],['carbs_g','Carbs (g)'],['fat_g','Fat (g)']].map(([k,l]) => (
+                {[['calories','Calories'],['protein_g','Protein (g)'],['carbs_g','Carbs (g)'],['fat_g','Fat (g)'],['fiber_g','Fiber (g)']].map(([k,l]) => (
                   <div key={k}>
                     <label className="text-xs text-gray-500 block mb-0.5">{l}</label>
                     <input type="number" min="0" value={manualIngredient[k as keyof typeof manualIngredient]}
@@ -494,6 +509,7 @@ export default function RecipePage() {
                       <span>{m.protein_g}g P</span>
                       <span>{m.carbs_g}g C</span>
                       <span>{m.fat_g}g F</span>
+                      <span>{m.fiber_g}g Fi</span>
                     </div>
                   </div>
                 )
@@ -524,33 +540,36 @@ export default function RecipePage() {
             {/* Full recipe totals */}
             <div className="bg-gray-50 rounded-xl p-3 mb-3">
               <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Whole Recipe</p>
-              <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="grid grid-cols-5 gap-2 text-center">
                 <div><div className="font-bold text-gray-800 text-sm">{recipeTotals.calories}</div><div className="text-xs text-gray-500">cal</div></div>
                 <div><div className="font-bold text-green-600 text-sm">{recipeTotals.protein_g}g</div><div className="text-xs text-gray-500">protein</div></div>
                 <div><div className="font-bold text-blue-600 text-sm">{recipeTotals.carbs_g}g</div><div className="text-xs text-gray-500">carbs</div></div>
                 <div><div className="font-bold text-orange-500 text-sm">{recipeTotals.fat_g}g</div><div className="text-xs text-gray-500">fat</div></div>
+                <div><div className="font-bold text-emerald-600 text-sm">{recipeTotals.fiber_g}g</div><div className="text-xs text-gray-500">fiber</div></div>
               </div>
             </div>
 
             {/* Per serving */}
             <div className="bg-gray-50 rounded-xl p-3 mb-3">
               <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Per Serving (÷{totalServings})</p>
-              <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="grid grid-cols-5 gap-2 text-center">
                 <div><div className="font-bold text-gray-800 text-sm">{perServing.calories}</div><div className="text-xs text-gray-500">cal</div></div>
                 <div><div className="font-bold text-green-600 text-sm">{perServing.protein_g}g</div><div className="text-xs text-gray-500">protein</div></div>
                 <div><div className="font-bold text-blue-600 text-sm">{perServing.carbs_g}g</div><div className="text-xs text-gray-500">carbs</div></div>
                 <div><div className="font-bold text-orange-500 text-sm">{perServing.fat_g}g</div><div className="text-xs text-gray-500">fat</div></div>
+                <div><div className="font-bold text-emerald-600 text-sm">{perServing.fiber_g}g</div><div className="text-xs text-gray-500">fiber</div></div>
               </div>
             </div>
 
             {/* What you're logging */}
             <div className="bg-orange-50 border border-orange-200 rounded-xl p-3">
               <p className="text-xs font-semibold text-orange-600 mb-2 uppercase tracking-wide">You&apos;re Logging ({servingsEaten} serving{Number(servingsEaten) !== 1 ? 's' : ''})</p>
-              <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="grid grid-cols-5 gap-2 text-center">
                 <div><div className="font-bold text-gray-900 text-sm">{loggedMacros.calories}</div><div className="text-xs text-gray-500">cal</div></div>
                 <div><div className="font-bold text-green-700 text-sm">{loggedMacros.protein_g}g</div><div className="text-xs text-gray-500">protein</div></div>
                 <div><div className="font-bold text-blue-700 text-sm">{loggedMacros.carbs_g}g</div><div className="text-xs text-gray-500">carbs</div></div>
                 <div><div className="font-bold text-orange-600 text-sm">{loggedMacros.fat_g}g</div><div className="text-xs text-gray-500">fat</div></div>
+                <div><div className="font-bold text-emerald-700 text-sm">{loggedMacros.fiber_g}g</div><div className="text-xs text-gray-500">fiber</div></div>
               </div>
             </div>
           </div>
