@@ -250,11 +250,11 @@ export default function CoachClientDetailPage() {
                 {/* Meal total */}
                 <div className="grid grid-cols-[1fr_40px_36px_36px_36px_36px] gap-1 px-3 py-2 bg-gray-50 border border-t-0 border-gray-200 rounded-b-xl text-xs font-medium">
                   <span className="text-gray-400 text-[10px]">Total</span>
-                  <span className="text-center text-gray-700">{totals.cal}</span>
-                  <span className="text-center text-[#15803d]">{totals.pro}g</span>
-                  <span className="text-center text-[#c2410c]">{totals.carb}g</span>
-                  <span className="text-center text-[#7c3aed]">{totals.fat}g</span>
-                  <span className="text-center text-[#0369a1]">{totals.fib}g</span>
+                  <span className="text-center text-gray-700">{Math.round(totals.cal)}</span>
+                  <span className="text-center text-[#15803d]">{Math.round(totals.pro)}g</span>
+                  <span className="text-center text-[#c2410c]">{Math.round(totals.carb)}g</span>
+                  <span className="text-center text-[#7c3aed]">{Math.round(totals.fat)}g</span>
+                  <span className="text-center text-[#0369a1]">{Math.round(totals.fib)}g</span>
                 </div>
               </div>
             )
