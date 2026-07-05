@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     const { userId } = await auth()
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { messages, email, mode } = await req.json()
+    const { messages, email, mode, date } = await req.json()
 
     // Get client profile (non-fatal — chat works without it)
     let profile: Record<string, unknown> = {}
@@ -90,7 +90,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No user message found' }, { status: 400 })
     }
 
-    const today = localDateString()
+    // Prefer client-sent date (user's local timezone) over server UTC date.
+    // Without this, evening logs in the US get saved with tomorrow's UTC date
+    // and disappear from the user's "today" view.
+    const today = (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) ? date : localDateString()
     const actions: ChatAction[] = []
 
     // ── Agentic tool-use loop ──────────────────────────────────────────────────

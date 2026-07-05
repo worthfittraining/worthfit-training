@@ -203,6 +203,7 @@ export default function ChatPage() {
           messages: newMessages,
           mode,
           email: user?.primaryEmailAddress?.emailAddress,
+          date: localDateString(),
         }),
       })
 
