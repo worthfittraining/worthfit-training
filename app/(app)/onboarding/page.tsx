@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 
@@ -35,6 +35,19 @@ export default function OnboardingPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
+
+  // If the user already has a profile (e.g. returning user after sign-in),
+  // skip onboarding and go straight to the dashboard.
+  useEffect(() => {
+    const email = user?.primaryEmailAddress?.emailAddress
+    if (!email) return
+    fetch(`/api/profile?email=${encodeURIComponent(email)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d?.Calories) router.replace('/dashboard')
+      })
+      .catch(() => {})
+  }, [user, router])
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   // Chip selections stored separately from the free-text field so clicking
   // a chip doesn't confusingly populate the text input

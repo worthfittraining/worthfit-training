@@ -15,10 +15,11 @@ export default clerkMiddleware(async (auth, request) => {
   const { userId } = await auth()
   const { pathname } = request.nextUrl
 
-  // If user is signed in and on a public/auth page, redirect to dashboard
+  // After sign-up, send new users straight to onboarding so they can't skip it.
+  // After sign-in, send returning users to dashboard (SubscriptionGate handles any edge cases).
   if (userId && (pathname === '/' || pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up'))) {
-    const dashboardUrl = new URL('/dashboard', request.url)
-    return NextResponse.redirect(dashboardUrl)
+    const dest = pathname.startsWith('/sign-up') ? '/onboarding' : '/dashboard'
+    return NextResponse.redirect(new URL(dest, request.url))
   }
 
   if (!isPublicRoute(request)) {
