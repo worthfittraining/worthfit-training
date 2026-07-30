@@ -60,8 +60,23 @@ export async function POST(req: NextRequest) {
     // Event can come from:
     //   - URL query param: ?event=activated  (used when Playbook posts directly — encode it in the URL)
     //   - Body field: { "event": "activated" }  (used when Zapier posts)
+    //   - Playbook's native webhook format: { "trigger": "NewSubscriber" } — auto-mapped below
     const eventFromQuery = req.nextUrl.searchParams.get('event')
-    const event = eventFromQuery ?? body.event
+
+    // Map Playbook's native trigger names to our internal event names.
+    // Playbook sends e.g. { trigger: "NewSubscriber", email: "...", name: "...", plan: "Exclusive" }
+    // This allows Playbook to POST directly to this endpoint without going through Zapier.
+    const PLAYBOOK_TRIGGER_MAP: Record<string, string> = {
+      NewSubscriber: 'activated',
+      SubscriptionStarted: 'activated',
+      Subscription: 'activated',
+      CancelledSubscription: 'deactivated',
+      Cancellation: 'deactivated',
+      SubscriptionCancelled: 'deactivated',
+      Refunded: 'deactivated',
+    }
+    const eventFromBody = body.event ?? (body.trigger ? PLAYBOOK_TRIGGER_MAP[body.trigger] : undefined)
+    const event = eventFromQuery ?? eventFromBody
 
     // Email can come from body.email (both Playbook native and Zapier)
     const email = body.email
