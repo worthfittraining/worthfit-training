@@ -4,6 +4,25 @@ import { getClientByEmail, createClient, updateClient } from '@/lib/airtable'
 import { calculateMacros, calculateWaterGoal } from '@/lib/macros'
 import { resolvePlan } from '@/lib/plan'
 import type Airtable from 'airtable'
+import fs from 'fs'
+import path from 'path'
+
+/** Emails of active Playbook subscribers — loaded once from CSV at startup */
+function loadPlaybookEmails(): Set<string> {
+  try {
+    const csvPath = path.join(process.cwd(), 'playbook-subscribers.csv')
+    const lines = fs.readFileSync(csvPath, 'utf8').split('\n')
+    const emails = new Set<string>()
+    for (const line of lines) {
+      const [email, , active] = line.split(',')
+      if (email && active?.trim() === 'true') emails.add(email.toLowerCase().trim())
+    }
+    return emails
+  } catch {
+    return new Set()
+  }
+}
+const PLAYBOOK_EMAILS = loadPlaybookEmails()
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
@@ -50,8 +69,10 @@ export async function POST(req: NextRequest) {
     ...(!existing ? {
       Plan: (Coach_Email && typeof Coach_Email === 'string' && Coach_Email.includes('@')) ? 'standard' : 'free',
       ...(Coach_Email && typeof Coach_Email === 'string' && Coach_Email.includes('@') ? { Comp_Access: true } : {}),
+      // Auto-set Playbook_Active for Playbook members signing up — avoids manual CSV syncs
+      ...(PLAYBOOK_EMAILS.has(email.toLowerCase().trim()) ? { Playbook_Active: true } : {}),
     } : {}),
-    // Note: Playbook_Active is intentionally omitted here so it's never accidentally cleared
+    // Note: Playbook_Active is intentionally omitted from updates so it's never accidentally cleared
     // Set Coach_Email if provided (e.g. from ?coach= signup link)
     ...(Coach_Email && typeof Coach_Email === 'string' && Coach_Email.includes('@') ? { Coach_Email } : {}),
   }
