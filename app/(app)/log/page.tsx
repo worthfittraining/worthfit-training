@@ -24,6 +24,7 @@ type DaySummary = {
   protein_g: number
   carbs_g: number
   fat_g: number
+  fiber_g: number
   logged: boolean
 }
 
@@ -155,7 +156,7 @@ export default function LogPage() {
   const [copying, setCopying] = useState<string | null>(null)
   const [copySuccess, setCopySuccess] = useState<string | null>(null)
   const [profile, setProfile] = useState<{
-    Calories?: number; Protein_g?: number; Carbs_g?: number; Fat_g?: number
+    Calories?: number; Protein_g?: number; Carbs_g?: number; Fat_g?: number; Fiber_g?: number
     Rest_Calories?: number; Rest_Protein_g?: number; Rest_Carbs_g?: number; Rest_Fat_g?: number
     Weekly_Macros?: string
   } | null>(null)
@@ -354,12 +355,15 @@ export default function LogPage() {
     const d = new Date(); d.setDate(d.getDate() - i)
     const dateStr = localDateString(d)
     const dayLogs = weekLogs.filter(l => l.date === dateStr)
-    return { date: dateStr, label: getDateLabel(dateStr), calories: dayLogs.reduce((s, l) => s + l.calories, 0), protein_g: dayLogs.reduce((s, l) => s + l.protein_g, 0), carbs_g: dayLogs.reduce((s, l) => s + l.carbs_g, 0), fat_g: dayLogs.reduce((s, l) => s + l.fat_g, 0), logged: dayLogs.length > 0 }
+    return { date: dateStr, label: getDateLabel(dateStr), calories: dayLogs.reduce((s, l) => s + l.calories, 0), protein_g: dayLogs.reduce((s, l) => s + l.protein_g, 0), carbs_g: dayLogs.reduce((s, l) => s + l.carbs_g, 0), fat_g: dayLogs.reduce((s, l) => s + l.fat_g, 0), fiber_g: dayLogs.reduce((s, l) => s + (l.fiber_g || 0), 0), logged: dayLogs.length > 0 }
   })
 
   const daysHitProtein = weekDays.filter(d => d.logged && protTarget && d.protein_g >= protTarget * 0.9).length
   const daysHitCalories = weekDays.filter(d => d.logged && calTarget && d.calories >= calTarget * 0.9 && d.calories <= calTarget * 1.1).length
   const loggedDays = weekDays.filter(d => d.logged).length
+  const fiberTarget = profile?.Fiber_g || 0
+  const loggedFiberDays = weekDays.filter(d => d.logged)
+  const avgFiber = loggedFiberDays.length > 0 ? Math.round(loggedFiberDays.reduce((s, d) => s + d.fiber_g, 0) / loggedFiberDays.length) : 0
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -517,10 +521,11 @@ export default function LogPage() {
         {view === 'week' && (
           <>
             {loggedDays > 0 && (
-              <div className="grid grid-cols-3 gap-3 mb-5">
+              <div className="grid grid-cols-2 gap-3 mb-5">
                 <div className="bg-white rounded-2xl p-3 text-center shadow-sm border border-gray-100"><p className="text-2xl font-bold text-green-500">{loggedDays}/7</p><p className="text-xs text-gray-500">days logged</p></div>
                 <div className="bg-white rounded-2xl p-3 text-center shadow-sm border border-gray-100"><p className="text-2xl font-bold text-blue-500">{daysHitProtein}/7</p><p className="text-xs text-gray-500">hit protein</p></div>
                 <div className="bg-white rounded-2xl p-3 text-center shadow-sm border border-gray-100"><p className="text-2xl font-bold text-orange-500">{daysHitCalories}/7</p><p className="text-xs text-gray-500">on calories</p></div>
+                <div className="bg-white rounded-2xl p-3 text-center shadow-sm border border-gray-100"><p className={`text-2xl font-bold ${fiberTarget && avgFiber >= fiberTarget ? 'text-green-500' : 'text-purple-500'}`}>{avgFiber}g</p><p className="text-xs text-gray-500">{fiberTarget ? `/ ${fiberTarget}g` : ''} avg fiber</p></div>
               </div>
             )}
             {weekLoading ? (
