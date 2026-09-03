@@ -102,7 +102,7 @@ export default function CoachClientDetailPage() {
   const [forbidden, setForbidden] = useState(false)
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null)
   const [activeTab, setActiveTab] = useState<'log' | 'weekly' | 'report'>('log')
-  const [reportDays, setReportDays] = useState<30 | 60 | 90>(30)
+  const [reportDays, setReportDays] = useState<30 | 60 | 90 | 180>(30)
   const [reportData, setReportData] = useState<DayData[] | null>(null)
   const [reportLoading, setReportLoading] = useState(false)
   const [editingMacros, setEditingMacros] = useState(false)
@@ -483,13 +483,13 @@ export default function CoachClientDetailPage() {
         <div className="px-4 pt-4 pb-6 space-y-4">
           {/* Days selector */}
           <div className="flex gap-2">
-            {([30, 60, 90] as const).map(n => (
+            {([30, 60, 90, 180] as const).map(n => (
               <button
                 key={n}
                 onClick={() => { setReportDays(n); setReportData(null); fetchReport(n) }}
                 className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${reportDays === n ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-500 border-gray-200'}`}
               >
-                {n} days
+                {n === 180 ? '6 mo' : `${n}d`}
               </button>
             ))}
           </div>

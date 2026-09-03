@@ -150,7 +150,7 @@ export async function GET(
     // linked record fields by record ID. Instead we filter by date range only in
     // Airtable, then filter by client_id in JavaScript after fetching.
     const daysParam = parseInt(req.nextUrl.searchParams.get('days') || '14')
-    const numDays = Math.min(Math.max(daysParam, 1), 90)
+    const numDays = Math.min(Math.max(daysParam, 1), 180)
     const days = lastNDays(numDays)
     const oldest = days[days.length - 1]
     const todayStr = days[0]
