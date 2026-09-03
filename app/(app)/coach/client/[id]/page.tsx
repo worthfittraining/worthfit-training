@@ -101,7 +101,10 @@ export default function CoachClientDetailPage() {
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null)
-  const [activeTab, setActiveTab] = useState<'log' | 'weekly'>('log')
+  const [activeTab, setActiveTab] = useState<'log' | 'weekly' | 'report'>('log')
+  const [reportDays, setReportDays] = useState<30 | 60 | 90>(30)
+  const [reportData, setReportData] = useState<DayData[] | null>(null)
+  const [reportLoading, setReportLoading] = useState(false)
   const [editingMacros, setEditingMacros] = useState(false)
   const [macroForm, setMacroForm] = useState({ calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 })
   const [savingMacros, setSavingMacros] = useState(false)
@@ -152,6 +155,16 @@ export default function CoachClientDetailPage() {
     carb: Math.round(loggedDays.reduce((s, d) => s + d.carb, 0) / loggedDays.length),
     fat: Math.round(loggedDays.reduce((s, d) => s + d.fat, 0) / loggedDays.length),
     fib: Math.round(loggedDays.reduce((s, d) => s + d.fib, 0) / loggedDays.length),
+  }
+
+  async function fetchReport(n: 30 | 60 | 90) {
+    setReportLoading(true)
+    try {
+      const res = await fetch(`/api/coach/client/${clientId}?days=${n}`)
+      const d = await res.json()
+      setReportData(d.days || [])
+    } catch (e) { console.error(e) }
+    finally { setReportLoading(false) }
   }
 
   async function saveMacros() {
@@ -359,6 +372,12 @@ export default function CoachClientDetailPage() {
         >
           📊 Weekly
         </button>
+        <button
+          onClick={() => { setActiveTab('report'); if (!reportData) fetchReport(reportDays) }}
+          className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'report' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-400'}`}
+        >
+          📈 Report
+        </button>
       </div>
 
       {/* Client Stats Strip */}
@@ -457,6 +476,88 @@ export default function CoachClientDetailPage() {
             ))}
           </div>
         </>
+      )}
+
+      {/* ── Report Tab ── */}
+      {activeTab === 'report' && (
+        <div className="px-4 pt-4 pb-6 space-y-4">
+          {/* Days selector */}
+          <div className="flex gap-2">
+            {([30, 60, 90] as const).map(n => (
+              <button
+                key={n}
+                onClick={() => { setReportDays(n); setReportData(null); fetchReport(n) }}
+                className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${reportDays === n ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-500 border-gray-200'}`}
+              >
+                {n} days
+              </button>
+            ))}
+          </div>
+
+          {reportLoading ? (
+            <div className="text-center text-gray-400 py-12 text-sm">Loading report...</div>
+          ) : reportData ? (() => {
+            const allDays = reportData
+            const logged = allDays.filter(d => d.cal > 0)
+            const total = allDays.length
+            const loggedCount = logged.length
+            const hitProtein = logged.filter(d => t.protein_g > 0 && d.pro >= t.protein_g * 0.9).length
+            const hitCalories = logged.filter(d => t.calories > 0 && d.cal >= t.calories * 0.9 && d.cal <= t.calories * 1.1).length
+            const hitFiber = logged.filter(d => t.fiber_g > 0 && d.fib >= t.fiber_g * 0.9).length
+            const avgCal = logged.length ? Math.round(logged.reduce((s, d) => s + d.cal, 0) / logged.length) : 0
+            const avgPro = logged.length ? Math.round(logged.reduce((s, d) => s + d.pro, 0) / logged.length) : 0
+            const avgFib = logged.length ? Math.round(logged.reduce((s, d) => s + d.fib, 0) / logged.length) : 0
+
+            function StatRow({ label, count, total, color }: { label: string; count: number; total: number; color: string }) {
+              const pct = total > 0 ? Math.round((count / total) * 100) : 0
+              return (
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-600 font-medium">{label}</span>
+                    <span className={`font-semibold ${color}`}>{count}/{total} <span className="text-gray-400 font-normal">({pct}%)</span></span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div className={`h-2 rounded-full transition-all`} style={{ width: `${pct}%`, backgroundColor: color.includes('green') ? '#22c55e' : color.includes('blue') ? '#3b82f6' : color.includes('orange') ? '#f97316' : color.includes('purple') ? '#a855f7' : '#6b7280' }} />
+                  </div>
+                </div>
+              )
+            }
+
+            return (
+              <>
+                <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm space-y-4">
+                  <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Goal Hit Rate — last {reportDays} days</p>
+                  <StatRow label="Days logged" count={loggedCount} total={total} color="text-gray-700" />
+                  <StatRow label="Hit protein goal (±10%)" count={hitProtein} total={total} color="text-green-600" />
+                  <StatRow label="On calorie target (±10%)" count={hitCalories} total={total} color="text-orange-500" />
+                  {t.fiber_g > 0 && <StatRow label="Hit fiber goal (±10%)" count={hitFiber} total={total} color="text-purple-500" />}
+                </div>
+
+                {logged.length > 0 && (
+                  <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-3">Avg Daily (logged days only)</p>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Calories</span>
+                        <span className="font-semibold text-gray-800">{avgCal.toLocaleString()} <span className="text-gray-400 font-normal text-xs">/ {t.calories.toLocaleString()}</span></span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Protein</span>
+                        <span className="font-semibold text-[#15803d]">{avgPro}g <span className="text-gray-400 font-normal text-xs">/ {t.protein_g}g</span></span>
+                      </div>
+                      {t.fiber_g > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Fiber</span>
+                          <span className="font-semibold text-[#0369a1]">{avgFib}g <span className="text-gray-400 font-normal text-xs">/ {t.fiber_g}g</span></span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
+            )
+          })() : null}
+        </div>
       )}
 
       {/* ── Weekly Tab ── */}
