@@ -102,9 +102,16 @@ export default function CoachClientDetailPage() {
   const [forbidden, setForbidden] = useState(false)
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null)
   const [activeTab, setActiveTab] = useState<'log' | 'weekly' | 'report'>('log')
-  const [reportDays, setReportDays] = useState<30 | 60 | 90 | 180>(30)
   const [reportData, setReportData] = useState<DayData[] | null>(null)
   const [reportLoading, setReportLoading] = useState(false)
+  const [reportStart, setReportStart] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() - 29)
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  })
+  const [reportEnd, setReportEnd] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  })
   const [editingMacros, setEditingMacros] = useState(false)
   const [macroForm, setMacroForm] = useState({ calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 })
   const [savingMacros, setSavingMacros] = useState(false)
@@ -157,10 +164,10 @@ export default function CoachClientDetailPage() {
     fib: Math.round(loggedDays.reduce((s, d) => s + d.fib, 0) / loggedDays.length),
   }
 
-  async function fetchReport(n: 30 | 60 | 90) {
+  async function fetchReport(start: string, end: string) {
     setReportLoading(true)
     try {
-      const res = await fetch(`/api/coach/client/${clientId}?days=${n}`)
+      const res = await fetch(`/api/coach/client/${clientId}?start=${start}&end=${end}`)
       const d = await res.json()
       setReportData(d.days || [])
     } catch (e) { console.error(e) }
@@ -373,7 +380,7 @@ export default function CoachClientDetailPage() {
           📊 Weekly
         </button>
         <button
-          onClick={() => { setActiveTab('report'); if (!reportData) fetchReport(reportDays) }}
+          onClick={() => { setActiveTab('report'); if (!reportData) fetchReport(reportStart, reportEnd) }}
           className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'report' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-400'}`}
         >
           📈 Report
@@ -481,17 +488,37 @@ export default function CoachClientDetailPage() {
       {/* ── Report Tab ── */}
       {activeTab === 'report' && (
         <div className="px-4 pt-4 pb-6 space-y-4">
-          {/* Days selector */}
-          <div className="flex gap-2">
-            {([30, 60, 90, 180] as const).map(n => (
-              <button
-                key={n}
-                onClick={() => { setReportDays(n); setReportData(null); fetchReport(n) }}
-                className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${reportDays === n ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-500 border-gray-200'}`}
-              >
-                {n === 180 ? '6 mo' : `${n}d`}
-              </button>
-            ))}
+          {/* Date range picker */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-3 shadow-sm space-y-2">
+            <div className="flex gap-2 items-center">
+              <div className="flex-1">
+                <p className="text-[10px] text-gray-400 mb-1">From</p>
+                <input
+                  type="date"
+                  value={reportStart}
+                  max={reportEnd}
+                  onChange={e => setReportStart(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-green-400"
+                />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] text-gray-400 mb-1">To</p>
+                <input
+                  type="date"
+                  value={reportEnd}
+                  min={reportStart}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={e => setReportEnd(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-green-400"
+                />
+              </div>
+            </div>
+            <button
+              onClick={() => { setReportData(null); fetchReport(reportStart, reportEnd) }}
+              className="w-full bg-green-500 text-white text-sm font-semibold py-2 rounded-xl hover:bg-green-600 transition-colors"
+            >
+              Load Report
+            </button>
           </div>
 
           {reportLoading ? (
@@ -526,7 +553,7 @@ export default function CoachClientDetailPage() {
             return (
               <>
                 <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm space-y-4">
-                  <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Goal Hit Rate — last {reportDays} days</p>
+                  <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Goal Hit Rate — {reportStart} to {reportEnd}</p>
                   <StatRow label="Days logged" count={loggedCount} total={total} color="text-gray-700" />
                   <StatRow label="Hit protein goal (±10%)" count={hitProtein} total={total} color="text-green-600" />
                   <StatRow label="On calorie target (±10%)" count={hitCalories} total={total} color="text-orange-500" />

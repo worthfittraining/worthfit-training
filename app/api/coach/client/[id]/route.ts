@@ -145,15 +145,35 @@ export async function GET(
       }
     }
 
-    // Fetch food logs for the last N days (default 14, max 90 via ?days= query param)
-    // NOTE: client_id is a linked record field in Airtable — formulas cannot filter
-    // linked record fields by record ID. Instead we filter by date range only in
-    // Airtable, then filter by client_id in JavaScript after fetching.
-    const daysParam = parseInt(req.nextUrl.searchParams.get('days') || '14')
-    const numDays = Math.min(Math.max(daysParam, 1), 180)
-    const days = lastNDays(numDays)
-    const oldest = days[days.length - 1]
-    const todayStr = days[0]
+    // Fetch food logs for a date range. Supports two modes:
+    //   ?start=YYYY-MM-DD&end=YYYY-MM-DD  (explicit range)
+    //   ?days=N  (last N days, default 14, max 365)
+    const startParam = req.nextUrl.searchParams.get('start')
+    const endParam = req.nextUrl.searchParams.get('end')
+
+    let days: string[]
+    let oldest: string
+    let todayStr: string
+
+    if (startParam && endParam) {
+      // Build day list between start and end (inclusive), newest first
+      const start = new Date(startParam + 'T00:00:00')
+      const end = new Date(endParam + 'T00:00:00')
+      const tmp: string[] = []
+      for (let d = new Date(end); d >= start; d.setDate(d.getDate() - 1)) {
+        tmp.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)
+      }
+      days = tmp.slice(0, 365) // hard cap
+      oldest = startParam
+      todayStr = endParam
+    } else {
+      const daysParam = parseInt(req.nextUrl.searchParams.get('days') || '14')
+      const numDays = Math.min(Math.max(daysParam, 1), 365)
+      days = lastNDays(numDays)
+      oldest = days[days.length - 1]
+      todayStr = days[0]
+    }
+
     const formula = encodeURIComponent(
       `AND(DATETIME_FORMAT({Date},'YYYY-MM-DD')>='${oldest}',DATETIME_FORMAT({Date},'YYYY-MM-DD')<='${todayStr}')`
     )
