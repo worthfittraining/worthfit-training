@@ -471,12 +471,15 @@ export default function LogPage() {
             {!loading && MEAL_ORDER.map((slot) => {
               const slotLogs = bySlot[slot]
               if (slotLogs.length === 0) return null
-              const slotCal = slotLogs.reduce((s, l) => s + (l.calories || 0), 0)
+              const slotCal = Math.round(slotLogs.reduce((s, l) => s + (l.calories || 0), 0))
+              const slotProt = Math.round(slotLogs.reduce((s, l) => s + (l.protein_g || 0), 0))
+              const slotCarb = Math.round(slotLogs.reduce((s, l) => s + (l.carbs_g || 0), 0))
+              const slotFat = Math.round(slotLogs.reduce((s, l) => s + (l.fat_g || 0), 0))
               return (
                 <div key={slot} className="bg-white rounded-2xl shadow mb-4 overflow-hidden">
                   <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-b">
                     <h3 className="font-semibold text-gray-700 capitalize">{slot}</h3>
-                    <span className="text-sm text-gray-500">{slotCal} kcal</span>
+                    <span className="text-sm font-semibold text-orange-500">{slotCal} kcal</span>
                   </div>
                   <div className="divide-y">
                     {slotLogs.map((log) => (
@@ -511,6 +514,15 @@ export default function LogPage() {
                         </button>
                       </div>
                     ))}
+                  </div>
+                  {/* Meal totals row */}
+                  <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-t">
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Meal total</span>
+                    <div className="flex gap-3 text-xs font-semibold">
+                      <span className="text-blue-500">P: {slotProt}g</span>
+                      <span className="text-yellow-500">C: {slotCarb}g</span>
+                      <span className="text-green-500">F: {slotFat}g</span>
+                    </div>
                   </div>
                 </div>
               )
