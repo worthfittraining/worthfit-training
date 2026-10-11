@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     const logDate = date || new Date().toISOString().split('T')[0]
 
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}`
-    const res = await fetch(url, {
+    const res = await fetchWithRetry(url, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${AIRTABLE_TOKEN}`,
@@ -193,7 +193,7 @@ export async function PATCH(req: NextRequest) {
     if (notes !== undefined) updateFields.notes = notes
 
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}/${id}`
-    const res = await fetch(url, {
+    const res = await fetchWithRetry(url, {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${AIRTABLE_TOKEN}`,
@@ -222,7 +222,7 @@ export async function DELETE(req: NextRequest) {
     // Delete by ID (manual log deletion)
     if (id) {
       const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}/${id}`
-      const res = await fetch(url, {
+      const res = await fetchWithRetry(url, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
       })
@@ -303,7 +303,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     const delUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(FOOD_LOGS_TABLE)}/${match.id}`
-    const delRes = await fetch(delUrl, {
+    const delRes = await fetchWithRetry(delUrl, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` },
     })
