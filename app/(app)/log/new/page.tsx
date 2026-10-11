@@ -4,7 +4,7 @@ import { useUser } from '@clerk/nextjs'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack']
+const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert']
 
 type SearchResult = {
   name: string

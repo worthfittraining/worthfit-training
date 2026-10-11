@@ -640,7 +640,7 @@ export default function BarcodePage() {
             <div className="mb-5">
               <label className="block text-xs font-medium text-gray-500 mb-2">Meal</label>
               <div className="grid grid-cols-2 gap-1">
-                {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map(s => (
+                {(['breakfast', 'lunch', 'dinner', 'snack', 'dessert'] as const).map(s => (
                   <button
                     key={s}
                     type="button"
